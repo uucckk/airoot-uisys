@@ -79,11 +79,11 @@ UI-SYSTEM 在设计之初，就将模块化、资源管理、整合其他框架�
 因此，UI-SYSTEM是轻量级的平台，但是可以承接复杂的项目。UI-SYSTEM发布的项目是轻量级的，但是具备重量级项目的表现力。
 
 # 搭建环境
-下载本站项目，运行Release目录下的main.exe程序。
+[https://github.com/uucckk/UI-SYSTEM-RELEASE/archive/master.zip](点击这里下载 UI-SYSTEM-RELEASE)
 <img src='doc/images/01.jpg' />
 添加服务节点和项目目录,我们选择Release/example/下的项目,并运行在80端口：
 ```cmd
-    add a0 example/HelloWorld :80
+    add a0 example/v1 :80
 ```
 然后打开Chrome/FireFox/Edge浏览器，输入http://localhost/
 <img src="doc/images/02.jpg" />
@@ -105,7 +105,7 @@ run a0 :80
 ```html
 <!--
     Hello World
-    保存到code/Hello.html
+    保存到Hello.ui
  -->
 <style>
     body{
@@ -133,8 +133,9 @@ run a0 :80
 ```html
 <!--
     Index
-    保存到code/Index.html
+    保存到Index.ui
  -->
+<@pub value="default" />
 <div>
     <Hello />
 </div>
