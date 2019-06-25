@@ -1,0 +1,93 @@
+<!-- 
+	可拖拽的Label标签
+	@author sunxy
+	@version 0.0
+ -->
+<jus.DisplayObject>
+	<style>
+		body{
+			user-select:none;
+			position:absolute;
+			left:0px;
+			top:0px;
+		}
+      	
+	</style>
+	<jus.vbox width="100%" height="100%" >
+		<@content/>
+	</jus.vbox>
+	<script>
+		var _self = $(dom);
+		private var _dragEnabled = true;
+		private var downFlag:Boolean = false;
+      	var tx:Number = 0;
+      	var ty:Number = 0;
+		/**
+		 * 默认初始化函数
+		 */
+		function init():void{
+			_self.bind("mousedown",downEvt);
+			_self.on("mousedown","[dragEnabled='false']",function(e){
+				return false;
+			});
+			$(window).bind("mouseup",upEvt);
+			$(window).bind("mousemove",moveEvt);
+			trigger(0);
+		}
+      
+      	function downEvt(e):void{
+         	downFlag = true;
+          	tx = e.pageX;
+          	ty = e.pageY;
+			document.onselectstart = new Function("return false;");
+        }
+      
+      	
+      	function upEvt(e):void{
+         	 downFlag = false;
+			 document.onselectstart = null;
+        }
+      	
+      	function moveEvt(e):void{
+         	 if(downFlag && _dragEnabled){
+              	var target = e.target;
+               	tx = parseInt(_self.css("left")) + (e.pageX - tx);
+				ty = parseInt(_self.css("top")) + (e.pageY - ty);                             
+               	_self.css("left",tx).css("top",ty);
+				tx = e.pageX;
+				ty = e.pageY;
+             }
+        }
+		
+		public function trigger(event){
+			_self.children("div").each(function(){
+				var $this = $(this);
+				//$this.width($this.width());
+				$this.height($this.attr("height"));
+				
+				var $id = window[$this.attr("id")];
+				if($id && $id.trigger){
+					$id.trigger(event);
+				}
+			});
+			
+		}
+		
+		/**
+		 * 设置是否可以拖动
+		 */
+		public function set dragEnabled(value:Boolean){
+			_dragEnabled = value;
+		}
+		
+		
+		/**
+		 * 析构函数
+		 * 默认情况下可以不使用
+		 */
+		public function finalize():void{
+			$(window).unbind("mouseup",upEvt);
+			$(window).unbind("mousemove",moveEvt);
+		}
+	</script>
+</jus.DisplayObject>

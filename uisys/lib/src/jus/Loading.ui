@@ -1,0 +1,29 @@
+<!-- 加载页面 -->
+<@import value="jus.* />
+<positionArea width="100%" height="100%">
+	<style>
+		body{
+			color:#f0f0f0;
+			text-align:center;
+		}
+	</style>
+	<div id="label" width="60" height="36" x="50%" y="50%">
+		Loading...
+	</div>
+	<script>
+		var _self = $(dom);
+		private var tid = -1;
+		function init(){
+			clearInterval(tid);
+			tid = setInterval(function(){
+				try{
+					label.innerHTML = "Loading" + "......".substring(0,parseInt(Math.random()*10));
+				}catch(e){
+					clearInterval(tid);
+				}
+			},10);
+		}
+		
+		
+	</script>
+</positionArea>

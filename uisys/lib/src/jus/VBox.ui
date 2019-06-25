@@ -1,0 +1,143 @@
+<jus.DisplayObject width="100%" height="100%">
+	<@content />
+	<script>
+		var _self = $(dom);
+		private static function layoutV(_self,event){
+			var $obj = _self.children("div").not(":hidden");
+			var aSum = 0;
+			var rSum = 0;//相对内容
+			$obj.each(function(index){
+				var $this = $(this);
+				//设置高度
+				var tmp = $this.attr("height");
+				
+				if(tmp){
+					if(!$this.css("overflow-x")){
+						$this.css("overflow-x","auto");
+					}
+					if(!$this.css("overflow-y")){
+						$this.css("overflow-y","auto");
+					}
+					if(tmp.lastIndexOf("%") == -1){
+						$this.height(parseInt(tmp));
+						aSum += parseInt($this.outerHeight(true));
+					}
+				}else{
+					$this.attr("heightstate","tmp");
+					aSum += parseInt($this.outerHeight(true));
+				}
+				//只设置固定高度的div
+				
+			});
+			
+			$obj.each(function(){
+				var $this = $(this);
+				var tmp = $this.attr("height");
+				if(tmp){
+					if(tmp.lastIndexOf("%") != -1){
+						rSum += parseInt(tmp);
+					}
+				}
+			});
+			$obj.each(function(){
+				var $this = $(this);
+				
+				//设置宽度
+				var tmp = $this.attr("width");
+				if(tmp){
+					if(tmp.lastIndexOf('%') == -1){
+						if($this.width() != parseInt(tmp)){
+							$this.width(parseInt(tmp));
+						}
+					}else{
+						if(tmp == '100%'){
+							
+						}	
+						else if($this.width() != $this.parent().width() * (parseInt(tmp)/100) - ($this.outerWidth(true) - $this.width())){
+							$this.width($this.parent().width() * (parseInt(tmp)/100) - ($this.outerWidth(true) - $this.width()));
+						}
+					}
+				}
+				
+				//设置高度
+				tmp = $this.attr("height");
+				
+				if(tmp && tmp.lastIndexOf("%") != -1){
+					//取出父亲节点的所有height属性
+					
+					var height = parseInt(tmp);
+					
+					var per = height/(rSum <100 ? 100 : rSum);
+					//最终核算
+					var padding = $this.outerHeight(true) - $this.height();
+					var tHeight = (($this.parent().height() - aSum) * per)- padding
+					var jtmp = 0;
+					
+					jtmp = $this.attr('minHeight');
+					if(jtmp){
+						var minHeight = jtmp.lastIndexOf('%') != -1 ? ($this.parent().height() * parseInt(jtmp)/100) : parseInt(jtmp);
+						if(tHeight<minHeight){
+							tHeight = minHeight - padding;
+							aSum += minHeight;
+							rSum -= (parseInt(jtmp) + height);
+						}
+						
+					}else{
+						jtmp = $this.attr("maxHeight");
+						if(jtmp){
+							var maxHeight = tmp.lastIndexOf('%') != -1 ? ($this.parent().height() * parseInt(jtmp)/100) : parseInt(jtmp);
+							if(tHeight>maxHeight){
+								tHeight = maxHeight - padding;
+								aSum += maxHeight;
+								rSum -= (parseInt(jtmp) + height);
+							}
+						}
+					}
+					
+					if($this.height() != tHeight){
+						$this.height(tHeight);
+					}
+					
+				}
+				
+				
+			});
+			_self.find(">div").each(function(){
+				var $id = window[$(this).attr("id")];
+				if($id && $id.trigger){
+					$id.trigger(event);
+				}
+			});
+		}
+
+		
+		private static function Normal(_self,event){
+			_self.css("overflow","auto");
+			var $obj = _self.find(">div").not(":hidden");
+			$obj.each(function(){
+				var $this = $(this);
+				$this.css("width","");
+				$this.css("height","");
+			});
+			_self.find(">div").each(function(){
+				var $id = window[$(this).attr("id")];
+				if($id && $id.trigger){
+					$id.trigger(event);
+				}
+			});
+		}
+
+		
+		/**
+		 *	触发变化
+		 */
+		public function trigger(event){
+			if(event){
+				Normal(_self,event);
+			}else{
+				layoutV(_self,event);
+			}
+			
+		}
+	</script>
+</jus.DisplayObject>

@@ -1,0 +1,54 @@
+<module>
+	<span id="loading">loading...</span>
+	<script>
+		var _self = $(dom);
+		public var onLoad:Function = null;
+		public var onComplete:Function = null;//私有
+		function init():void{
+			
+		}
+
+		/**
+		 * 加载内容
+		 * @param url	URL
+		 * @param data	携带的数据
+		 */
+		public function load(url:String,data:Object = {}):void{
+			asjs.load(
+				url,
+				function(e){
+					if(onLoad){
+						loading.innerHTML = "";
+						_self.before(onLoad(e));
+						if(onComplete){
+							onComplete();
+						}
+					}
+				},
+				data
+			);
+		}
+		
+		public function append(url:String,data:Object = {},onLoad:Function):void{
+			asjs.load(
+				url,
+				function(e){
+					if(onLoad){
+						_self.append(onLoad(e));
+						if(onComplete){
+							onComplete();
+						}
+					}
+				},
+				data
+			);
+		}
+
+
+		public function content():HTML{
+			return _self;
+		}
+
+		
+	</script>
+</module>

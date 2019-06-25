@@ -1,0 +1,73 @@
+<@pub value="default"/>
+<@import value="jus.*" />
+<desktop>
+	<vbox>
+		<style>
+			.menu{
+				background-color:#ffffff;
+				border-bottom:1px solid #999999;
+			}
+			.menu ul{
+				margin:0px;
+				padding:0px;
+			}
+			
+			.menu ul li{
+				float:left;
+				height:32px;
+				margin:1px;
+				padding-left:32px;
+				padding-right:5px;
+				line-height:32px;
+				font-size:13px;
+			}
+			.menu ul li.save{
+				background:url(images/save.png) no-repeat 8px 8px #fefefe;
+				
+			}
+			.menu ul li.svn{
+				background:url(images/04_45.png) no-repeat 8px 8px #fefefe;
+			}
+			.menu ul li.new{
+				background:url(images/page.png) no-repeat 8px 8px #fefefe;
+			}
+		</style>
+		
+		<coder id="coder" />
+		<script>
+			var _self = $(dom);
+			private var editor = null;
+			private var text = null;
+			private var purl = null;
+			private var pdata = null;
+			function init(){
+				$(window).keydown(function(e){
+					// ctrl + s
+					if( e.ctrlKey  == true && e.keyCode == 83 ){
+						saveEvt();
+						return false; // 截取返回false就不会保存网页了
+					}
+				});
+				load("/index.api?do=getCode&path=/index.html");
+			}
+
+			/**
+			 * 加载数据
+			 */
+			public function load(url,data){
+				purl = url;
+				pdata = data;
+				asjs.load(url,function(e){
+					coder.text = e.target.data;
+					alert(coder.text);
+					super.trigger();
+				},data);
+			}
+
+
+			public function trigger(){
+				super.trigger();
+			}
+		</script>
+	</vbox>
+</desktop>

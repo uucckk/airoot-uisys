@@ -1,0 +1,393 @@
+<module>
+
+	<script>
+		var _self = $(dom);
+		public static const CANVAS:int = 1;
+		public static const CMD:int = 2;
+		public var paint:Function;
+		public var _canvas_:*;
+		private var _type_:int;
+		private var _context_:*;
+		private var _width_:Number;
+		private var _height_:Number;
+		private var _rect_:Rectangle = new Rectangle();
+		public var transparent:Boolean;
+		
+		public function BitmapData(w:Number=0,h:Number=0,transparent:Boolean=true,color:uint=0xFFFFFF) 
+		{
+			this.transparent = transparent;
+			_rect_.x=_rect_.y=0;
+			_rect_.width=_width_ = w;
+			_rect_.height=_height_ = h;
+			setType(CMD);
+			
+			if (!this.transparent)
+			{
+				_createCMD_();
+				this._fillRect_(new Rectangle(0, 0, w, h), color);
+			}
+		}
+		
+		public function paintCanvas(ctx:Context, x:Number, y:Number, w:Number, h:Number):void
+		{
+			if(ctx.width !=0 && ctx.height != 0 && _canvas_ && _canvas_.width !=0 && _canvas_.height !=0)
+			{
+				_canvas_&&ctx.drawImage(_canvas_, 0, 0, _canvas_.width, _canvas_.height, x, y, w, h);
+			}
+		}
+		
+		public function paintCmd(ctx:Context, x:Number, y:Number, w:Number, h:Number):void
+		{		
+			_canvas_ && _canvas_.paint(ctx, x, y, w, h);
+		}
+		
+		public function setType(value:int):void
+		{
+			_type_ = value;
+			paint = _type_ == CANVAS ? paintCanvas:paintCmd;
+		}
+		
+		public function get type():int
+		{
+			return _type_;
+		}
+		
+		public  function get rect():Rectangle
+		{
+			_rect_.width = _width_;
+			_rect_.height = _height_;
+			return _rect_;
+		}
+		
+		public function clone():BitmapData
+		{
+			return copyTo(new BitmapData());
+		}
+		
+		public function set width(w:Number):void
+		{
+			size(w,_height_);
+		}
+		
+		public function get width():Number
+		{
+			return _width_;
+		}
+		
+		public function set height(h:Number):void
+		{
+			size(_width_, h);
+		}
+		
+		public function get height():Number
+		{
+			return _height_;
+		}
+		
+		private var _url:String;
+		public function get url():String
+		{
+			return _url;
+		}
+		
+		public function size(w:Number, h:Number):void
+		{
+			_width_ = w;
+			_height_ = h;
+		}
+		
+		public function copyTo(dec:BitmapData):BitmapData
+		{
+			dec._height_ = _height_;
+			dec._width_ = _width_;
+			dec._rect_ = _rect_.clone();
+			_canvas_&&(dec._canvas_ = this._canvas_.clone());
+			dec._context_ =dec.type==CANVAS?dec._canvas_.getContext("2d"):dec._canvas_;
+			return dec;
+		}
+		
+		public function initBitmapdata(src:*):Boolean
+		{
+			var __image:*= Browser.document.createElement("image");
+			__image.onload = function():void
+			{
+				this.setImage(__image);
+			};
+			__image.src = src;
+			if(Laya.RENDERBYCANVAS)DisplayUnit._insertUnit_(this, DrawBitmapData._DEFAULT_);
+			return false;
+		}
+		
+		public function destroy():void
+		{
+			_canvas_ = null;
+			_context_ = null;
+		}
+		
+		public function setCanvas(data:Canvas):void
+		{
+			this._canvas_ = data;
+			this._context_ = _canvas_.getContext('2d');
+			if(_width_==0||_height_==0)
+			{
+				_width_ = data.width;
+				_height_ = data.height;
+			}
+		}
+		public function setImage(data:*):void
+		{
+			if(_width_==0||_height_==0)
+			{
+				_width_ = data.width;
+				_height_ = data.height;
+			}
+			if (!_canvas_) {
+				if (_type_ == CMD)
+				{
+					_canvas_ = new VirtualCanvas();//Browser.document.createElement("virtualBitmap");
+					_canvas_.size(_width_, _height_);
+					_canvas_.setImage(data);
+					_context_ = _canvas_.getContext("2d");
+				}
+				else
+				{
+					_canvas_ = _canvas_||Canvas.create();
+					_canvas_.size(_width_, _height_);
+					_context_ = _canvas_.getContext("2d");
+					_context_.drawImage(data, 0, 0);
+				}
+			}
+			else 
+			{
+				if (_type_ == CMD)
+					_canvas_.changeImage(data);
+				else
+					_context_.drawImage(data, 0, 0);
+			}
+			
+		}		
+		
+		public function fillRect (rect:Rectangle, color:uint) : void
+		{			
+			_createCMD_();
+			if(color==0)
+			{
+				_context_.clearRect(rect.left, rect.top, rect.width, rect.height);
+			}
+			else
+			{
+				_fillRect_(rect, color);
+			}
+		}
+		
+		private function _fillRect_(rect:Rectangle, color:uint):void
+		{
+			_context_.save();
+			var s:String, len:int, str:String="";
+			if(color<=0xffffff)
+			{
+				s=color.toString(16).toUpperCase();
+				len = 6 - s.length;
+			}else {
+				var newColor:Number = color % 0x1000000;
+				var alpha:int = parseInt(color / 0x1000000+"");
+				_context_.globalAlpha = alpha / 255;
+				s = newColor.toString(16);
+			}
+			if(s.length<6)
+			{
+				for(var i:int=0;i<len;i++)
+				{
+					str+=0;
+				}
+			}
+			s="#"+str+s;
+
+			_context_.fillStyle = s;
+			_context_.fillRect(rect.left, rect.top, rect.width, rect.height);
+			_context_.restore();
+		}
+		
+		public function _createCMD_():*
+		{
+			if (_canvas_) return _canvas_;
+			_canvas_ = _type_ == CMD?  Browser.document.createElement("virtualBitmap"):Canvas.create();
+			_context_ =type==CANVAS? _canvas_.getContext("2d"):_canvas_;
+			_canvas_.size(width, height);
+			return _canvas_;
+		}
+		
+		public function isOk():Boolean
+		{
+			if (_canvas_ && _canvas_.isReady())
+				return true;
+			return false;
+		}
+		
+		public function setComplete(callback:Function):void
+		{
+			_canvas_.onComplete = callback;
+		}
+		
+		public function draw(source:*, matrix:Matrix = null, colorTransform:*= null, blendMode:String = null, clipRect:Rectangle = null, smoothing:Boolean = false) : void
+		{
+			var tempCanvas:VirtualCanvas;
+			if (clipRect == null) clipRect = new Rectangle(0, 0, this.width, this.height);
+			if(clipRect.right > this.width)
+				clipRect.width = this.width - clipRect.x;
+			if(clipRect.bottom>this.height)
+				clipRect.height = this.height - clipRect.y;
+			_createCMD_();
+			if (source is BitmapData)
+			{
+				tempCanvas = source._canvas_;
+			}
+			else
+			{
+				tempCanvas = new VirtualCanvas();
+				tempCanvas.size(clipRect.width, clipRect.height);
+				source._lyToBody_();
+				source.conchPaint(tempCanvas, 0, 0,true);
+			}
+			if(_context_)
+			{
+				if (matrix)
+				{
+					_context_.drawMartixImage(tempCanvas, matrix, clipRect);
+				}
+				else
+				{
+					_context_.drawImage(tempCanvas, clipRect.x, clipRect.y, clipRect.width, clipRect.height, clipRect.x, clipRect.y, clipRect.width, clipRect.height);
+				}
+			}
+		}
+		
+		public function scroll (x:int, y:int) : void{}
+		
+		public function dispose():void
+		{
+			_canvas_ = null;
+			_context_ = null;
+		}
+		
+		public function isReady():Boolean
+		{
+			return _canvas_!=null;
+		}
+		
+		public function setPixels(rect:Rectangle, inputData:ByteArray,url:String):void
+		{
+			_width_ = rect.width;
+			_height_ = rect.height;
+			var imgdata:*= { };
+			imgdata.data = inputData;
+			imgdata.width = rect.width;
+			imgdata.height = rect.height;
+			if (Laya.CONCHVER || Laya.FLASHVER)
+			{
+				var img:* = Browser.document.createElement('img');
+				setImage(img);
+				img.putImageData(url, imgdata, 0, 0,null);
+			}
+			_url = url;
+			return;
+		}
+		public  function getPixel(x:int,y:int):uint{return 0}
+
+		
+		public function clear():void
+		{
+			_context_ && _context_.clearRect(0,0,_width_,_height_);
+		}
+		
+		
+		public function copyPixels (sourceBitmapData:*, sourceRect:Rectangle,destPoint:Point=null, alphaBitmapData:BitmapData=null, alphaPoint:Point= null, mergeAlpha:Boolean=false) : void
+		{
+			var w:Number = _width_;
+			var h:Number = _height_;
+			destPoint = destPoint || Point.__DEFAULT__;
+			
+			if(sourceRect.width+destPoint.x > this.width)
+				sourceRect.width = this.width - destPoint.x;
+			if(sourceRect.height+destPoint.y>this.height)
+				sourceRect.height = this.height - destPoint.y;	
+			if (sourceBitmapData.width < sourceRect.width)
+				sourceRect.width = sourceBitmapData.width;
+			else if(sourceBitmapData.height < sourceRect.height)
+			    sourceRect.height=sourceBitmapData.height;
+			if (_canvas_ == null) { size(w||sourceRect.width, h||sourceRect.height); _createCMD_(); }
+			!mergeAlpha&& _canvas_.clearRect(destPoint.x, destPoint.y, sourceRect.width, sourceRect.height);// ¼ô²ÃÓÐÎÊÌâ
+			sourceBitmapData._canvas_&&_canvas_.drawImage(sourceBitmapData._canvas_, sourceRect.left, sourceRect.top,Math.min(sourceRect.width,_width_), Math.min(_height_,sourceRect.height), destPoint.x, destPoint.y, Math.min(sourceRect.width,_width_), Math.min(_height_,sourceRect.height));
+		}		
+		
+		public function getPixel32(x:int, y:int):uint
+		{
+			return 0xff9900;;
+		}
+		
+		public function lock():void{}
+
+		public function unlock():void{}
+
+		
+		public function setPixel (x:int, y:int, color:uint) : void{}
+
+		
+		public function getCanvas():*
+		{
+			if (_type_ == CANVAS) return _canvas_;
+			else 
+			{
+				if (_canvas_.isNormal())
+					return _canvas_.getImage();
+				var canvas:Canvas = Canvas.create();
+				canvas.size(_width_, _height_);
+				var context:Context = canvas.getContext("2d");
+				canvas.context = context;
+				this.paintCmd(context, 0, 0, _width_, _height_);
+				return canvas;
+			}
+		}
+		
+		
+		
+		
+		
+		public function getColorBoundsRect (mask:uint, color:uint, findColor:Boolean=true) : Rectangle
+		{
+			//Log.unfinished("BitmapData","getColorBoundsRect");
+			return this.rect;
+		}
+		
+		public function  copyChannel(sourceBitmapData:BitmapData,sourceRect:Rectangle,destPoint:Point, sourceChannel:uint, destChannel:uint):void{}
+		
+		
+		public function colorTransform(rect:Rectangle, colorTransform:ColorTransform):void{}
+
+		
+		public function applyFilter(sourceBitmapData:BitmapData, sourceRect:Rectangle, destPoint:Point, filter:BitmapFilter):void{}
+
+		
+		public function setPixel32(x:int, y:int, color:uint):void{}
+		
+		public function threshold(sourceBitmapData:BitmapData, sourceRect:Rectangle, destPoint:Point, operation:String, threshold:uint, color:uint = 0, mask:uint = 0xFFFFFFFF, copySource:Boolean = false):uint{return 0}
+		
+		public function getPixels(rect:Rectangle):ByteArray{return null}
+
+		
+		public function histogram (hRect:Rectangle=null) : Vector.<Vector.<Number>>
+		{
+			//Log.unfinished("BitmapData","histogram");
+			return new Vector.<Vector.<Number>>
+		}
+		
+		public function hitTest(firstPoint:Point, firstAlphaThreshold:uint, secondObject:Object, secondBitmapDataPoint:Point = null, secondAlphaThreshold:uint = 1):Boolean{return false}
+
+		
+		public function compare(otherBitmapData:BitmapData):Object{return null}
+
+		
+		public function generateFilterRect(sourceRect:Rectangle, filter:BitmapFilter):Rectangle{return null}
+
+	</script>
+</module>

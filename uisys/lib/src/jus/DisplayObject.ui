@@ -1,0 +1,101 @@
+<!-- 
+	DisplayObject 模块是JUIS平台的展现界面的祖级别模块。
+ -->
+<module>
+	<@content />
+	<script>
+		/**
+		 * DisplayObject 
+		 */
+		var _self = $(dom);
+		private var _x = 0;
+		private var _y = 0;
+		
+	
+	
+		function init(value,target){;
+			var dw = _self.attr("width");
+			if(dw && dw.indexOf("%") == -1 && dw != "auto"){
+				_self.width(parseInt(dw) - (_self.outerWidth(true) - _self.width()));
+			}
+	
+			dw = _self.attr("height");
+			if(dw  && dw.indexOf("%") == -1 && dw != "auto"){
+				_self.height(parseInt(dw) - (_self.outerHeight(true) - _self.height()));
+			}
+		}
+
+
+		/**
+		 * @param value		设置x属性
+		 */
+		public function set x(value){
+			_x = value;
+			_self.css("left",value);
+		}
+		/**
+		 * @param value		设置x属性
+		 */
+		public function set y(value){
+			_y = value;
+			_self.css("top",value);
+		}
+		/**
+		 * 设定容器宽度
+		 * @param value		设置宽度
+		 */
+		public function set width(value):void{
+			_self.width(value);
+		}
+		/**
+		 * 设定容器宽度
+		 * @param value		设置高度
+		 */
+		public function set height(value):void{
+			_self.height(value);
+		}
+		
+		
+		public function get width():Number{
+			return _self.width();
+		}
+		
+		
+		public function get height():Number{
+			return _self.height();
+		}
+
+		/**
+		 * @param value		设置背景颜色
+		 */
+		public function background(value){
+			
+		}
+		
+		public function set visible(value:Boolean):void{
+			if(value){
+				_self.show();
+			}else{
+				_self.hide();
+			}
+		}
+	
+		public function trigger(event){
+			_self.find(">div").each(function(){
+				var $id = window[$(this).attr("id")];
+				if($id && $id.trigger){
+					$id.trigger(event);
+				}
+			});
+		}
+
+		/**
+		 * 添加
+		 */
+		public function append(html){
+			return _self.append(html);
+		}
+	
+	
+	</script>
+</module>

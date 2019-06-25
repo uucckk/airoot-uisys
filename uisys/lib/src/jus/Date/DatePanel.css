@@ -1,0 +1,363 @@
+body{
+	width:224px;
+	height:224px;
+	position:absolute;
+	background-color:#fff;
+}
+.data-panel{
+	margin-top:10px;
+}
+a{
+	text-decoration: none;
+	text-align: center;
+}
+li{
+	list-style: none;
+	text-align: center;
+}
+ul{
+	margin:0;
+	padding:0;
+}
+
+/*头部可以切换的年+月*/
+.top-date{
+	width:224px;
+	height:28px;
+	background-color:#ffffff;
+	line-height: 28px;
+	color:#3A83EA;
+	border:1px solid #3785EA;
+	border-bottom:none;
+	box-shadow: 0 2px 4px rgba(0,0,0,0.2), 0 -1px 0px rgba(0,0,0,0.02);
+	border-bottom-shadow:none;
+	font-size:14px;
+	font-weight: bold;
+}
+/*左右切换*/
+.left,.right{
+	font-size: 1.3em;
+	width:23px;
+	height:20px;
+	line-height: 16px;
+	color:#90A1B1;
+	margin-top:4px;
+	background-repeat:no-repeat;
+}
+.left{
+	left:5px;
+	border-right:1px solid #90A1B1;
+	background-image: url(img/Common/ico_left_N.png);
+	background-position: left center;
+}
+.right{
+	right:5px;
+	border-left:1px solid #90A1B1;
+	background-image: url(img/Common/ico_right_N.png);
+	background-position: right center;
+}
+.left:hover{
+	background-image: url(img/Common/ico_left_P.png);
+	border-right:1px solid #3785EA;
+}
+.right:hover{
+	background-image: url(img/Common/ico_right_P.png);
+	border-left:1px solid #3785EA;
+}
+/*可编辑年份*/
+.top-change-year{
+	display: inline-block;
+	width:40px;
+	position: absolute;
+	left:66px;
+}
+.changeYear{
+	position: absolute;
+	z-index: 5;
+	left:50px;
+	top:28px;
+	width:55px;
+	display: none;
+	background-color:#ccc;
+}
+.changeYear li{
+	float:none;
+}
+.top-year{
+	display: inline-block;
+	width:17px;
+	position: absolute;
+	left:106px;
+}
+/*可编辑月份*/
+.top-change-month{
+	display: inline-block;
+	width:20px;
+	position: absolute;
+	left:123px;
+}
+.changeMonth{
+	position: absolute;
+	z-index: 5;
+	left:114px;
+	top:28px;
+	width:50px;
+	display: none;
+	background-color:#ccc;
+}
+.changeMonth li a{
+	display: inline-block;
+	width:50px;
+	text-align: center;
+	/*float:left;*/
+}
+.month-panel li a{
+	float:left;
+}
+.year-panel li a{
+	float:left;
+}
+.top-month{
+	display: inline-block;
+	width:17px;
+	left:143px;
+}
+/*星期+日期主面板*/
+.contain{
+	width:224px;
+	height:224px;
+	border:1px solid #3984EA;
+	box-shadow: 0 2px 4px rgba(0,0,0,0.2), 0 -1px 0px rgba(0,0,0,0.02);
+	border-top:none;
+	background-color:#fff;
+}
+/*星期*/
+.center-week{
+	width:100%;
+	height:28px;
+	background-color:#EFF4F8;
+	font-size:14px;
+	color:#444645;
+}
+.center-week ul{
+	line-height: 28px;
+	height:28px;
+}
+.center-week li{
+	list-style:none;
+	float:left;
+	width:32px;
+	height:28px;
+}
+/*主面板日期*/
+.bottom-day{
+
+	height:168px;
+	font-size:13px;
+	background-color:#fff;
+}
+.bottom-day li a{
+	display: inline-block;
+	width:32px;
+	height:28px;
+	line-height: 32px;
+}
+.date-Ul{
+	position: absolute;
+	width:100%;
+}
+.date-Ul li{
+	list-style:none;
+	float:left;
+}
+/*背景*/
+.change-bg{
+	position: absolute;
+	width:224px;
+	height:168px;
+	line-height:168px;
+	text-align: center;
+	font-size: 11em;
+	/*color:#EDF0F7;*/
+	color:#000;
+	opacity: 0.05;
+}
+/*主面板显示与事件状态*/
+.nowDay{
+	color:#434544;
+}
+.prevDay,.nextDay{
+	color:#999999;
+}
+.active{
+	color:#4E8FEB;
+}
+.nowDay:hover{
+	background-color: #3785EA;
+	color:#fff;
+}
+/*自定义时分秒面板*/
+.detailChangePanel{
+	position: absolute;
+	z-index:5;
+	top:0;
+	left:1px;
+	width:224px;
+	height:224px;
+	background-color:#FFFFFF;
+	display:none;
+}
+#timeChoose{
+	text-align:center;
+	border-bottom:1px solid #3785EA;
+	background-color:#3785EA;
+	color:#fff;
+	font-weight:bold;
+	letter-spacing:2px;
+}
+.detailChangePanel div{
+	height:28px;
+	text-align:center;
+	line-height:28px;
+	color:#999999;
+}
+#closeIcon{
+	float:right;
+	margin-right:6px;
+	margin-top:6px;
+}
+.detailChangePanel .detailTimeChange{
+	width:74px;
+	margin-top:28px;
+	float:left;
+	color:#000;
+}
+.detailChangePanel .detailTimeList{
+	width:54px;
+	height:140px;
+	border:1px solid #3785EA;
+	box-shadow: 0 2px 4px rgba(0,0,0,0.2), 0 -1px 0px rgba(0,0,0,0.02);
+	float:left;
+	margin:9px;
+	overflow:auto;
+	color:#434544;
+	border-radius:25px;
+}
+
+.detailTimeList li{
+	cursor:pointer;
+	width:54px;
+	height:28px;
+	line-height:28px;
+}
+.detailTimeList li:hover{
+	background-color:#3A83EA;
+	color:#fff;
+	font-size:20px;
+}
+
+/*自定义年月面板*/
+.year-panel{
+	position: absolute;
+	top:29px;
+	width:224px;
+	border: 1px solid #3785EA;
+	border-top:none;
+	display: none;
+	color:#434343;
+	box-shadow: 0 2px 4px rgba(0,0,0,0.2), 0 -1px 0px rgba(0,0,0,0.02);
+	background-color:#ffffff;
+}
+.year-panel li a{
+	display: inline-block;
+	width:74.5px;
+	height:49px;
+	line-height: 49px;
+	text-align: center;
+}
+.year-panel li a:hover{
+	background-color: #3785EA;
+	color:#fff;
+}
+.month-panel{
+	position: absolute;
+	top:29px;
+	width:224px;
+	border: 1px solid #3785EA;
+	border-top:none;
+	display: none;
+	color:#434343;
+	box-shadow: 0 2px 4px rgba(0,0,0,0.2), 0 -1px 0px rgba(0,0,0,0.02);
+	background-color:#ffffff;
+}
+.month-panel li a{
+	display: inline-block;
+	width:74.5px;
+	height:49px;
+	line-height: 49px;
+	text-align: center;
+}
+.month-panel li a:hover{
+	background-color: #3785EA;
+	color:#fff;
+}
+.monthChange,.yearChange{
+	color:#000;
+}
+.changeYearActive{
+	color:#3785EA;
+	font-weight: bold;
+}
+.changeMonthActive{
+	color:#3785EA;
+	font-weight: bold;
+}
+/*  "时分秒" */
+.detailTime{
+	height:28px;
+	background-color:#EFF4F8;
+	padding-left: 5px;
+}
+.detailTime input[type="text"]{
+	display: inline-block;
+	width:25px;
+	text-align: center;
+	height:13px;
+	margin-top:4px;
+	outline: none;
+	cursor: pointer;
+}
+.detailTime input[type="button"]{
+	display: inline-block;
+	background-color: #3A83EA;
+	outline: none;
+	border: none;
+	cursor: pointer;
+	border-radius:5px;
+	font-size:12px;
+	font-weight:bold;
+	padding:4px;
+	width:35px;
+	color:#ffffff;
+}
+.detailTime input[type="button"]:active{
+	background-color: #2A00C3;
+}
+.detailTime input[type="button"]:hover{
+	color:#fff;
+}
+.detailTime .clear{
+	margin-left:10px;
+}
+.detailTime .nowTime{
+	margin-right:3px;
+	margin-top:2px;
+	float:right;
+}
+
+
+#setTime{
+	display:none;
+	background-color:#ffffff;
+	text-align:center;
+}

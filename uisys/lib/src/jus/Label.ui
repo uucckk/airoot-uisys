@@ -1,0 +1,20 @@
+<label>
+	<@content/>
+	<script>
+		var _self = $(dom);
+		public static var res = {"k01":"自定义标题"};
+		function init(){
+			notifyEvt(_self);
+			FrameEvent("@this","i18n",function(){
+				notifyEvt(_self);
+			});
+		}
+		static function notifyEvt(_self){
+			var txt = res[_self.attr("key")];
+			if(txt){
+				_self.text(txt);
+			}
+			
+		}
+	</script>
+</label>

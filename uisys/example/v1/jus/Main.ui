@@ -1,0 +1,61 @@
+<!-- 
+	类注释
+	@author sunxy
+	@version 0.0
+ -->
+<@pub value="default" />
+<@import value="jus.*" />
+<desktop>
+	<style @use="scss" >
+		body{
+			text-align:center;
+          	
+		}
+      	.content{
+        	background-color:#abcdef;
+      	}
+      	.login{
+        	color:#f0f0f0;
+          	font-size:64px;
+          	font-weight:bold;
+      	}
+      
+	</style>
+  	<vbox class="content" width="100%" height="100%">
+      	<div width="100%" height="100%"></div>
+		<div class="login">Index</div>
+		<div @use="color" class="login" style="font-size:24px;">
+			<button onclick="@this.pop();">我爱你中国</button>
+		</div>
+ 		<div width="100%" height="100%"></div>
+  	</vbox>
+  
+	<script>
+		import jus.Work;
+		import jus.Dialog;
+		/**
+		 * 默认初始化函数
+		 */
+		function init():void{
+			for(var i = 0;i<1;i++){
+				pop();
+			}
+			new Work(" now");
+		}
+		
+		function pop(){
+			var dialog = new Dialog();
+			dialog.load("jus.Child");
+			dialog = new Dialog();
+			dialog.load("jus.ChildTree");
+		}
+
+		/**
+		 * 析构函数
+		 * 默认情况下可以不使用
+		 */
+		public function finalize():void{
+
+		}
+	</script>
+</desktop>

@@ -1,0 +1,3 @@
+function main(node){
+	//node.SetInnerString("body{background-color:#00f000;}");
+}

@@ -1,0 +1,6 @@
+<div>
+	<div class="topToggleBTN">
+		<input id="ipt" type="text" class='inp-date' readonly="readonly" style="padding-left:10px;overflow:hidden;">
+		<img id="img" src="img/Common/ico_calendar_N.png" alt="" class="DataIcon click-btn">
+	</div>
+</div>

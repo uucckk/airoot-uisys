@@ -1,0 +1,65 @@
+<module>
+	<iframe id='iframe'  style='width:100%;border:none;'>
+	<script>
+		var _self = $(dom);
+		private var frame = null;
+		public var onLoad:Function = null;
+		private function init(url){
+			frame = document.getElementById("$iframe");
+			frame.src = url ? url : _self.attr("url");
+			frame.onload = function(){
+				if(onLoad){
+					onLoad({target:@this});
+				}
+			}
+		}
+
+		public function width(value){
+			$(#iframe).width(value);
+		}
+
+		public function height(value){
+			$(#iframe).height(value);
+		}
+
+		public function get content(){
+			return _self;
+		}
+		
+		
+		/**
+		 * 内部window
+		 */
+		public function get contentWindow():Window{
+			return frame.contentWindow;
+		}
+		
+		
+		/**
+		 * 返回内容文档节点
+		 */
+		public function get contentDocument():Document{
+			return frame.contentWindow.document? frame.contentWindow.document : frame.ownerDocument;
+		}
+
+
+		public function set url(value:String):void{
+			#iframe.src = value;
+		}
+		
+		
+		/**
+		 * 发送信息
+		 */
+		public function postMessage(value:Object):void{
+			frame.contentWindow.postMessage(value,"*");
+		}
+		
+		
+		public function trigger(){
+			$(#iframe).height(_self.height());
+		}
+		
+	</script>
+	</iframe>
+</module>

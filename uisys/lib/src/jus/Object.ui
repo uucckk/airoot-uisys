@@ -1,0 +1,30 @@
+<!-- 容器 -->
+<div>
+	<@content />
+	<script>
+		var _self = $(dom);
+		function init(){
+			var w = _self.attr("width");
+			if(w){
+				_self.width(w)
+			}
+			
+			var h = _self.attr("height");
+			if(h){
+				_self.height(h);
+			}
+			setTimeout(trigger,0);
+		}
+		
+		public function trigger(event){
+			_self.children("div").each(function(){
+				var $this = $(this);
+				$this.height(_self.height());
+				var $id = window[$this.attr("id")];
+				if($id && $id.trigger){
+					$id.trigger(event);
+				}
+			});
+		}
+	</script>
+</div>

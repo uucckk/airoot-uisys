@@ -1,0 +1,123 @@
+<!-- 
+	JUS网格系统
+	@author	sunxy
+	@version 1.0
+	@type	公共集成组件
+-->
+<module>
+	<style>
+		body{
+			position:relative;
+			overflow:hidden;
+		}
+	</style>
+	<@content/>
+	<script>
+		private var _self = $(dom);
+		private var paddingLeft:int = 10;
+		private var paddingTop:int = 10;
+		var hPadding:int = 10;
+		var vPadding:int = 10;
+		function init():void{
+			var tmp = _self.attr("paddingLeft");
+			if(tmp){
+				paddingLeft = parseInt(tmp);
+			}
+			tmp = _self.attr("paddingTop");
+			if(tmp){
+				paddingTop = parseInt(tmp);
+			}
+			tmp = _self.attr("hPadding");
+			if(tmp){
+				hPadding = parseInt(tmp);
+			}
+			tmp = _self.attr("vPadding");
+			if(tmp){
+				vPadding = parseInt(tmp);
+			}
+			initObject(_self,event,hPadding,vPadding,paddingTop,paddingLeft);
+			
+		}
+
+
+		private static function initObject(_self:JQuery,event,hPadding,vPadding,paddingTop,paddingLeft):void{
+			var totalHeight = 0;
+			var gridWidth:int = _self.width();
+			var gridHeight:int = _self.height();
+
+			var tWidth:int = paddingLeft;
+
+			var width:int = 0;
+			var height:int = 0;
+			var maxHeight:int = 0;
+			var posV:int = paddingTop;
+		
+			var obj = _self.children("div").not(":hidden");
+			obj.each(function(){
+				var $this = $(this);
+				$this.css("position","absolute");
+				var padding = $this.outerWidth(true) - $this.width();
+				var tmp = $this.attr("width");
+				if(tmp){
+					if(tmp.indexOf("%") != -1){
+						$this.width(gridWidth * parseInt(tmp)/100 - padding);
+					}else{
+						$this.width(tmp - padding);
+					}
+				}
+				padding = $this.outerHeight(true) - $this.height();
+				tmp = $this.attr("height");
+				if(tmp){
+					if(tmp.indexOf("%") != -1){
+						$this.height(gridHeight * parseInt(tmp)/100 - padding);
+					}else{
+						$this.height(tmp - padding);
+					}
+				}
+
+				height = $this.outerHeight(true);
+				width = $this.outerWidth(true);
+				
+				var $id = window[$this.attr("id")];
+				if($id && $id.trigger){
+					$id.trigger(event);
+				}
+
+				if(tWidth + width>gridWidth){
+					tWidth = width + paddingLeft + hPadding;
+					posV += maxHeight + vPadding;
+					$this.css("left",paddingLeft + "px").css("top",posV);
+					maxHeight = height;
+					
+					return true;
+				}
+
+				
+				
+				$this.css("left",tWidth).css("top",posV);
+				tWidth += width + hPadding;
+				if(height>maxHeight){
+					maxHeight = height;
+				}
+				
+			});
+
+			if(!_self.attr("height") || _self.attr("__TH__")){
+				totalHeight = posV + maxHeight + vPadding;
+				if(_self.attr("__TH__") != totalHeight){
+					_self.attr("__TH__",totalHeight);
+				}else{
+					return;
+				}
+				_self.attr("height",totalHeight);
+				_self.triggerParent();
+			}
+			
+		}
+
+		
+		public function trigger(event):void{
+			initObject(_self,event,hPadding,vPadding,paddingTop,paddingLeft);
+		}
+	</script>
+</module>

@@ -1,0 +1,24 @@
+<div>
+	<style>
+		body{
+			position:absolute;
+			line-height:26px;
+			height:26px;
+		}
+	</style>
+	<span id="cursor">|</span>
+	<script>
+		private var flag:Boolean = false;
+		function init(){
+			setInterval(function(e){
+				if(flag){
+					#cursor.hide();
+					
+				}else{
+					#cursor.show();
+				}
+				flag = !flag;
+			},1000);
+		}
+	</script>
+</div>

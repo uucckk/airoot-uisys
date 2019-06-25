@@ -1,0 +1,24 @@
+<@import value="jus.*" />
+<layout>
+	<div id="map"></div>
+	<script>
+		var _self = $(dom);
+
+
+
+		public function create(config){
+			if (config['plugin']) {
+			  var pluginToLoad = config['plugin'];
+			  if (!HeatmapConfig.plugins[pluginToLoad]) {
+				throw new Error('Plugin \''+ pluginToLoad + '\' not found. Maybe it was not registered.');
+			  } else {
+				var plugin = HeatmapConfig.plugins[pluginToLoad];
+				this._renderer = new plugin.renderer(config);
+				this._store = new plugin.store(config);
+			  }
+			}
+			
+		}
+		
+	</script>
+</layout>

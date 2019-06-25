@@ -1,0 +1,55 @@
+<!-- 
+	类注释
+	@author sunxy
+	@version 0.0
+ -->
+<@pub value="default" />
+<@import value="jus.*" />
+<style @use="scss" >
+	body{
+		text-align:center;
+		
+	}
+	.content{
+		background-color:#abcdef;
+	}
+	.login{
+		color:#f0f0f0;
+		font-size:64px;
+		font-weight:bold;
+	}
+	Tree{
+		border-right:none;
+		border-left:none;
+		border-bottom:none;
+	}
+</style>
+<vbox class="content" width="100%" height="100%">
+	<Tree id="dg" />
+</vbox>
+
+<script>
+	import component.Dialog;
+	/**
+	 * 默认初始化函数
+	 */
+	function init():void{
+		var data = [];
+		for(var i = 0;i<100000;i++){
+			data.push({name:"u" + i});
+		}
+		dg.dataLabel = "name";
+		dg.dataField = "name"
+		dg.dataProvider = data;	
+		
+		
+	}
+
+	/**
+	 * 析构函数
+	 * 默认情况下可以不使用
+	 */
+	public function finalize():void{
+
+	}
+</script>

@@ -1,0 +1,240 @@
+<!-- 
+	类注释
+	@author sunxy
+	@version 0.0
+ -->
+<@import value="jus.*" />
+<div>
+	<style>
+		body{
+          	padding:0px;
+			text-align:left;
+			font-size:14px;
+			font-family:microsoft YaHei;
+			background-color:#222222;
+          	
+		}
+		#area{
+			box-sizing:border-box;
+			padding:10px 8px 0px 8px;
+			color:#eeeeee;
+		}
+		
+		#ipt{
+			width:100%;
+			padding:0px;
+			font-size:16px;
+			font-weight:bold;
+			border:none;
+			background:none;
+			color:#eeee00;
+			box-sizing: border-box;
+			padding: 8px;
+			margin-top: 5px;
+		}
+		
+		#ipt:focus{
+			outline:none;
+		}
+		
+		.iptLine{
+			color:#aaaa00;
+		}
+		.t63{
+			padding-left:2px;
+			padding-right:2px;
+			background-color:#456789;
+		}
+		.t47{
+			background-color: #45aa67;
+
+		}
+		.t111{
+			padding-left:2px;
+			padding-right:2px;
+			background-color: #998800;
+		}
+		.t335{
+			background-color: #aa4567;
+		}
+		.t303{
+			background-color: #409060;
+		}
+		.t8{
+			color:#a0a0a0;
+		}
+		.t11{
+			/*margin-left: 5px;*/
+			color:#00ffff
+		}
+		.t880{
+			margin-left:5px;
+			padding-left:10px;
+			padding-right:10px;
+		  color:#000000;
+			background-color: #e0e0e0;
+		}
+		.t496{
+			margin-left:10px;
+			padding-left:10px;
+			padding-right:10px;
+			color:#000000;
+			background-color:#fefefe;
+		}
+		
+		
+		#login{
+			position:fixed;
+			text-align:center;
+			border-radius:5px;
+			background-color:rgba(255,255,255,0.9);
+			width:400px;
+			border:1px solid #ffffff;
+		}
+		.login{
+			background-color:#ffffff;
+			line-height:36px;
+			padding-left:10px;
+			font-weight:bold;
+		}
+		
+		#login table{
+			padding:10px;
+			line-height:30px;
+		}
+		
+		
+		.list {
+			margin-left:10px;
+			font-family: verdana,arial,sans-serif;
+			font-size:11px;
+			color:#333333;
+			border-width: 1px;
+			border-color: #999999;
+			border-collapse: collapse;
+		}
+		.list th {
+			background:#b5cfd2 url('cell-blue.jpg');
+			border-width: 1px;
+			padding: 8px;
+			border-style: solid;
+			border-color: #999999;
+		}
+		.list td {
+			background:#fefefe;
+			border-width: 1px;
+			padding: 8px;
+			border-style: solid;
+			border-color: #999999;
+		}
+		
+		
+      
+	</style>
+	<div id="area">
+	</div>
+	<input id="ipt" onkeydown="@this.send(event)"/>
+	<!-- 首页登陆 -->
+	<div id="login">
+		<div class="login">Login Panel</div>
+		<table width="100%">
+			<tr>
+				<td>Login Name:</td><td><input id="username" type="text" onkeydown="@this.test(event);" /></td>
+			</tr>
+			<tr>
+				<td>Password:</td><td><input id="pass" type="password" onkeydown="@this.test(event);" /></td>
+			</tr>
+			<tr>
+				<td colspan="2"><button onclick="@this.initStage()">Login</button>&nbsp;&nbsp;&nbsp;&nbsp;<button onclick="@this.reset()">Reset</button></td>
+			</tr>
+		</table>
+	</div>
+  	<script>
+		import net.Socket;
+		var _self = $(dom);
+		var ws;
+		function init(){
+			$(window).resize(resizeEvt);
+			$(window).trigger("resize");
+		}
+		
+		function resizeEvt(e){
+			$(#login).css("left",($(window).width() - $(#login).width())/2 + "px");
+			$(#login).css("top",($(window).height() - 36 - $(#login).height())/2 + "px");
+			$(#login).css("animation","ca 0.5s");
+		}
+		
+		function test(e){
+			if(e.keyCode == 13){
+				initStage();
+			}
+		}
+		
+		
+		function initStage(){
+			$(#area).empty();
+			if(username.value == ""){
+				alert("please input username.");
+				return;
+			}
+			if(pass.value == ""){
+				alert("please input password.");
+				return;
+			}
+			$(#login).fadeOut();
+			$(window).keydown(function(){
+				ipt.focus();
+			});
+			var socket:Socket = new Socket();
+			ws = new WebSocket("wss://" + window.location.host + "/ws");
+			ws.onerror = function(e){
+				$(window).unbind("keydown");
+				setTimeout(function(){
+					$(#login).show();
+					$(#login).css("animation","ca 0.5s");
+					$(#username).focus();
+				},1000);
+				
+			}
+			ws.onclose = function(e){
+				$(window).unbind("keydown");
+				setTimeout(function(){
+					$(#login).show();
+					$(#login).css("animation","ca 0.5s");
+					$(#username).focus();
+				},1000);
+			}
+			ws.onopen = function(e){
+				ws.send("login " + username.value.trim() + " " + pass.value.trim());
+			}
+			ws.onmessage = function(e) {
+			  area.innerHTML += e.data.replace(/\n/g,"<br/>");
+			  listDown();
+			};
+			
+		}
+		
+		function send(e){
+			if(e.keyCode == 13){
+				$(#area).append("<div class='iptLine'>" + ipt.value + "</div>");
+				if(ipt.value == "cls"){
+					area.innerHTML = "";
+				}else{
+					ws.send(ipt.value);
+				}
+				ipt.value = "";
+				listDown();
+			}
+		 
+		}
+		
+		function reset(){
+			username.value = pass.value = "";
+		}
+		
+		function listDown(){
+			document.documentElement.scrollTop = (document.body.scrollHeight - $(window).height());
+		}
+		
+	</script>
+</div>

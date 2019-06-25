@@ -1,0 +1,156 @@
+<module dataLabel="" dataField="">
+	<css>
+		body{
+			border:solid 1px #eeeeee;
+			border-bottom:none;
+			background-color:#ffffff;
+			font-size:13px;
+		}
+		ul{
+			margin:0px;
+			padding:0px;
+		}
+		ul li{
+			border-bottom:1px solid #eeeeee;
+			padding:1px 10px 1px 10px;
+			list-style:none;
+			cursor:pointer;
+		}
+		
+		ul li.over{
+			color:#ffffff;
+			background-color:#ffaa00;
+		}
+		
+		
+	</css>
+	<ul id="content">
+		<@value/>
+	</ul>
+	<script>
+		var _self = $(dom);
+		private var _selectedIndex:int = 0;
+		private var _dataLabel:String = null;
+		private var _dataField:String = null;
+		private var data:Array = null;
+		public var onClick = null;
+		function init(){
+			dataLabel = _self.attr("dataLabel");
+			dataField = _self.attr("dataField");
+			try{
+				data = JSON.parse(context.value);
+				initList(data);
+			
+			}catch(e){
+				console.log(e);
+			}
+			#content.on("click",">li",mouseEvt);
+		}
+		
+		public function set dataLabel(value:String):void{
+			_dataLabel = value;
+			dataProvider = data;
+		}
+		
+		public function get dataLabel():String{
+			return _dataLabel;
+		}
+		
+		public function set dataField(value:String):void{
+			_dataField = value;
+			dataProvider = data;
+		}
+		
+		public function get dataField():String{
+			return _dataField;
+		}
+		
+
+		private function initList(xml:XML):void{
+			var p = null;
+			for(var i:int = 0;i<xml.length;i++){
+				p = xml[i];
+				var li = document.createElement("li");
+				li.setAttribute("value",p[dataField]);
+				li.innerHTML = p[dataLabel];
+				#content.append(li);
+			}
+			initEffect();
+		}
+
+		private function initEffect():void{
+			var list = #content.find(">li");
+			list.mouseover(function(){
+				var $this = $(this);
+				$this.addClass("over");
+			});
+			list.mouseout(function(){
+				var $this = $(this);
+				$this.removeClass("over");
+			});
+		}
+		
+		
+		public function set dataProvider(data:Array):void{
+			if(!data){
+				return data;
+			}
+			this.data = data;
+			#content.children().remove();
+			var p = null;
+			for(var i:int = 0;i<data.length;i++){
+				p = data[i];
+				var li = document.createElement("li");
+				li.setAttribute("value",p[dataField]);
+				li.innerHTML = p[dataLabel];
+				#content.append(li);
+			}
+			initEffect();
+		}
+
+		/**
+		 * 
+		 */
+		private function mouseEvt(e:Event):void{
+			e = e.currentTarget;
+			if(onClick){
+				onClick({target:{label:$(e).text(),value:$(e).attr("value")}});
+			}
+		}
+		
+		
+		public function set selectedIndex(value:int):void{
+			_selectedIndex = value;
+			
+			if(data && data.length>0){
+				onClick({target:{label:data[value][_dataLabel],value:data[value][_dataField]}});
+			}
+		}
+		
+
+		public function get selectedLabel():String{
+			return "--请选择--";
+		}
+		
+		
+		
+		/**
+		 * 通过值返回标签内容
+		 */
+		public function getLabelByValue(value:String):void{
+			var p = null;
+			for(var i:int = 0;i<data.length;i++){
+				p = data[i];
+				if(p[dataField] == value){
+					return p[dataLabel];
+				}
+			}
+			return "-";
+		}
+		
+		
+		public function finalize():void{
+			//alert("$list");
+		}
+	</script>
+</module>

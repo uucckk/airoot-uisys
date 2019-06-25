@@ -1,0 +1,88 @@
+<!-- 文本输入控件 -->
+<div>
+	<style>
+		body{
+			padding:5px;
+			padding-left:5px;
+			padding-right:5px;
+		}
+		.ipt{
+			line-height:22px;border-radius:4px 4px 4px 4px;border:1px solid #aaaaaa;height:28px;
+			background-image:url(img/Common/ico_search_N.png);
+			background-repeat:no-repeat;
+			background-position:right center;
+			padding-left:5px;
+			
+		}
+		.ipt:focus{
+			background-image:url(img/Common/ico_search_P.png);
+		}
+		input::-webkit-input-placeholder{
+			color:#cdced2;
+			font-family: "Microsoft YaHei","微软雅黑";
+		}
+
+		input:-ms-input-placeholder {
+			color:#cdced2;
+			font-family: "Microsoft YaHei","微软雅黑";
+		}
+
+		input::-ms-clear {
+			display:none;
+		}		
+	</style>
+	<input id="ipt" class="ipt" value="" />
+	<script>
+		var _self = $(dom);
+		public var onChange = null;
+		private var tid = -1;
+		private var _this_ = null;
+		private var isNull:Boolean = true;
+		function init(){
+			_this_ = this;
+			#ipt.bind("keyup",changeEvt);
+			
+			if(_self.attr("tolerant")){
+				#ipt.attr("placeholder",_self.attr("tolerant"));
+			}
+		}
+		
+		public function set text(value:String):void{
+			ipt.value = value;
+		}
+		public function get text(){
+			return ipt.value;
+		}
+		
+		public function trigger(){
+			#ipt.width(_self.width() - 10);
+		}
+		
+		
+		private function changeEvt(e){
+			if(e.keyCode == 13 && ipt.value.trim() != ""){
+				isNull = false;
+				clearTimeout(tid);
+				if(onChange){
+					onChange({target:_this_});
+				}
+				return;
+			}else if(ipt.value.trim() == ""){
+				clearTimeout(tid);
+				if(!isNull){
+					onChange({target:_this_});
+				}
+				isNull = true;
+				return;
+			}
+			isNull = false;
+			clearTimeout(tid);
+			tid = setTimeout(function(){
+				if(onChange){
+					onChange({target:_this_});
+				}
+			},500);
+		}
+		
+	</script>
+</div>

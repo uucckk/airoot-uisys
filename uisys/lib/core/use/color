@@ -1,0 +1,3 @@
+function main(value){
+	//value.SetInnerHTML("<span style='color:#ff0000'>" + value.Text() + value.TagName() + value.GetAttr("class") + "</span>")
+}

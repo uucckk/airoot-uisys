@@ -1,0 +1,33 @@
+<div>
+	<@content />
+	<script>
+		var _self = $(dom);
+		public function trigger(event){
+			var vBorderSum:int = 0;
+			var hBorderSum:int = 0;
+			_self.children().each(function(){
+				var $this = $(this);
+				vBorderSum = parseInt($this.css("border-top-width")) + parseInt($this.css("border-bottom-width"));
+				hBorderSum = parseInt($this.css("border-left-width")) + parseInt($this.css("border-right-width"));
+				$this.width(_self.width() - hBorderSum);
+				$this.height(_self.height() - vBorderSum);
+				if($this.is("canvas") || $this.is("image")){
+					if($this.attr("width") != _self.width() - hBorderSum){
+						$this.attr("width",_self.width() - hBorderSum);
+					}
+					
+					if($this.attr("height") !=  _self.height() - vBorderSum){
+						$this.attr("height",_self.height() - vBorderSum);
+					}
+					
+					
+				}
+				var $id = window[$this.attr("id")];
+				if($id && $id.trigger){
+					$id.trigger(event);
+				}
+			});
+			
+		}
+	</script>
+</div>

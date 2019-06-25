@@ -1,0 +1,30 @@
+<!-- 
+	类注释
+	@author sunxy
+	@version 0.0
+ -->
+<module>
+	<style>
+		body{
+			text-align:center;	
+		}
+	</style>
+	<span>JUS 功能模块页面</span>
+	<script>
+
+		/**
+		 * 默认初始化函数
+		 */
+		function init():void{
+
+		}
+
+		/**
+		 * 析构函数
+		 * 默认情况下可以不使用
+		 */
+		public function finalize():void{
+
+		}
+	</script>
+</module>

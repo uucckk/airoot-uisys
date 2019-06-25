@@ -1,0 +1,53 @@
+<module>
+	<@content />
+	<script>
+		var _self = $(dom);
+		/**
+		 * 新增内容可以增加横屏纵屏幕效果
+		 */
+		 function init(){
+			var win = $(window);
+			var stageWidth = 0.0;
+			var stageHeight = 0.0;
+			win.bind("resize",function(){
+				stageWidth = win.width();
+				stageHeight = win.height();
+				
+				if(stageWidth>=stageHeight){
+					var $obj = _self.find(">div").not(":hidden");
+					$obj.each(function(index){
+						var $this = $(this);
+						//设置高度
+						var tmp = $this.attr("height");
+						if(!tmp){
+							tmp = _self.height();
+						}
+						
+						if(tmp.lastIndexOf("%") == -1){
+							$this.height(parseInt(tmp));
+						}
+						//设置宽度
+						var tmp = $this.attr("width");
+						if(!tmp){
+							tmp = _self.width();
+						}
+						
+						if(tmp.lastIndexOf("%") == -1){
+							$this.width(parseInt(tmp));
+						}
+
+						
+					});
+				}//横屏
+				
+				_self.find(">div").each(function(){
+					var $id = window[$(this).attr("id")];
+					if($id && $id.trigger){
+						$id.trigger(_self.attr("auto") == "true" ? (stageWidth>=stageHeight ? 0 : 1) : 0);
+					}
+				});
+			});
+			win.trigger("resize");
+		}
+	</script>
+</module>

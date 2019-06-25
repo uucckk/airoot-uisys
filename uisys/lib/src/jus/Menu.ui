@@ -1,0 +1,208 @@
+<module>
+	<style>
+		body{
+			overflow:hidden;
+			background-color:#ffffff;
+			font-size:13px;
+		}
+		ul{
+			margin:0px;
+			padding:0px;
+			list-style:none;
+			background-color:#ffffff;
+		}
+		ul li{
+			float:left;
+			padding:5px 10px 5px 10px;
+		}
+
+		ul li a{
+			color:#000000;
+			text-decoration:none;
+		}
+
+		
+		
+	</style>
+	<style id="base">
+		.$menuList{
+			margin:0px;
+			padding:0px;
+			list-style:none;
+			background-color:#ffffff;
+			border:1px solid #cccccc;
+			box-shadow: 1px 1px 5px #aaaaaa;
+		}
+		.$menuList li{
+			padding:5px 10px 5px 10px;
+			margin:0px;
+		}
+		.$elem a{
+			color:#000000;
+			text-decoration:none;
+		}
+		.$elem.$selected{
+			background-color:#ffaa00;
+		}
+		.$elem.$selected a{
+			color:#ffffff;
+		}
+	</style>
+
+	<@value/>
+
+	<script>
+		var _self = $(dom);
+		var eventFlag = false;
+		var nextArr:Array = [];
+		var xml:XML = null;
+		
+		//过滤器
+		private var _filter:Function = null;
+			
+
+		function init(){
+			xml = new XML(context.value);
+			_self.append(initMenu(xml.child("elem"),0));
+		}
+		
+		/**
+         * 数据过滤器
+		 * 可以过滤和更改dataLabel标签的值
+		 * @param f		过滤函数
+		 */
+		public function filter(f:Function):void{
+			_filter = f;
+			_self.children("ul").remove();
+			_self.append(initMenu(xml.child("elem"),0));
+		}
+
+		/**
+		 * 初始化MENU
+		 */
+		private function initMenu(list:XMLList,level):List{
+			var ul = $("<ul/>");
+			var li = $("<li/>");
+			var p:XML = null;
+			var t:li = null;
+			var tmp = null;
+			for(var i:int = 0;i<list.length();i++){
+				p = list.at(i);
+				t = li.clone();
+				t.html(_filter ? _filter(p) : "<a href='#'>" + p.child("@label") + "</a>");
+				tmp = initMenu(p.child("elem"),level + 1);
+				if(tmp){
+					t.append(tmp);
+				}
+				if(level>0){
+					t.hide();
+				}
+				t.mouseover(function(){
+					if(!hav(this)){
+						showList(this,level + 1);
+					}
+				});
+				ul.append(t);
+			}
+			return list.length() >0 ? ul :null;
+		}
+
+		//展示出List
+		private function showList(node,level){
+			clear({pageX:-100,pageY:-100},level);
+			var menu = $(node);
+			var obj = menu.children("ul");
+			if(obj.length>0){
+				obj.css("position","absolute").show();
+				obj.children("li").show().addClass("$elem");
+				obj.children("li").mouseover(function(){
+					var $this = $(this);
+					$this.addClass("$selected");
+					if(!hav(this)){
+						showList(this,level + 1);
+					}
+				});
+				obj.children("li").mouseout(function(){
+					var $this = $(this);
+					$this.removeClass("$selected");
+				});
+				obj.addClass("$menuList");
+				nextArr.push({obj:obj,parent:node,level:level});
+				$("body").append(obj);
+				if(level == 1){
+					obj.css("left",menu.offset().left + parseInt(menu.css("padding-left")));
+					obj.css("top",menu.offset().top + menu.outerHeight(true));
+				}else{
+					obj.css("left",menu.offset().left + menu.outerWidth(true));
+					obj.css("top",menu.offset().top);
+				}
+				
+				addStageListener();
+			}
+			
+			
+			
+		}
+
+		private function hav(menu):Boolean{
+			var p = null;
+			for(var i = 0;i<nextArr.length;i++){
+				p = nextArr[i];
+				if(menu == p.parent){
+					return true;
+				}
+			}
+			return false;
+		}
+		
+
+		private function addStageListener():void{
+			if(!eventFlag){
+				$(window).bind("mousemove",clear);
+				eventFlag = true;
+			}
+		}
+
+		function clear(e,level = 0){
+			var p = null;
+			if(isInner(_self,e)){
+				return;
+			}
+			for(var i = 0;i<nextArr.length;i++){
+				p = nextArr[i].obj;
+				if(isInner(p,e)){
+					return;
+				}
+			}
+			
+			for(var i = 0;i<nextArr.length;i++){
+				p = nextArr[i];
+				if(p.level >= level){
+					$(p.parent).append(p.obj);
+					p.obj.hide();
+				}
+				
+			}
+			for(var i = nextArr.length - 1;i>=0 ;i--){
+				p = nextArr[i];
+				if(p.obj.is(":hidden")){
+					nextArr.splice(i,1);
+				}
+			}
+			
+			$(window).unbind("click",clear);
+			eventFlag = false;
+		}
+
+		function isInner(obj,event):void{
+			if(
+				event.pageX>(obj.offset().left - parseInt(obj.css("padding-left")) - parseInt(obj.css("margin-left")) - 10) && event.pageX<(obj.offset().left + obj.width() + parseInt(obj.css("padding-right")) + parseInt(obj.css("margin-right")))
+				&& 
+				event.pageY>(obj.offset().top - parseInt(obj.css("padding-top")) - parseInt(obj.css("margin-top")) - 10) && event.pageY<(obj.offset().top + obj.height() + parseInt(obj.css("padding-bottom")) + parseInt(obj.css("margin-bottom")))
+			){
+				return true;
+			}
+			return false;
+		}
+	</script>
+</module>

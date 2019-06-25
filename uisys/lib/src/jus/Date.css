@@ -1,0 +1,40 @@
+body{
+	width:224px;
+	height:30px;
+	position: relative;
+} 
+a{
+	text-decoration: none;
+}
+li{
+	list-style: none;
+	float:left;
+}
+ul{
+	margin:0;
+	padding:0;
+}
+
+/*触发图标*/
+.DataIcon{
+	pointer-events:none;
+	position: absolute;
+	top:9px;
+	right:0px;
+}
+/*显示input*/
+.topToggleBTN{
+	position: absolute;
+	width:100%;
+	height:inherit;
+}
+.inp-date{
+	border:1px solid #ccc;
+	width:100%;
+	height:inherit;
+	position: absolute;
+	left:0;
+	top:0;
+	color:#454545;
+	font-size: 14px;
+}

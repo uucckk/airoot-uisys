@@ -1,0 +1,65 @@
+<@import value="jus.*" />
+<@import value="root.button.*" />
+<@import value="root.*" />
+<vbox width="400" height="320">
+	<vbox width="400" height="320" id="myvbox">
+		<style>
+			body{
+				width:100%;
+				height:100%;
+				//font-size:14px;
+				box-sizing:border-box;
+				overflow:hidden;
+			}
+			#posi{
+				background-color:rgba(40,40,40,0.8);
+				opacity:0.8;
+				box-shadow:0px 3px 2px 0px rgba(0,0,0,0.2);
+				border-radius:10px;
+				border:1px solid #2b2b2b;
+				padding:8px 10px;
+			}
+			.$show{
+				animation:showAlert 0.5s forwards;
+			}
+			.$hide{
+				animation:hideAlert 0.5s forwards;
+			}
+			.$number{
+				margin-bottom:3px;
+				padding-left:2px;
+			}
+			.$time{
+				padding-top:6px;
+				padding-left:2px;
+			}
+			.$message{
+				width:375px;
+				padding-top:6px;
+				line-height:26px;
+				padding-left:2px;
+			}
+		</style>
+		<div id="content" style="padding:8px 10px;height:100%;overflow:auto;">
+			
+		</div>
+	</vbox>
+	<script>
+		var _self = $(dom);
+		function init(message){
+			#content.append("<div style='border-bottom:1px solid #dddddd;width:100%;'>"+
+							"<div class='$number'>号码：<span id='number'>"+ message.deviceId +"("+ message.sendTime +")</span></div>"+
+							"<div class='$message'>短信内容：<span id='message'>"+message.content +"</span></div></div>");
+			
+			FrameEvent("@this","MessageResult",function(e){
+				if(e.mess == "success"){
+					return;
+				}
+				#content.append("<div style='border-bottom:1px solid #dddddd;width:100%;'>"+
+							"<div class='$number'>号码：<span id='number'>"+ e.deviceId +"("+ e.sendTime +")</span></div>"+
+							"<div class='$message'>短信内容：<span id='message'>"+ e.content +"</span></div></div>");
+			});
+		}
+		
+	</script>
+</vbox>

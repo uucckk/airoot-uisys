@@ -1,0 +1,1178 @@
+<!-- 
+地图瓦力
+@author sunxy
+ -->
+<@import value="jus.*" />
+<@import value="jus.map.core.*"/>
+<PositionArea width="100%" height="100%">
+	<style>
+		body{
+			position:relative;
+			overflow:hidden;
+			background-color:#aac6ee;
+			-moz-user-select:none;/*火狐*/
+			-webkit-user-select:none;/*webkit浏览器*/
+			-ms-user-select:none;/*IE10*/
+			-khtml-user-select:none;/*早期浏览器*/
+			user-select:none;
+		}
+		
+		#content{
+			
+		}
+		
+		
+		#label{
+			display:block;
+		}
+	</style>
+	<cartoon(parent) id="cton" />
+	<!-- 地图加载 -->
+	<layout width="100%" height="100%" id="dituContent">
+		<canvas id="ditu" />
+	</layout>
+	
+	<!--svg-->
+	<svglayer(parent) id="svg" />
+	<renderlayer(parent) id="cvs" />
+	<!-- compoent -->
+	<div id="cpnt" x="0" y="0" width="100%" height="100%"  ><!-- style="pointer-events:none;" -->
+		
+	</div>
+	<span bottom="0" id="label" style="position:absolute;background-color:#fefefe;border:1px solid #555555;left:10px;bottom:10px;padding:1px 5px 1px 5px;border-radius:5px;font-size:10pt">--</span>
+	<script>
+		import jus.map.AIMark;
+		import jus.map.MapTool;
+		import jus.map.projection.CommonProjection;
+		var _self = $(dom);
+		private var server:String = "http://172.16.0.151:8004/MapTile/";
+		//private var server:String = "http://t1.tianditu.com/DataServer?T=vec_w";//cva_c vec_c
+		//private var server:String = "http://t5.tianditu.com/DataServer?T=vec_c";//cva_c vec_c
+		//private var server:String = "image/DataServer?T=vec_c";
+		
+		private var layerSet:Array = [];//地图图层信息
+		private var _mouseEnabled:Boolean = true;
+		private var onLoadFlag:Boolean = false;
+		private var hav:Object = {};//记录已经存在那些瓦力
+		
+		
+		private var contentX:int = 0;
+		private var contentY:int = 0;
+		private var ctPos = null;
+		
+		private var mouseEvent = null;
+		
+		
+		public var defImage:Image = new Image();
+		/**
+		 * 地图图层Canvas句柄
+		 */
+		private var lay0:CanvasContext = #ditu[0].getContext("2d");
+
+		
+		/**
+		 * 地图视图区域
+		 * 本次改成真实区域pixel
+		 */
+		private var mapRect:Rectangle = {left:0,top:0,right:0,bottom:0}
+		
+		
+		
+		private var markWidth:int = 256;
+		private var dx:int = 0;
+		private var dy:int = 0;
+		private var _mx:int = 0
+		private var _my:int =0;
+		private var _down = false;
+		
+		//地图上的xml坐标寄存点
+		private var mapX:int = 0;
+		private var mapY:int = 0;
+		private var _level:int = 9;
+		
+		
+		//地图坐标记录点
+		private var _mouseX:Number = 0;
+		private var _mouseY:Number = 0;
+		private var _mouseLong:Number = 0;
+		private var _mouseLat:Number = 0;
+		
+		//投影坐标映射函数
+		private var _projection = null;
+		private var ctx = null;
+		private var _componentList = [];//组建列表
+		private var _iconList = [];//图标列表
+		
+		
+		//地图控制
+		private var _mEnabled = true;//是否可以用鼠标控制
+		
+		public var onLoad:Function = null;//默认加载时候调用
+		public var onClick:Function = null;
+		public var onMouseDown:Function = null;
+		public var onMouseUp:Function = null;
+		public var onMouseMove:Function = null;
+		public var onMouseOut:Function = null;
+		public var onDblClick:Function = null;
+		public var onLevelChange:Function = null;//地图级别变更
+		public var onMapMove:Function = null;//当地图移动触发
+		public var onMapMoved:Function = null;//当地图移动后出发
+		
+		/**
+		 * 地图临时数据
+		 */
+		public var data:Array = [];
+		
+		private var internalID:int = -1;
+		private var enterframeFlag:Boolean = true;
+		
+		
+		/**
+		 * 经纬度网格图片
+		 */
+		private var blackGrid:Canvas = null;
+		private var _gridEnabled:Boolean = false;
+		
+		
+		function init(value){
+			#label.hide();
+			iniBlackGrid();
+			ctPos = #content;
+			if(value){
+				_projection = value;
+			}
+			initData();
+		}
+		
+		private function iniBlackGrid():void{
+			blackGrid = document.createElement("canvas");
+			blackGrid.width = blackGrid.height = 256;
+			var ctx = blackGrid.getContext("2d");
+			ctx.fillStyle = "#1e253a";
+			ctx.fillRect(0,0,256,256);
+			ctx.strokeStyle = "#456789";
+			ctx.lineWidth = 1;
+			ctx.beginPath();
+			for(var i:int = 1;i<=4;i++){
+				ctx.moveTo(0 - 0.5,64 * i - 0.5);
+				ctx.lineTo(256 - 0.5,64 * i - 0.5);
+			}
+			for(var i:int = 1;i<=4;i++){
+				ctx.moveTo(64 * i - 0.5,0 - 0.5);
+				ctx.lineTo(64 * i - 0.5,256 - 0.5);
+			}
+			ctx.closePath();
+			ctx.stroke();
+			
+		}
+		
+		
+		/**
+		 * 返回映射
+		 */
+		public function get projection():Projection{
+			return _projection;
+		}
+		
+		
+		/**
+		 * 是否只显示网格数据
+		 */
+		public function set gridEnabled(value:Boolean):void{
+			_gridEnabled = value;
+			render();
+		}
+		
+		
+		public function get gridEnabled():Boolean{
+			return _gridEnabled;
+		}
+		
+		
+		public function layerStyle(name:String,style:OBject):void{
+			switch(name){
+				case "map" :
+					#dituContent.css(style);
+				break;
+			}
+		}
+		
+		
+		/**
+		 * 初始化数据
+		 */
+		private function initData(conf:String):void{
+			if(!conf){
+				conf = "conf/map.conf";
+			}
+			asjs.post(conf,function(e){
+				
+				//这里改为XML
+				var xml = new XML(e.target.data);
+				server =  xml.child("host").toString().trim();
+				//读取瓦片原点
+				var tile = xml.child("tile");
+				var tileOrgin:Array = tile.child("tileOrgin").toString().split(",");
+				
+				
+				//读取经纬度方位
+				var coordinate = xml.child("coordinate").at(0);
+				var coordinateX = coordinate.child("x").toString() == "right" ? 1 : -1;
+				var coordinateY = coordinate.child("y").toString() == "top" ? 1 : -1;
+				//读取经纬度范围-这里先不写了
+				
+				_projection = new CommonProjection(tileOrgin[0],tileOrgin[1],0,0,0,0,coordinateX,coordinateY);
+				
+				var layers:XMLList = xml.child("[layer.level]");
+				var p = null;
+				for(var i:int = 0;i<layers.length();i++){
+					p = layers.at(i);
+					var et:Array = p.qname("extent").split(",");
+					layerSet.push(
+						{
+							tileLevel:p.qname("tileLevel"),
+							width:parseInt(p.qname("width")),
+							height:parseInt(p.qname("height")),
+								extent:{
+									minX:parseFloat(et[0]),
+									minY:parseFloat(et[1]),
+									maxX:parseFloat(et[2]),
+									maxY:parseFloat(et[3])
+							},
+							node:p
+						}
+					);
+				}
+				console.log("layerSet",layerSet.length);
+				onLoadFlag = true;
+				initMap();
+				
+				//判断是否有默认坐标
+				var mapSet = xml.child("layer");
+				var arr:Array = null;
+				if(mapSet != ""){
+					arr = mapSet.qname("defaultPoint").split(",");
+				}
+				moveTo(arr[0],arr[1],mapSet.qname("defaultLevel"));
+				//enterframe();
+				_self.bind("mouseout",function(e){
+					
+					mouseEnabled = false;
+					enterframe();
+					#label.hide();
+					if(onMouseOut){
+						onMouseOut({target:@this});
+					}
+				});
+				
+				_self.bind("mouseover",function(e){
+					mouseEnabled = true;
+				});
+				if(onLoad){
+					onLoad({target:@this});
+				}
+			});
+		}
+		
+		
+		
+		/**
+		 * 初始化地图
+		 */
+		private function initMap(){
+			defImage.src = "img/sGrid.png";
+			var moveFlag = false;
+			_self.bind("mousemove",function(e){
+				mouseEvent = e;
+				mapX = e.clientX - _self.offset().left;
+				/*
+				mapY = e.clientY - _self.offset().top;
+				*/
+				if(_projection.yFlag == 1){
+					mapY = _self.offset().top - e.clientY;
+				}else{
+					mapY = e.clientY - _self.offset().top;
+				}
+				
+				var am:AIMark = getOneAIMark();
+				if(am != null){
+					_mouseX = mapRect.left + mapX;
+					_mouseY = mapRect.top + mapY;
+					_mouseLong = _projection.x2Lng(_mouseX,layerSet[level]);
+					_mouseLat = _projection.y2Lat(_mouseY,layerSet[level]);
+					#label.show();
+					//#label.text("N: " + parseInt(_mouseLong*10000)/10000 + ",W: " + parseInt(_mouseLat*10000)/10000 + ",X: "  + _mouseX + ",Y: " + _mouseY);//+ " - " + toXPixel(_projection.x2Lng(_mouseX,am.level)) +"," + toYPixel(_projection.y2Lat(_mouseY,am.level))
+					#label.text("经度: " + parseInt(_mouseLong*10000)/10000 + ",纬度: " + parseInt(_mouseLat*10000)/10000 + ",级别: " + level);//+ " - " + toXPixel(_projection.x2Lng(_mouseX,am.level)) +"," + toYPixel(_projection.y2Lat(_mouseY,am.level))
+				}
+				if(_down && _mEnabled){
+					
+					dx = e.clientX - _mx;
+					dy = e.clientY - _my;
+					if(Math.abs(dx)>2 ||  Math.abs(dy) >2){
+						moveFlag = true;
+					}
+					moveByPixel(dx,dy);
+					_mx = e.clientX;
+					_my = e.clientY
+					if(onMapMove){
+						onMapMove({target:@this,event:e});
+					}
+					
+				}
+				
+				if(onMouseMove != null && _mouseEnabled){
+					onMouseMove({target:@this,event:e});
+				}
+				
+				
+				//return false;
+			});
+			_self.bind("mousedown",function(e){
+				_down = true;
+				moveFlag = false;
+				_mx = e.clientX;
+				_my = e.clientY;
+				if(onMouseDown){
+					onMouseDown({target:@this});
+				}
+			});
+			_self.bind("mouseup",function(e){
+				_down = false;
+				cvs.render();
+				if(onMouseUp){
+					onMouseUp({target:@this,event:e});
+				}
+				enterframe();
+				if(onMapMoved){
+					
+					onMapMoved({target:@this,event:e});
+					
+				}
+				
+			});
+			$(window).bind("mouseup",windowEvt);
+			
+			
+			_self.bind("click",function(e){
+				if(onClick != null && !moveFlag){
+					onClick({target:@this,event:e});
+				}
+			});
+			
+		
+			
+			_self.bind("dblclick",function(e){
+				if(onDblClick != null){
+					onDblClick({target:@this});
+				}
+			});
+			
+			
+			_self.bind("mousewheel",wheelEvt);
+		}
+		
+		
+		private function windowEvt():void{
+			_down = false;
+		}
+		
+
+		
+		
+		
+		
+		/**
+		 * 定期刷新地图数据
+		 */
+		private function enterframe(){
+			clearTimeout(internalID);
+			var s = 0;
+			if(enterframeFlag){
+				for(var i in hav){
+					s ++;
+					hav[i].enterframe();
+				}
+			}
+			//internalID = setTimeout(enterframe,100);
+		}
+		
+		/**
+		 * 获取一个显存的AIMark
+		 */
+		private function getOneAIMark():AIMark{
+			for(var mark in hav){
+				return hav[mark];
+			}
+			return null;
+		}
+		
+		private var tMapX = 0;
+		private var tMapY = 0;
+		private function wheelEvt(e):void{
+			if(mapX == 0 && mapY == 0){
+				e.type = "mousemove";
+				_self.trigger(e);
+			}
+			cton.tMapX = tMapX = mapX;
+			cton.tMapY = tMapY = mapY;
+			if(e.originalEvent.wheelDelta > 0){//放大
+				if(_level + 1>=layerSet.length){
+					return;
+				}
+				_level ++;
+				cton.pushMarks(hav);
+				cton.moreEvt = function(m){
+					moveToByPixelForPoint(_mouseX*Math.pow(2,m),_mouseY*Math.pow(2,m),_level,tMapX,tMapY);
+					refreshMap(0,0);
+					cvs.render();
+					svg.render(@this);
+					if(onLevelChange){
+						onLevelChange({target:@this});
+					}
+					
+				}
+				cton.scaleMore();
+				
+			}else{
+				if(_level - 1<0){
+					return;
+				}
+				_level --;
+				cton.pushMarks(hav);
+				cton.lessEvt = function(m){
+					moveToByPixelForPoint(_mouseX*Math.pow(2,m),_mouseY*Math.pow(2,m),_level,tMapX,tMapY);
+					refreshMap(0,0);
+					cvs.render();
+					svg.render(@this);
+					if(onLevelChange){
+						onLevelChange({target:@this});
+					}
+					
+					
+				}
+				cton.scaleLess();
+				
+			}
+
+			return false;
+			
+		}
+		
+		/**
+		 * 刷新地图
+		 */
+		private function refreshMap(dx:int,dy:int):void{
+			renderMark();
+			cton.move(dx,dy);
+			svg.move(-dx,-dy);
+			var t = null;
+			//渲染
+			cvs.move(dx,dy);
+
+			for(var a in _componentList){
+				t = _componentList[a].render(@this);
+			}
+
+			
+		}
+		
+		
+		private function clearCanvas(){
+			lay0.clearRect(0,0,ditu.width,ditu.height);
+		}
+		
+		
+		private function getServerImage(x:int,y:int,level:int){
+			return server.replace("{\$x}",x).replace("{\$y}",y).replace("{\$level}",layerSet[level].tileLevel);
+		}
+		
+		
+		
+		
+		
+		/**
+		 * 投影坐标函数
+		 */
+		public function set projection(value:Projection){
+			_projection = value;
+		}
+		
+		
+		
+		/**
+		 * 设置是否可移动
+		 * @param value	true or false
+		 */
+		public function set moveEnabled(value:Boolean):void{
+			_mEnabled = value;
+		}
+		
+		
+		/**
+		 * 判断map是否被加载完毕
+		 */
+		public function get loaded():Boolean{
+			return onLoadFlag;
+		}
+		
+		/**
+		 * 移动地图
+		 * @param dx	移动横坐标像素
+		 * @param dy	移动纵坐标像素
+		 */
+		public function moveByPixel(dx:int,dy:int):void{
+			dx = parseInt(dx);
+			dy = parseInt(dy);
+
+			mapRect.left -= dx;
+			mapRect.right -= dx;
+			if(_projection.yFlag == 1){
+				mapRect.top +=  dy;
+				mapRect.bottom += dy;
+			}else{
+				mapRect.top -=  dy;
+				mapRect.bottom -= dy;
+			}
+			
+			refreshMap(dx,dy);
+		}
+		
+		/**
+		 * 获取当前图层信息
+		 * @return {}
+		 */
+		public function getLayerInfo():Object{
+			return layerSet[level];
+		}
+		
+		
+		
+		
+		private var gX:int = 0;
+		private var gY:int = 0;
+		/**
+		 * 渐进移动
+		 */
+		public function gMove(dx,dy){
+			gX = dx;
+			gY = dy;
+			
+		}
+		
+		
+		
+		
+		/**
+		 * 设置是否可以有鼠标操作
+		 */
+		public function set mouseEnabled(value:Boolean):void{
+			_mouseEnabled = value;
+		}
+		
+		/**
+		 * 获取鼠标是否可用
+		 */
+		public function get mouseEnabled():Boolean{
+			return _mouseEnabled;
+		}
+		
+		
+		/**
+		 * 增加Object
+		 */
+		public function addChild(object:Object){
+			#cpnt.addChild(object);
+			_componentList.push(object);
+		}
+		
+		/**
+		 * 增加SVG信息
+		 */
+		public function addSvgChild(name:String,svgObj:SVG):void{
+			svg.addChild(name,svgObj);
+		}
+		
+		public function getSvgChild(name:String):void{
+			svg.getChild(name);		
+		}
+		
+		
+		public function removeSvgChild(name:String):void{
+			svg.removeChild(name);
+		}
+		
+		
+		
+		/**
+		 * 添加Canvas试图数据
+		 */
+		public function addCanvasChild(name:String,data:Array):void{
+			return;
+			cvs.clear();
+			
+			var p = null;
+			for(var i in data){
+				p = data[i];
+				if(p.data){
+					p.text = p.data.length;
+					cvs.drawObject(p);
+				}else if(p.count != null){
+					p.text = p.count;
+					cvs.drawObject(p);
+				}else{
+					p.text = p.name;
+					cvs.drawAddress(p);
+				}
+				
+			};
+			
+		}
+		
+		public function removeCanvasChild(name:String):void{
+			cvs.clear();
+			
+			
+		}
+		
+	
+		/**
+		 * 移动指定像素的经纬度间隔像素
+		 * @param dLng	移动横向经度差
+		 * @param dLat	移动纵向纬度差
+		 */
+		public function move(dLng:Number,dLat:Number):void{
+			moveByPixel(_projection.longitude(lng,layerSet[_level]),_projection.latitude(lat,layerSet[_level]));
+		}
+		
+		
+		
+		/**
+		 * 通过像素移动到指定位置
+		 *
+		 */
+		public function moveToByPixel(dx:int,dy:int,level:int = -1):void{
+			level = parseInt(level);
+			if(_projection.yFlag == -1){
+				if(dx>mapRect.left - width && dx<mapRect.right + width && dy > mapRect.top - height && dy<mapRect.bottom + height){
+					moveByPixel(-dx + (mapRect.left + (mapRect.right - mapRect.left)/2),-dy + mapRect.top + (mapRect.bottom - mapRect.top)/2);
+				}else{
+					if(level == -1){
+						level = this._level;
+					}else{
+						this._level = level;
+					}
+					var am = dx % markWidth;
+					var bm = dy % markWidth;
+					var a = parseInt(dx/markWidth);
+					var b = parseInt(dy/markWidth);
+					clearAll();
+					
+					mapRect.left = parseInt(dx - width/2);
+					
+					mapRect.top = parseInt(dy - height/2);
+					mapRect.right = parseInt(dx + width/2);
+					mapRect.bottom = parseInt(dy + height/2);
+					var mark = new AIMark(this,level,a,b);
+					svg.render(@this);
+					refreshMap(0,0);
+				}
+			}else{
+				if(dx>mapRect.left - width && dx<mapRect.right + width && dy < mapRect.top + height && dy>mapRect.bottom - height){
+					moveByPixel(-dx + (mapRect.left + (mapRect.right - mapRect.left)/2),dy - mapRect.top - (mapRect.bottom - mapRect.top)/2);
+				}else{
+					if(level == -1){
+						level = this._level;
+					}else{
+						this._level = level;
+					}
+					var a = parseInt(dx/markWidth);
+					var b = parseInt(dy/markWidth);
+					clearAll();
+					
+					mapRect.left = parseInt(dx - width/2);
+					mapRect.top = parseInt(dy + height/2);
+					mapRect.right = parseInt(dx + width/2);
+					mapRect.bottom = parseInt(dy - height/2);
+					var mark = new AIMark(this,level,a,b);
+					svg.render(@this);
+					refreshMap(0,0);
+					
+				}
+				
+			}
+			
+			if(onLevelChange){
+				onLevelChange({target:@this});
+			}
+			enterframe();
+			if(onMapMoved){
+				onMapMoved({target:@this});
+				
+			}
+
+		}
+		
+		
+		/**
+		 * 通过像素移动到指定位置
+		 *
+		 */
+		public function moveToByPixelForPoint(dx:int,dy:int,level:int = -1,pointX:int = 0,pointY:int = 0):void{
+			if(_projection.yFlag == -1){
+				if(level == -1){
+					level = this._level;
+				}else{
+					this._level = level;
+				}
+				var am = dx % markWidth;
+				var bm = dy % markWidth;
+				var a = parseInt(dx/markWidth);
+				var b = parseInt(dy/markWidth);
+				clearAll();
+				
+				mapRect.left = parseInt(dx - pointX);
+				mapRect.top = parseInt(dy - pointY);
+				mapRect.right = parseInt(dx + width - pointX);
+				mapRect.bottom = parseInt(dy + height - pointY);
+				
+				
+				var mark = new AIMark(this,level,a,b);
+				_self.trigger(mouseEvent);
+				
+			}else{
+				if(level == -1){
+					level = this._level;
+				}else{
+					this._level = level;
+				}
+				var am = dx % markWidth;
+				var bm = dy % markWidth;
+				var a = parseInt(dx/markWidth);
+				var b = parseInt(dy/markWidth);
+				clearAll();
+				
+				mapRect.left = parseInt(dx - pointX);
+				mapRect.top = parseInt(dy - pointY);
+				mapRect.right = parseInt(dx + width - pointX);
+				mapRect.bottom = parseInt(dy - height - pointY);
+				
+				
+				var mark = new AIMark(this,level,a,b);
+				_self.trigger(mouseEvent);
+				
+			}
+			
+			refreshMap(0,0);
+		}
+		
+		
+		/**
+		 * 通过经纬度坐标移动到指定位置上
+		 *
+		 */
+		public function moveTo(lng:Number,lat:Number,level:int):void{
+			if(level == -1){
+				level = this._level;
+			}else{
+				if(level<0){
+					level = 0;
+				}
+				if(level>=layerSet.length){
+					level = layerSet.length - 1;
+				}
+				this._level = level;
+			}
+			moveToByPixel(_projection.longitude(lng,layerSet[level]),_projection.latitude(lat,layerSet[level]),level);
+		}
+		
+		
+		/**
+		 * 获取MapView中心点的经纬度坐标
+		 * @return {lang,lat};
+		 */
+		public function getCenter():Object{
+			return {longitude: _projection.x2Lng(mapRect.left + (mapRect.right - mapRect.left)/2,layerSet[level]),latitude:_projection.y2Lat(mapRect.bottom + (mapRect.top - mapRect.bottom)/2,layerSet[level])};
+		}
+		
+		public function toLong(value:Number):Number{
+			return _projection.x2Lng(value,layerSet[_level]);
+		}
+		
+		public function toLat(value:Number):Number{
+			return _projection.y2Lat(value,layerSet[_level]);
+		}
+		
+		/**
+		 * 
+		 */
+		public function toXPixel(lng:Number):Number{
+			return _projection.longitude(lng,layerSet[_level]);
+		}
+		
+		/**
+		 *
+		 */
+		public function toYPixel(lat:Number):Number{
+			return _projection.latitude(lat,layerSet[_level]);
+		}
+		
+		
+	
+
+		
+		/**
+		 * 判断是在视图范围内
+		 */
+		public function inView(lng,lat):Boolean{
+			var obj = earchRect;
+			if(lng>obj.left && lng<obj.right && lat<obj.top && lat>obj.bottom){
+				return true;
+			}
+			return false;
+		}
+
+		
+		/**
+		 * 获取mapView宽度
+		 */
+		public function get width():int{
+			return _self.width();
+		}
+		
+		
+		/**
+		 * 获取mapView高度
+		 */
+		public function get height():int{
+			return _self.height();
+		}
+		
+		/**
+		 * 获取鼠标目前地图横坐标
+		 */
+		public function get mouseX(){
+			return _mouseX;
+		}
+		
+		
+		/**
+		 * 获取鼠标目前地图横坐标
+		 */
+		public function get mouseY(){
+			return _mouseY;
+		}
+		
+		
+		/**
+		 * 获取鼠标精度坐标
+		 */
+		public function get mouseLong(){
+			return _mouseLong;
+		}
+		
+		/**
+		 * 获取鼠标纬度坐标
+		 */
+		public function get mouseLat(){
+			return _mouseLat;
+		}
+		
+		
+		/**
+		 * 获取当前层级信息
+		 */
+		public function get level():int{
+			return _level;
+		}
+		
+		
+		/**
+		 * 经度坐标转换成实际ViewPort相对X像素
+		 * @param lng	纬度
+		 * @return 视图窗口相对X坐标
+		 */
+		public function toViewPortX(lng:Number):int{
+			var xlng = _projection.longitude(lng,layerSet[_level]);
+			return xlng - mapRect.left;
+		}
+		
+		
+		
+		
+		
+		/**
+		 * 纬度坐标转换成实际ViewPort相对Y像素
+		 * @param lat	纬度
+		 * @return 视图窗口相对Y坐标
+		 */
+		public function toViewPortY(lat:Number):int{
+			var ylat = _projection.latitude(lat,layerSet[_level]);
+			if(_projection.yFlag == 1){
+				return -(ylat - mapRect.top);
+			}else{
+				return (ylat - mapRect.top);
+			}
+			
+		}
+		
+		/**
+		 * 地图像素标转换成实际ViewPort相对X像素
+		 * @param lng	纬度
+		 * @return 视图窗口相对X坐标
+		 */
+		public function toViewPortXByPixel(x:int):int{
+			return x - mapRect.left;
+		}
+		
+		
+		/**
+		 * 地图像素标转换成实际ViewPort相对Y像素
+		 * @param lat	纬度
+		 * @return 视图窗口相对Y坐标
+		 */
+		public function toViewPortYByPixel(y:int):int{
+			if(_projection.yFlag == 1){
+				return -(y - mapRect.top);
+			}else{
+				return (y - mapRect.top);
+			}
+			
+		}
+		
+		
+		
+		
+		
+		/**
+		 * ViewPort相对像素坐标转换成全局经度坐标
+		 * @param value	ViewPort X坐标
+		 * @return 经度坐标
+		 */
+		public function viewPortXPixelToLng(value:int):Number{
+			return _projection.x2Lng(mapRect.left + value,layerSet[_level]);
+		}
+		
+		
+		/**
+		 * ViewPort相对像素坐标转换成全局经度坐标
+		 * @param value	ViewPort Y坐标
+		 * @return 经度坐标
+		 */
+		public function viewPortYPixelToLat(value:int):Number{
+			return _projection.y2Lat(mapRect.top - value,layerSet[_level]);
+		}
+		
+		
+		
+		/**
+		 * 通过x,y获得对应的瓦力
+		 */
+		public function getMarkByXY(x:int,y:int):AIMark{
+			var t = null;
+			for(var a in hav){
+				t = hav[a];
+				if(x>=t.x && x<=t.x + markWidth && y>=t.y && y<=t.y + markWidth){
+					return t;
+				}
+			}
+	
+		}
+		
+		/**
+		 * 获取距离
+		 * @param lng0	起始经度
+		 * @param lat0	起始纬度
+		 * @param lng1	终止经度
+		 * @param lat1	终止纬度
+		 */
+		public function GetDistance(lng0,lat0,lng1,lat1):Number{
+			return MapTool.GetDistance(lng0,lat0,lng1,lat1);
+		}
+		
+		/**
+		 * 将Mark瓦片绘制到地图图层
+		 */
+		private function drawMark(mark:AIMark){
+			if(_gridEnabled){
+				if(_projection.yFlag == 1){
+					lay0.drawImage(blackGrid,mark.mapX - mapRect.left,mapRect.top - mark.mapY - 256);
+				}else{
+					lay0.drawImage(blackGrid,mark.mapX - mapRect.left,-mapRect.top + mark.mapY);
+				}
+				return;
+			}
+			//lay0.save();
+			//lay0.globalAlpha = 0.5;
+			if(mark.enabled){
+				if(_projection.yFlag == 1){
+					lay0.drawImage(mark.image,mark.mapX - mapRect.left,mapRect.top - mark.mapY - 256);
+				}else{
+					lay0.drawImage(mark.image,mark.mapX - mapRect.left,-mapRect.top + mark.mapY);
+				}
+			}else{
+				return;
+				if(_projection.yFlag == 1){
+					lay0.drawImage(defImage,mark.mapX - mapRect.left,mapRect.top - mark.mapY - 256);
+				}else{
+					lay0.drawImage(defImage,mark.mapX - mapRect.left,mark.mapY - mapRect.top);
+				}
+				
+			}
+			
+			//lay0.fillStyle = '#000000';
+			//lay0.textAlign = 'left';
+			//lay0.fillText(mark.level + "," + mark.left + "," + mark.top,mark.mapX - mapRect.left,mapRect.top  - mark.mapY );
+			//lay0.restore();
+			
+		}
+		
+		
+		/**
+		 * 获取像素距离
+		 * @param lng0	起始经度
+		 * @param lat0	起始纬度
+		 * @param lng1	终止经度
+		 * @param lat1	终止纬度
+		 */
+		public function GetDistanceByPixel(lng0,lat0,lng1,lat1):Number{
+			var x0 = _projection.longitude(lng0,layerSet[_level]);
+			var y0 = _projection.latitude(lat0,layerSet[_level]);
+			var x1 = _projection.longitude(lng1,layerSet[_level]);
+			var y1 = _projection.latitude(lat1,layerSet[_level]);
+			return Math.sqrt(Math.pow(x1 - x0,2) + Math.pow(y1 - y0,2));
+		}
+		
+		
+		/**
+		 * 获取矩形经纬度信息
+		 */
+		public function get earchRect():Object{
+			var left =  _projection.x2Lng(mapRect.left,layerSet[_level]);
+			var top = _projection.y2Lat(mapRect.top,layerSet[_level]);
+			var right = _projection.x2Lng(mapRect.right,layerSet[_level]);
+			var bottom = _projection.y2Lat(mapRect.bottom,layerSet[_level]);
+			var t = null;
+			return {left:left,top:top,right:right,bottom:bottom};
+			
+		}
+		
+		
+		private function clearAll(){
+			var t = null;
+			for(var a in hav){
+				t = hav[a];
+				t.destroy();
+			}
+		}
+		
+		public function renderMark(){
+			clearCanvas();
+			var flag = false;
+			for(var mark in hav){
+				flag = true;
+				drawMark(hav[mark]);
+			}
+			if(!flag){
+				console.log("no.");
+			}
+			//enterframe();
+		}
+		
+		
+		/**
+		 * 设置过滤器
+		 */
+		public function setRender(name:String,filter:Function):void{
+			cvs.filter(name,filter);
+		}
+		
+		
+		/**
+		 * 设置图层
+		 */
+		public function setRenderIndex(name:String,index:int):void{
+			cvs.setLayer(name,index);
+		}
+		
+		/**
+		 * 设置数据是否可见
+		 */
+		public function setDataVisible(name:String,flag:Boolean):void{
+			cvs.setDataVisible(name,flag);
+		}
+		
+		/**
+		 * 设置数据是否可见
+		 */
+		public function getDataVisible(name:String,flag:Boolean):void{
+			return cvs.getDataVisible(name);
+		}
+		
+		
+		/**
+		 * 重新设置Canvas 数据
+		 */
+		public function setData(name:String,data:Array):void{
+			cvs.setData(name,data)
+		}
+		
+		/**
+		 * 添加渲染数据
+		 */
+		public function pushData(name:String,data:Array):void{
+			cvs.pushData(name,data);
+		}
+		
+		
+		
+		
+		/**
+		 * 添加渲染数据
+		 */
+		public function setObject(name:String,data:Array):void{
+			cvs.setObject(name,data);
+		}
+		
+		/**
+		 * 删除数据
+		 */
+		public function removeData(name:String):void{
+			cvs.removeData(name);
+		}
+		
+		
+		/**
+		 * 刷新整个地图
+		 */
+		public function render():void{
+			refreshMap(0,0);
+			cvs.render();
+		}
+		
+		public function trigger(event){
+			super.trigger(event);
+			mapRect.right = parseInt(mapRect.left + width);
+			if(loaded){
+				if(_projection.yFlag == 1){
+					mapRect.bottom = parseInt(mapRect.top - height);
+				}else{
+					mapRect.bottom = parseInt(mapRect.top + height);
+				}
+				
+				refreshMap(0,0);
+				cvs.render();
+				enterframe();
+			}
+			
+		}
+		
+		
+		public function finalize():void{
+			_self.unbind();
+			$(window).unbind("mouseup",windowEvt);
+			console.log("MapView destory!");
+		}
+		
+
+	</script>
+</PositionArea>
