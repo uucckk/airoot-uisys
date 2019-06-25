@@ -79,7 +79,7 @@ UI-SYSTEM 在设计之初，就将模块化、资源管理、整合其他框架�
 因此，UI-SYSTEM是轻量级的平台，但是可以承接复杂的项目。UI-SYSTEM发布的项目是轻量级的，但是具备重量级项目的表现力。
 
 # 搭建环境
-[https://github.com/uucckk/UI-SYSTEM-RELEASE/archive/master.zip](点击这里下载 UI-SYSTEM)
+[点击这里下载 UI-SYSTEM](https://github.com/uucckk/UI-SYSTEM-RELEASE/archive/master.zip)
 <img src='doc/images/01.jpg' />
 添加服务节点和项目目录,我们选择Release/example/下的项目,并运行在80端口：
 ```cmd
