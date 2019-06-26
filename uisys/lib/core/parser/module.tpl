@@ -7,5 +7,6 @@
  */
 {@base}
 (function(){
+	var fExt = ".ui.html";
 	{@manager}
 })();

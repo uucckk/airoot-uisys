@@ -112,7 +112,7 @@ type APIlist struct {
 /**
  * 通过什么创建APIList
  */
-func (a *APIlist) CreateFrom(jus *JusServer, className string) error {
+func (a *APIlist) CreateFrom(jus *UIServer, className string) error {
 	a.className = className
 	a.style = `<style>
 			table {

@@ -25,14 +25,15 @@ type HTMLObject struct {
 
 //----------------------------------JUS-----------------------------------------
 type JUS struct {
-	SERVER              *JusServer //服务器引用
-	resPath             string     //资源生成目录（例如index.lib）
-	dirPath             string     //所在目录地址
-	path                string     //记录类的文件夹路径
-	htmlPath            string     //html模块的绝对路径
-	jsPath              string     //js模块的绝对路径
-	cssPath             string     //css模块路径
-	SYSTEM_PATH         string     //系统路径
+	Debug               bool      //判断是否被测试
+	SERVER              *UIServer //服务器引用
+	resPath             string    //资源生成目录（例如index.lib）
+	dirPath             string    //所在目录地址
+	path                string    //记录类的文件夹路径
+	htmlPath            string    //html模块的绝对路径
+	jsPath              string    //js模块的绝对路径
+	cssPath             string    //css模块路径
+	SYSTEM_PATH         string    //系统路径
 	CLASS_PATH          string
 	root                string
 	parent              *JUS
@@ -145,23 +146,23 @@ func (j *JUS) CreateFrom(root string, domain string, node *HTML, className strin
 	if root == "" {
 		j.path = file
 		j.htmlPath = JUSExist(file + ".ui")
-		j.jsPath = JUSExist(file + ".js")
+		j.jsPath = JUSExist(file + ".es")
 		j.cssPath = JUSExist(file + ".css")
 	} else {
 		if file[0] == '$' {
 			j.path = j.CLASS_PATH + file[1:]
 			j.htmlPath = JUSExist(j.path + ".ui")
-			j.jsPath = JUSExist(j.path + ".js")
+			j.jsPath = JUSExist(j.path + ".es")
 			j.cssPath = JUSExist(j.path + ".css")
 		} else {
 			j.path = root + "/" + file
 			j.htmlPath = JUSExist(j.path + ".ui")
-			j.jsPath = JUSExist(j.path + ".js")
+			j.jsPath = JUSExist(j.path + ".es")
 			j.cssPath = JUSExist(j.path + ".css")
 			if j.htmlPath == "" && j.jsPath == "" && j.cssPath == "" {
 				j.path = j.CLASS_PATH + file
 				j.htmlPath = JUSExist(j.path + ".ui")
-				j.jsPath = JUSExist(j.path + ".js")
+				j.jsPath = JUSExist(j.path + ".es")
 				j.cssPath = JUSExist(j.path + ".css")
 			}
 			//fmt.Println(j.htmlPath, j.jsPath)
@@ -729,7 +730,7 @@ func (j *JUS) importHTML() {
 			for _, f := range lst {
 				if !f.IsDir() && (fileName == "" || fileName == f.Name()) {
 					cls = filepath.Ext(f.Name())
-					if cls == ".ui" || cls == ".js" {
+					if cls == ".ui" || cls == ".es" {
 						key = Substring(f.Name(), 0, LastIndex(f.Name(), "."))
 						j.pkgMap[strings.ToLower(key)] = path + "." + key
 					}
@@ -745,7 +746,7 @@ func (j *JUS) importHTML() {
 			for _, f := range lst {
 				if !f.IsDir() && (fileName == "" || fileName == f.Name()) {
 					cls = filepath.Ext(f.Name())
-					if cls == ".ui" || cls == ".js" {
+					if cls == ".ui" || cls == ".es" {
 						key = Substring(f.Name(), 0, LastIndex(f.Name(), "."))
 						j.pkgMap[strings.ToLower(key)] = path + "." + key
 					}
@@ -1361,7 +1362,6 @@ func (j *JUS) GetModuleMap() map[string]*Attr {
 	if j.parent != nil {
 		return j.parent.GetModuleMap()
 	}
-
 	return j.moduleMap
 }
 
@@ -1497,7 +1497,7 @@ func (j *JUS) ToFormatHTMLString(result string) string {
 	vm.Set("__goja_log__", console.Log)
 	vm.RunString(`var console = {};console.log = __goja_log__;`)
 	vm.Set("code", result)
-	vm.Set("jus", j)
+	vm.Set("UI", j)
 	v, e := GetCode(j.SYSTEM_PATH + "/core/pub/" + j.pub + "/decode.js")
 	if e != nil {
 		return "O" + j.className + " 00000000000000000000000000000000 " + e.Error()

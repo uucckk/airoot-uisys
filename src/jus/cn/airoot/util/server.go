@@ -54,7 +54,7 @@ type WsUser struct {
 	list map[string]*connectElement
 }
 
-type JusServer struct {
+type UIServer struct {
 	protocol      string //连接协议http or https
 	Addr          string //连接地址
 	Status        bool   //运行状态
@@ -64,7 +64,6 @@ type JusServer struct {
 	osName        string                  //操作系统名称
 	SysPath       string
 	RootPath      string
-	jusDirName    string
 	pattern       map[string]*urlMap //映射列表
 	attribute     map[string]string  //服务环境变量
 	useClassList  []*element
@@ -80,14 +79,12 @@ type JusServer struct {
  * @param rootPath	工程类路径
  * 启动函数
  */
-func (u *JusServer) CreateServer(SysPath string, rootPath string, srcPath string, resPath string) {
+func (u *UIServer) CreateServer(SysPath string, rootPath string, srcPath string, resPath string) {
 	u.Datetime = time.Now()
 	u.SysPath = SysPath
 	if rootPath != "" {
 		u.SetProject(rootPath)
 	}
-
-	u.jusDirName = "/juis/"
 	u.pattern = make(map[string]*urlMap, 0)
 	u.attribute = make(map[string]string, 0)
 	u.wsUser = &WsUser{list: make(map[string]*connectElement)} //初始化
@@ -98,7 +95,7 @@ func (u *JusServer) CreateServer(SysPath string, rootPath string, srcPath string
 /**
  * 服务器监测
  */
-func (u *JusServer) testServer() {
+func (u *UIServer) testServer() {
 	u.testConnect = make(chan byte)
 	go func() {
 		for {
@@ -132,11 +129,11 @@ func (u *JusServer) testServer() {
 /**
  * 获取当前Websocket用户的服务器列表
  */
-func (u *JusServer) WebsocketList() []*connectElement {
+func (u *UIServer) WebsocketList() []*connectElement {
 	return u.connectedList
 }
 
-func (u *JusServer) Start(addr string, printf func(string, int, string)) string {
+func (u *UIServer) Start(addr string, printf func(string, int, string)) string {
 	if u.Status {
 		return "服务已经开启."
 	}
@@ -175,7 +172,7 @@ func (u *JusServer) Start(addr string, printf func(string, int, string)) string 
 /**
  * 设置工程目录
  */
-func (u *JusServer) SetProject(path string) int {
+func (u *UIServer) SetProject(path string) int {
 	if Exist(path) {
 		rpath, _ := filepath.Abs(path)
 		u.RootPath = rpath
@@ -214,7 +211,7 @@ func (u *JusServer) SetProject(path string) int {
 /**
  * 创建模块文件
  */
-func (u *JusServer) CreateModule(cls string, className string) bool {
+func (u *UIServer) CreateModule(cls string, className string) bool {
 	tPath := "" //临时路径
 	path := u.RootPath + "/" + Replace(className, ".", "/")
 	dirPath := Substring(path, 0, LastIndex(path, "/"))
@@ -285,7 +282,7 @@ func (u *JusServer) CreateModule(cls string, className string) bool {
 /**
  * 关闭本次服务
  */
-func (u *JusServer) Close() error {
+func (u *UIServer) Close() error {
 	u.Status = false
 	if u.server != nil {
 		return u.server.Close()
@@ -300,7 +297,7 @@ func (u *JusServer) Close() error {
 /**
  * 销毁当前服务，是在移除当前服务时候使用
  */
-func (u *JusServer) Destroy() error {
+func (u *UIServer) Destroy() error {
 	u.Status = false
 	//u.fServer = nil
 	u.fServerList = nil
@@ -317,7 +314,7 @@ func (u *JusServer) Destroy() error {
 /**
  *
  */
-func (u *JusServer) wsHandler(ws *websocket.Conn) {
+func (u *UIServer) wsHandler(ws *websocket.Conn) {
 	ce := &connectElement{Time: time.Now().Unix(), Connected: false, Conn: ws}
 	u.connectedList = append(u.connectedList, ce)
 	msg := make([]byte, 256) //8 8 4 4 2 ...
@@ -411,7 +408,7 @@ func (u *JusServer) wsHandler(ws *websocket.Conn) {
 /**
  * 服务器下发信息
  */
-func (u *JusServer) Send(router string, uuid string, value string) {
+func (u *UIServer) Send(router string, uuid string, value string) {
 	buff := bytes.NewBufferString(router)
 	buff.WriteByte(0)
 	buff.WriteString(uuid)
@@ -428,7 +425,7 @@ func (u *JusServer) Send(router string, uuid string, value string) {
 /**
  * 判断是否存在此用户
  */
-func (u *JusServer) havUser(cmds []string) (bool, string, string) {
+func (u *UIServer) havUser(cmds []string) (bool, string, string) {
 	name := cmds[1]
 	pass := cmds[2]
 	if u.wsURL != "" {
@@ -466,9 +463,9 @@ func (u *JusServer) havUser(cmds []string) (bool, string, string) {
 }
 
 ///param ext 文件扩展名
-func (u *JusServer) jusEvt(w http.ResponseWriter, req *http.Request, ext string) {
-	jus := &JUS{SERVER: u, SYSTEM_PATH: u.SysPath, CLASS_PATH: u.SysPath + "/src/"}
-	className := Substring(req.RequestURI, 0, LastIndex(req.RequestURI, ext))
+func (u *UIServer) jusEvt(w http.ResponseWriter, req *http.Request, ext string) {
+	jus := &JUS{SERVER: u, SYSTEM_PATH: u.SysPath, CLASS_PATH: u.SysPath + "/src/", Debug: true}
+	className := Substring(req.URL.Path, 0, LastIndex(req.URL.Path, ext))
 	className = Replace(className, "/", ".")
 	if jus.CreateFrom(u.RootPath+"/", "", nil, className) {
 		b := jus.Bytes()
@@ -489,12 +486,18 @@ func (u *JusServer) jusEvt(w http.ResponseWriter, req *http.Request, ext string)
 
 }
 
-func (u *JusServer) root(w http.ResponseWriter, req *http.Request) {
+func (u *UIServer) root(w http.ResponseWriter, req *http.Request) {
 	if req.URL.Path != "/" {
 		if IsType(req.URL.Path, ".ui") {
-			req.URL.Path = Substring(req.URL.Path, 0, StringLen(req.URL.Path)-5)
 			u.jusEvt(w, req, ".ui")
 			return
+		}
+
+		if IsType(req.URL.Path, ".ui.html") {
+			if !Exist(u.RootPath + "/" + req.URL.Path) {
+				u.jusEvt(w, req, ".ui")
+				return
+			}
 		}
 
 		if req.URL.Path == "/index.doc" {
@@ -557,7 +560,7 @@ func (u *JusServer) root(w http.ResponseWriter, req *http.Request) {
 /**
  * 本工程设计使用的类
  */
-func (u *JusServer) classList() string {
+func (u *UIServer) classList() string {
 	u.useClassList = u.useClassList[0:0]
 	str := bytes.NewBufferString("")
 	path, _ := filepath.Abs(u.SysPath + "/src/")
@@ -832,7 +835,7 @@ func (u *JusServer) classList() string {
 	return format
 }
 
-func (u *JusServer) walkClassFiles(src string, pt string) {
+func (u *UIServer) walkClassFiles(src string, pt string) {
 	commet := ""
 	filepath.Walk(pt,
 		func(f string, fi os.FileInfo, err error) error { //遍历目录
@@ -977,7 +980,7 @@ func toAttrbutes(f string) map[string]string {
 /**
  * 返回服务服务器使用协议http 或者https
  */
-func (u *JusServer) GetProtocol() string {
+func (u *UIServer) GetProtocol() string {
 	if u.protocol == "" {
 		return "http"
 	}
@@ -987,7 +990,7 @@ func (u *JusServer) GetProtocol() string {
 /**
  * 显示类的使用说明
  */
-func (u *JusServer) docEvt(className string) string {
+func (u *UIServer) docEvt(className string) string {
 	//fmt.Println(">>", className)
 	api := &APIlist{}
 	api.CreateFrom(u, className)
@@ -997,7 +1000,11 @@ func (u *JusServer) docEvt(className string) string {
 /**
  * server 控制api调用接口
  */
-func (u *JusServer) apiEvt(req *http.Request) string {
+func (u *UIServer) apiEvt(req *http.Request) string {
+	url := req.FormValue("do")
+	if Index(url, "..") != -1 {
+		return ""
+	}
 	switch req.FormValue("do") {
 	case "ls":
 		return u.getDirList(u.RootPath + req.FormValue("path"))
@@ -1010,7 +1017,7 @@ func (u *JusServer) apiEvt(req *http.Request) string {
 		}
 	case "module":
 		jus := &JUS{SERVER: u, SYSTEM_PATH: u.SysPath, CLASS_PATH: u.SysPath + "/"}
-		className := Substring(req.RequestURI, StringLen(u.jusDirName), LastIndex(req.RequestURI, "."))
+		className := Substring(req.RequestURI, 0, LastIndex(req.RequestURI, "."))
 		className = Replace(className, "/", ".")
 		if jus.CreateFromString(u.RootPath+"/", "", nil, req.FormValue("value"), className, nil) {
 			return jus.ToFormatString()
@@ -1028,7 +1035,7 @@ func (u *JusServer) apiEvt(req *http.Request) string {
 /**
  * 获取文件夹路径列表XML
  */
-func (u *JusServer) getDirList(path string) string {
+func (u *UIServer) getDirList(path string) string {
 	sb := ""
 	lst, err := ioutil.ReadDir(path)
 	if err == nil {
@@ -1055,7 +1062,7 @@ func (u *JusServer) getDirList(path string) string {
 /**
  * 判断是否有可用映射
  */
-func (u *JusServer) hasUrl(urlPath *url.URL, w http.ResponseWriter, req *http.Request) bool {
+func (u *UIServer) hasUrl(urlPath *url.URL, w http.ResponseWriter, req *http.Request) bool {
 	var p *urlMap = nil
 	for _, v := range u.pattern {
 		if Index(urlPath.Path, v.pattern) == 0 {
@@ -1149,7 +1156,7 @@ func singleJoiningSlash(a, b string) string {
  * 获取项目属性信息
  * @param	项目属性
  */
-func (u *JusServer) GetAttr(attr string) []string {
+func (u *UIServer) GetAttr(attr string) []string {
 	list := u.GetData()
 	for _, v := range list {
 		if v[0] == attr {
@@ -1163,7 +1170,7 @@ func (u *JusServer) GetAttr(attr string) []string {
  * 获取项目相似的Attr
  * @param	项目属性
  */
-func (u *JusServer) GetAttrLike(attr string) [][]string {
+func (u *UIServer) GetAttrLike(attr string) [][]string {
 	list := u.GetData()
 	lst := make([][]string, 0)
 	for _, v := range list {
@@ -1177,25 +1184,43 @@ func (u *JusServer) GetAttrLike(attr string) [][]string {
 /**
  * 发布此工程
  */
-func (u *JusServer) Release() {
+func (u *UIServer) Release() {
 	for _, v := range u.GetAttr("release-path") {
-
 		if v != "" {
 			os.MkdirAll(v, 0777)
 		}
-		Copy(u.RootPath, v, u.RootPath+"/")
-		jusPath := v + u.jusDirName + "/"
-		if u.RootPath != "" {
-			os.MkdirAll(jusPath, 0777)
+		fmt.Println("copy static file to [" + v + "].")
+		Copy(u.RootPath, v, ".ui;.es")
+		fmt.Println("complete.")
+		//生成module.js
+		f, e := os.Create(v + "/ui-sys.js")
+		defer f.Close()
+		if e == nil {
+			tpl, fe := GetCode("lib/core/parser/module.tpl")
+			if fe != nil {
+				fmt.Errorf("load module.tpl error.")
+			}
+			inner, ierr := GetCode("lib/core/parser/module_base.tpl")
+			if ierr != nil {
+				fmt.Errorf("load module_base.tpl error.")
+			}
+			tpl = Replace(tpl, "{@base}", inner)
+			inner, ierr = GetCode("lib/core/parser/module_manager.tpl")
+			if ierr != nil {
+				fmt.Errorf("load module_manager.tpl error.")
+			}
+			tpl = Replace(tpl, "{@manager}", inner)
+			f.Write([]byte(tpl))
 		}
 		//发布Code,先遍历
-		u.WalkFiles(FormatSimplePath(u.RootPath+"/"), jusPath)
+		u.WalkFiles(FormatSimplePath(u.RootPath+"/"), v)
 	}
 
 }
 
-func (u *JusServer) WalkFiles(src string, dest string) {
+func (u *UIServer) WalkFiles(src string, dest string) {
 	fileType := ""
+	t := time.Now()
 	filepath.Walk(src,
 		func(f string, fi os.FileInfo, err error) error { //遍历目录
 			dPath := Substring(f, StringLen(src), -1)
@@ -1208,9 +1233,9 @@ func (u *JusServer) WalkFiles(src string, dest string) {
 			} else {
 				//fmt.Println(dPath)
 				fileType = Substring(aPath, LastIndex(aPath, "."), -1)
-				if fileType == ".html" || fileType == ".js" || fileType == ".css" { //2018-5-4
-					d, _ := os.Create(aPath[0:(len(aPath)-len(fileType))] + ".html")
-					d.Write(relEvt(u, u.SysPath, u.RootPath, u.jusDirName, dPath))
+				if fileType == ".ui" || fileType == ".es" || fileType == ".css" { //2018-5-4
+					d, _ := os.Create(aPath[0:(len(aPath)-len(fileType))] + ".ui.html")
+					d.Write(relEvt(u, u.SysPath, u.RootPath, dPath))
 					defer d.Close()
 				} else {
 					CopyFile(aPath, f)
@@ -1218,15 +1243,19 @@ func (u *JusServer) WalkFiles(src string, dest string) {
 			}
 			return nil
 		})
+	fmt.Println("use time:", time.Since(t))
 }
 
-func relEvt(server *JusServer, sysPath string, rootPath string, jusDirName string, path string) []byte {
-	jus := &JUS{SERVER: server, SYSTEM_PATH: sysPath, CLASS_PATH: sysPath + "/"}
+func relEvt(server *UIServer, sysPath string, rootPath string, path string) []byte {
+	jus := &JUS{SERVER: server, SYSTEM_PATH: sysPath, CLASS_PATH: sysPath + "/src/"}
 	lp := LastIndex(path, ".")
 	className := Substring(path, 0, lp)
-	fmt.Println("export:", className)
+	fmt.Print("export:", className)
+	t1 := time.Now()
 	if jus.CreateFrom(rootPath+"/", "", nil, className) {
-		return jus.ToFormatBytes()
+		b := jus.Bytes()
+		fmt.Println(" | " + time.Since(t1).String())
+		return b
 	}
 
 	return []byte("nothing.")
@@ -1235,8 +1264,12 @@ func relEvt(server *JusServer, sysPath string, rootPath string, jusDirName strin
 /**
  * 获取项目信息
  */
-func (u *JusServer) GetData() [][]string {
-	data, err := GetCode(u.RootPath + "/.jus")
+func (u *UIServer) GetData() [][]string {
+	f := u.RootPath + "/.jus"
+	if !Exist(f) {
+		os.MkdirAll(f, 0777)
+	}
+	data, err := GetCode(f)
 	if err != nil {
 		fmt.Println(err)
 		return nil
@@ -1247,7 +1280,7 @@ func (u *JusServer) GetData() [][]string {
 /**
  * 增加虚拟目录和反向代理
  */
-func (u *JusServer) AddProxy(pattern string, path string) {
+func (u *UIServer) AddProxy(pattern string, path string) {
 	fmt.Println("pattern", pattern, "-->", path)
 	cls := 0
 	if Index(strings.ToLower(path), "http://") == 0 || Index(strings.ToLower(path), "https://") == 0 {
@@ -1267,7 +1300,7 @@ func (u *JusServer) AddProxy(pattern string, path string) {
 /**
  * 添加服务器环境变量
  */
-func (u *JusServer) AddServerVar(cls string, key string, value string) {
+func (u *UIServer) AddServerVar(cls string, key string, value string) {
 
 	switch cls {
 	case "string":
@@ -1282,14 +1315,14 @@ func (u *JusServer) AddServerVar(cls string, key string, value string) {
 
 }
 
-func (u *JusServer) GetServerVar(key string) string {
+func (u *UIServer) GetServerVar(key string) string {
 	return u.attribute[key]
 }
 
 /**
  * 设置环境变量
  */
-func (u *JusServer) SetData(cmds []string) {
+func (u *UIServer) SetData(cmds []string) {
 	data, err := GetCode(u.RootPath + "/.jus")
 	if err != nil {
 		fmt.Println(err)
@@ -1345,7 +1378,7 @@ func (u *JusServer) SetData(cmds []string) {
 /**
  * 移除环境变量
  */
-func (u *JusServer) RetData(cmds []string) bool {
+func (u *UIServer) RetData(cmds []string) bool {
 	success := false
 	data, err := GetCode(u.RootPath + "/.jus")
 	if err != nil {

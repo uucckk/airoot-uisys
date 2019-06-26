@@ -24,7 +24,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-var version string = "AIroot UI-SYSTEM 0.9.0beta"
+var version string = "AIroot UI-SYSTEM 0.9.1beta"
 var lang map[string]string
 
 var zhCN = make(map[string]string, 0)
@@ -143,15 +143,13 @@ func init() {
 /**
  * 服务器列表
  */
-var serverList map[string]*JusServer = make(map[string]*JusServer)
+var serverList map[string]*UIServer = make(map[string]*UIServer)
 var testHandle map[string]*TestServer = make(map[string]*TestServer)
 var webCList map[string]*websocket.Conn = make(map[string]*websocket.Conn) //webControl用户列表
 var SysPath string
 var SysLibPath string
 var SysStartDate string
 var _Count_ int = 0
-var CODE_PATH = "/src" //jus 源代码路径
-var RES_PATH = "/"     //静态资源路径
 
 /**
  * 创建工程目录
@@ -164,50 +162,32 @@ func CreateProjectDir(path string) bool {
 		return false
 	}
 	os.MkdirAll(path, 0777)
-	os.MkdirAll(path+CODE_PATH, 0777)
-	os.MkdirAll(path+"/"+RES_PATH+"/img", 0777)
-	os.MkdirAll(path+"/"+RES_PATH+"/css", 0777)
-	os.MkdirAll(path+"/"+RES_PATH+"/js", 0777)
-	os.MkdirAll(path+"/"+RES_PATH+"/.settings", 0777)     //配置文件项
-	os.MkdirAll(path+"/"+RES_PATH+"/.settings/use", 0777) //格式化命令
-	s, _ := filepath.Abs("lib/js")
-	Copy(s, path+"/"+RES_PATH+"/js", "")
-	s, _ = filepath.Abs("lib/icon/")
-	Copy(s, path+"/"+RES_PATH+"/img", "")
+	os.MkdirAll(path+"/resources/img", 0777)  //图片
+	os.MkdirAll(path+"/resources/css", 0777)  //css
+	os.MkdirAll(path+"/resources/js", 0777)   //javascript库
+	os.MkdirAll(path+"/resources/font", 0777) //字体
+	os.MkdirAll(path+"/resources/wasm", 0777) //web汇编文件
+	os.MkdirAll(path+"/.settings", 0777)      //配置文件项
+	os.MkdirAll(path+"/.settings/use", 0777)  //格式化命令
+	os.MkdirAll(path+"/.settings/pub", 0777)  //发布配置
 
-	//生成module.js
-	f, e := os.Create(path + "/" + RES_PATH + "/js/module.js")
+	s, _ := filepath.Abs("lib/js")
+	Copy(s, path+"/js", "")
+	s, _ = filepath.Abs("lib/core/icon/")
+	Copy(s, path+"/resources/img", "")
+	f, e := os.Create(path + "/index.html")
 	defer f.Close()
 	if e == nil {
-		tpl, fe := GetCode("lib/core/parser/module.tpl")
-		if fe != nil {
-			return false
-		}
-		inner, ierr := GetCode("lib/core/parser/module_base.tpl")
-		if ierr != nil {
-			return false
-		}
-		tpl = Replace(tpl, "{@base}", inner)
-		inner, ierr = GetCode("lib/core/parser/module_manager.tpl")
-		if ierr != nil {
-			return false
-		}
-		tpl = Replace(tpl, "{@manager}", inner)
-		f.Write([]byte(tpl))
-	}
-	f, e = os.Create(path + "/" + RES_PATH + "/index.html")
-	defer f.Close()
-	if e == nil {
-		data, _ := GetBytes("./lib/template/index.template")
+		data, _ := GetBytes("./lib/core/template/index.template")
 		f.Write(data)
 	} else {
 		return false
 	}
 
-	f, e = os.Create(path + CODE_PATH + "/Main.html")
+	f, e = os.Create(path + "/Index.ui")
 	defer f.Close()
 	if e == nil {
-		data, _ := GetCode("./lib/template/codeIndex.template")
+		data, _ := GetCode("./lib/core/template/codeIndex.template")
 		data = strings.Replace(data, "{@content}", abs, -1)
 		f.Write([]byte(data))
 	} else {
@@ -217,8 +197,6 @@ func CreateProjectDir(path string) bool {
 	f, e = os.Create(path + "/.jus")
 	defer f.Close()
 	if e == nil {
-		f.WriteString("src " + "/src/\r\n")
-		f.WriteString("res " + "/\r\n")
 		f.WriteString("release-path " + filepath.Dir(abs) + "/" + filepath.Base(abs) + "-release/")
 	} else {
 		return false
@@ -637,8 +615,7 @@ func command(cmds []string) (bool, string) {
 		case "add": //创建服务
 			if len(cmds) > 1 && (zhCN[cmds[1]] == "" || len(cmds[1]) != len([]rune(cmds[1]))) {
 				if serverList[cmds[1]] == nil {
-					serverList[cmds[1]] = &JusServer{}
-					//serverList[cmds[1]].CreateServer(SysLibPath, "", CODE_PATH, RES_PATH)
+					serverList[cmds[1]] = &UIServer{}
 					serverList[cmds[1]].CreateServer(SysLibPath, "", "", "/")
 					str = DevPrintln(2, lang["添加成功"], cmds[1]) //添加成功
 				} else {

@@ -63,14 +63,15 @@ var __READ_DATA__ = function(value){
 function main(){
 	var html = "<!DOCTYPE html><html><head><meta charset='utf-8' ><style>body{margin:0px;padding:0px;}</style></head><body>";
 	__FORMAT__(code);
-	html += mod[jus.GetClassName()].html.replace(/[\b]/g,uuid);
+	html += mod[UI.GetClassName()].html.replace(/[\b]/g,uuid);
 	var data = "<script id='_data' type='text/plain'>";
 	data += code;
 	data += "</script>";
 	var run = "<script type='text/javascript'>";
-	run += jus.GetCode(jus.SYSTEM_PATH + "/core/parser/module_base.tpl");
-	run += jus.GetCode(jus.SYSTEM_PATH + "/core/parser/module_manager.tpl");
-	run += "\r\nJUS.decode(document.body,'" + jus.GetClassName() + "',_data.innerText);";
+	run += UI.GetCode(UI.SYSTEM_PATH + "/core/parser/module_base.tpl");
+	run += "var fExt=" + (UI.Debug ? " '.ui'" : "'.ui.html'") + ";";
+	run += UI.GetCode(UI.SYSTEM_PATH + "/core/parser/module_manager.tpl");
+	run += "\r\nJUS.decode(document.body,'" + UI.GetClassName() + "',_data.innerText);";
 	run += "</script>";
 	return html + data + run + "</body></html>";
 }

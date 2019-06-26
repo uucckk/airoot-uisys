@@ -31,7 +31,7 @@ var __PACKAGE_COUNT__ = 0;
 var ____ERROR_POS____ = 0;
 var ____ERROR_COUNT____ = 0;
 var ____ERROR____ = function(value){
-	console.log("JUS ERROR: " + value);
+	console.log("UI ERROR: " + value);
 	var label = document.createElement("div");
 	label.setAttribute('style','position:absolute;color:#fefefe;background-color:#f05500;margin:5px 5px 0px 5px;border-radius:5px;padding:2px 10px 2px 10px;font-size:14px;font-weight:bold;');
 	label.innerText = ____ERROR_COUNT____ ++ + ". " + value;
@@ -358,7 +358,7 @@ function __INIT_PACKAGE__(){
  * 加载外部JS类包或互联网的类包
  */
 function __PACKAGE__(pkg,func){
-	var value = JUS.PATH + pkg.url;
+	var value = UI.PATH + pkg.url;
 	var ul = new URLLoader();
 	var req = new URLRequest(value);
 	req.method = URLRequestMethod.POST;
@@ -374,7 +374,7 @@ function __PACKAGE__(pkg,func){
 	});
 	ul.addEventListener("ioError",function(e){
 		__PACKAGE_COUNT__ --;
-		console.error("JUS_LOAD_PACKAGE_ERROR:",value);
+		console.error("UI_LOAD_PACKAGE_ERROR:",value);
 		if(__PACKAGE_COUNT__ == 0){
 			__INIT_PACKAGE__();
 			func();
@@ -489,7 +489,6 @@ var __FORMAT__ = function(__DATA__,__APPDOMAIN__,module){
 		}
 		
 	}
-	//__ADD_MOUDLE__(__APPDOMAIN__,module,{html:html,style:style,runLst:runLst});
 }
 /**
  * 转化为对象
@@ -633,7 +632,6 @@ function __InitModule__(__APPDOMAIN__,moduleName,uuid,value,target,append){
 				p = lst[i];
 				switch(p.type){
 					case "P":
-						//_MODULE_CONTENT_LIST_ATTR_[p.name.replace(/[\b]/g,uuid)] = eval(p.value.replace(/[\b]/g,uuid));
 						param.push(p.name.replace(/[\b]/g,uuid),p.value.replace(/[\b]/g,uuid));
 					break;
 					case "S"://执行基本函数
@@ -649,8 +647,6 @@ function __InitModule__(__APPDOMAIN__,moduleName,uuid,value,target,append){
 					break;
 					case "C"://执行命令函数
 						AddC2C(uuid,p,__APPDOMAIN__)//AddCommandToCompoent
-						//__PUSH_COMMAND__(uuid,__NAME__,'-lang',getModule('.Lang',__APPDOMAIN__)({target:window[uuid + 'a1'],data:'lang/index-lang.json'}));
-						//__PUSH_COMMAND__(uuid,p.name.replace(/[\b]/g,uuid),'-lang',getModule('.Lang',__APPDOMAIN__)({target:window[uuid + 'a1'],data:'lang/index-lang.json'}));
 					break;
 					case "T"://执行外连接函数
 						if(!_MODULE_INNER_[uuid]){
@@ -709,14 +705,14 @@ DocumentFragment.prototype.append = DocumentFragment.prototype.appendChild = fun
 };
 
 
-var JUS = {PATH:""};
+var UI = {PATH:""};
 //加载模块
 HTMLElement.prototype.loadModule = function(){//module,value,listener,appDomain
 	var p = [this];
 	for(var i = 0;i<arguments.length;i++){
 		p.push(arguments[i]);
 	}
-	return JUS.loadModule.apply(JUS,p);
+	return UI.loadModule.apply(UI,p);
 };
 
 
@@ -725,7 +721,7 @@ HTMLElement.prototype.decode = function(){//module,value,listener,appDomain
 	for(var i = 0;i<arguments.length;i++){
 		p.push(arguments[i]);
 	}
-	return JUS.decode.apply(JUS,p);
+	return UI.decode.apply(UI,p);
 };
 
 
@@ -735,7 +731,7 @@ HTMLElement.prototype.addModule = function(){//module,value,listener,appDomain
 	for(var i = 0;i<arguments.length;i++){
 		p.push(arguments[i]);
 	}
-	return JUS.addModule.apply(JUS,p);
+	return UI.addModule.apply(UI,p);
 };
 
 /*
@@ -749,7 +745,7 @@ Object.defineProperty(HTMLElement.prototype,"innerHTML",{
 ,enumerable:true});
 */
 
-JUS.loadClass = function(className,listener,appDomain){
+UI.loadClass = function(className,listener,appDomain){
 	var value,listener,appDomain;
 	var p = null;
 	for(var i = 2;i<arguments.length;i++){
@@ -765,7 +761,7 @@ JUS.loadClass = function(className,listener,appDomain){
 			return;
 		}
 	}
-	var url = JUS.PATH + "/" + className + ".ui";
+	var url = UI.PATH + "/" + className + ".ui.html";
 	var load = window.location.toString().indexOf("http:") == 0 ? asjs.post : asjs.get;
 	var _CF_ = null;
 	load(url,function(e){
@@ -782,13 +778,13 @@ JUS.loadClass = function(className,listener,appDomain){
 	});
 }
 
-JUS.getClass = function(className,appDomain){
+UI.getClass = function(className,appDomain){
 	appDomain = appDomain || "local";
 	return _MODULE_CONTENT_LIST_[appDomain][className];
 }
 
 
-JUS.loadModule = function(target,module){
+UI.loadModule = function(target,module){
 	var value,listener,appDomain;
 	var p = null;
 	for(var i = 2;i<arguments.length;i++){
@@ -804,7 +800,7 @@ JUS.loadModule = function(target,module){
 			return;
 		}
 	}
-	var url = JUS.PATH + "/" + module + ".ui";
+	var url = UI.PATH + "/" + module.replace(".","/") + ".ui.html";
 	var load = window.location.toString().indexOf("http:") == 0 ? asjs.post : asjs.get;
 	var _CF_ = null;
 	load(url,function(e){
@@ -829,7 +825,7 @@ JUS.loadModule = function(target,module){
 	}};
 }
 
-JUS.decode = function(target,module,code){
+UI.decode = function(target,module,code){
 	code = code.trim();
 	var value,listener,appDomain;
 	var p = null;
@@ -859,7 +855,7 @@ JUS.decode = function(target,module,code){
 		});
 }
 
-JUS.addModule = function(target,module){
+UI.addModule = function(target,module){
 	var value,listener,appDomain;
 	var p = null;
 	for(var i = 2;i<arguments.length;i++){
@@ -875,7 +871,7 @@ JUS.addModule = function(target,module){
 			return;
 		}
 	}
-	var url = JUS.PATH + "/" + module + ".ui";
+	var url = UI.PATH + "/" + module.replace(".","/") + ".ui.html";
 	var load = window.location.toString().indexOf("http:") == 0 ? asjs.post : asjs.get;
 	var _CF_ = null;
 	load(url,function(e){
@@ -908,7 +904,7 @@ JUS.addModule = function(target,module){
  * @param url		类路径地址
  * @param value 	不确定长度隐形参数
  */
-var getModule = JUS.getModule = function(module,__APPDOMAIN__){
+var getModule = UI.getModule = function(module,__APPDOMAIN__){
 	console.log("arguments",arguments);
 	__APPDOMAIN__ = __APPDOMAIN__ || "local";
 	if(__HAV_MODULE__(module,__APPDOMAIN__)){
@@ -1069,7 +1065,6 @@ var gcDefer = function(){
 	var l = null;
 	var n = null;
 	while(p){
-		//console.log(p);
 		n = p.next;
 		if(!p.dom.parentNode){
 			

@@ -44,10 +44,10 @@ func GetBytes(path string) ([]byte, error) {
 
 //遍历目录，将文件信息传入通道
 func WalkFiles(src string, dest string, unCopy string) {
+	arr := strings.Split(unCopy, ";")
 	filepath.Walk(src,
 		func(f string, fi os.FileInfo, err error) error { //遍历目录
 			dPath := Substring(f, StringLen(src), -1)
-
 			if dPath == "" {
 				return nil
 			}
@@ -55,6 +55,11 @@ func WalkFiles(src string, dest string, unCopy string) {
 			b, _ := filepath.Abs(unCopy)
 			if a == b {
 				return filepath.SkipDir
+			}
+			for _, v := range arr {
+				if Index(f, v) != -1 {
+					return nil
+				}
 			}
 			dPath = dest + "/" + dPath
 
@@ -66,7 +71,7 @@ func WalkFiles(src string, dest string, unCopy string) {
 					return filepath.SkipDir
 				}
 			} else {
-				fmt.Println("copy", f, dPath)
+				//fmt.Println("copy", f, dPath)
 				CopyFile(dPath, f)
 			}
 
