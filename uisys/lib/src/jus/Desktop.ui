@@ -7,7 +7,7 @@
 	</style>
 	<@content />
 	<script>
-		import /js/jquery.min.js;
+		import /resources/js/jquery.min.js;
 		var _self = $(dom);
 		var stageWidth = 0.0;
 		var stageHeight = 0.0;

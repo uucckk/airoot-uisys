@@ -10,6 +10,9 @@ import (
  * 获取字符串，字符穿从头的指定位置
  */
 func Index(s string, value string) int {
+	if len(value) == 0 {
+		return -1
+	}
 	ch := []rune(value)
 	l := len(ch)
 	p := 0

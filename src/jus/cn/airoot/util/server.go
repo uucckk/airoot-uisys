@@ -1266,9 +1266,6 @@ func relEvt(server *UIServer, sysPath string, rootPath string, path string) []by
  */
 func (u *UIServer) GetData() [][]string {
 	f := u.RootPath + "/.jus"
-	if !Exist(f) {
-		os.MkdirAll(f, 0777)
-	}
 	data, err := GetCode(f)
 	if err != nil {
 		fmt.Println(err)

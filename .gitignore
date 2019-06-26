@@ -17,4 +17,4 @@
 #dir
 /pkg/*
 /uisys/example/*
-/uisys/jus.conf
+/uisys/boot.conf

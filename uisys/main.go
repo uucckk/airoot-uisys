@@ -172,7 +172,7 @@ func CreateProjectDir(path string) bool {
 	os.MkdirAll(path+"/.settings/pub", 0777)  //发布配置
 
 	s, _ := filepath.Abs("lib/js")
-	Copy(s, path+"/js", "")
+	Copy(s, path+"/resources/js", "")
 	s, _ = filepath.Abs("lib/core/icon/")
 	Copy(s, path+"/resources/img", "")
 	f, e := os.Create(path + "/index.html")
@@ -1115,7 +1115,11 @@ func main() {
 	if len(os.Args) == 2 && (Index(args, "/") != -1 || Index(args, "\\") != -1) {
 		args = "add d0 " + args + " :80"
 	} else {
-		running, _ = BatCode("jus.conf", true) //程序默认执行一个控制类
+		if !Exist("boot.conf") {
+			f, _ := os.Create("boot.conf")
+			defer f.Close()
+		}
+		running, _ = BatCode("boot.conf", true) //程序默认执行一个控制类
 	}
 	go httpPost()
 	//键盘输入

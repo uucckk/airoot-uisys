@@ -3,7 +3,7 @@
 	@author sunxy
 	@version 0.0
  -->
-<@import value="component.*" />
+<@import value="jus.*" />
 <desktop>
 	<style>
 		body{
