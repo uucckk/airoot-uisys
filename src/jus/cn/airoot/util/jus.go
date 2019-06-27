@@ -688,6 +688,9 @@ func (j *JUS) loadSetting() {
 	sets := j.html.GetElementsByTagName("@pub")
 	for _, v := range sets {
 		j.pub = v.GetAttr("value")
+		if j.pub == "" {
+			j.pub = "default"
+		}
 	}
 	j.html.RemoveChildByTagName("@pub")
 }

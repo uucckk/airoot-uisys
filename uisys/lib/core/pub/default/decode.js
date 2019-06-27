@@ -71,7 +71,7 @@ function main(){
 	run += UI.GetCode(UI.SYSTEM_PATH + "/core/parser/module_base.tpl");
 	run += "var fExt=" + (UI.Debug ? " '.ui'" : "'.ui.html'") + ";";
 	run += UI.GetCode(UI.SYSTEM_PATH + "/core/parser/module_manager.tpl");
-	run += "\r\nJUS.decode(document.body,'" + UI.GetClassName() + "',_data.innerText);";
+	run += "\r\nUI.decode(document.body,'" + UI.GetClassName() + "',_data.innerText);";
 	run += "</script>";
 	return html + data + run + "</body></html>";
 }

@@ -24,7 +24,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-var version string = "AIroot UI-SYSTEM 0.9.1beta"
+var version string = "AIroot UI-SYSTEM 0.9.2beta"
 var lang map[string]string
 
 var zhCN = make(map[string]string, 0)
@@ -155,33 +155,33 @@ var _Count_ int = 0
  * 创建工程目录
  * @param path 	目录路径
  */
-func CreateProjectDir(path string) bool {
+func CreateProjectDir(path string) string {
 	abs, _ := filepath.Abs(path)
 	if Exist(path) {
 		DevPrintln(335, lang["项目已存在"], abs)
-		return false
+		return lang["项目已存在"]
 	}
 	os.MkdirAll(path, 0777)
-	os.MkdirAll(path+"/resources/img", 0777)  //图片
-	os.MkdirAll(path+"/resources/css", 0777)  //css
-	os.MkdirAll(path+"/resources/js", 0777)   //javascript库
-	os.MkdirAll(path+"/resources/font", 0777) //字体
-	os.MkdirAll(path+"/resources/wasm", 0777) //web汇编文件
-	os.MkdirAll(path+"/.settings", 0777)      //配置文件项
-	os.MkdirAll(path+"/.settings/use", 0777)  //格式化命令
-	os.MkdirAll(path+"/.settings/pub", 0777)  //发布配置
+	os.MkdirAll(path+"/lib/img", 0777)   //图片
+	os.MkdirAll(path+"/lib/css", 0777)   //css
+	os.MkdirAll(path+"/lib/js", 0777)    //javascript库
+	os.MkdirAll(path+"/lib/font", 0777)  //字体
+	os.MkdirAll(path+"/lib/wasm", 0777)  //web汇编文件
+	os.MkdirAll(path+"/.serv", 0777)     //配置文件项
+	os.MkdirAll(path+"/.serv/use", 0777) //格式化命令
+	os.MkdirAll(path+"/.serv/pub", 0777) //发布配置
 
 	s, _ := filepath.Abs("lib/js")
-	Copy(s, path+"/resources/js", "")
+	Copy(s, path+"/lib/js", "")
 	s, _ = filepath.Abs("lib/core/icon/")
-	Copy(s, path+"/resources/img", "")
+	Copy(s, path+"/lib/img", "")
 	f, e := os.Create(path + "/index.html")
 	defer f.Close()
 	if e == nil {
 		data, _ := GetBytes("./lib/core/template/index.template")
 		f.Write(data)
 	} else {
-		return false
+		return e.Error()
 	}
 
 	f, e = os.Create(path + "/Index.ui")
@@ -191,22 +191,22 @@ func CreateProjectDir(path string) bool {
 		data = strings.Replace(data, "{@content}", abs, -1)
 		f.Write([]byte(data))
 	} else {
-		return false
+		return e.Error()
 	}
 
-	f, e = os.Create(path + "/.jus")
+	f, e = os.Create(path + "/.uisys")
 	defer f.Close()
 	if e == nil {
 		f.WriteString("release-path " + filepath.Dir(abs) + "/" + filepath.Base(abs) + "-release/")
 	} else {
-		return false
+		return e.Error()
 	}
 	DevPrintln(2, lang["建立项目"], abs)
 	tName := GetName()
 	commandEvt("add " + tName + " " + abs)
 	DevPrintln(240, lang["项目挂载在"], tName)
 	_Count_++
-	return true
+	return ""
 }
 
 func GetName() string {
@@ -822,7 +822,7 @@ func command(cmds []string) (bool, string) {
 			return true, str
 		case "ctp": //增加一个项目
 			if len(cmds) > 1 {
-				CreateProjectDir(cmds[1])
+				str = DevPrintln(2, CreateProjectDir(cmds[1]))
 			} else {
 				str = DevPrintln(8, lang["ctp"])
 			}

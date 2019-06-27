@@ -20,6 +20,8 @@ import (
 	"golang.org/x/net/websocket"
 )
 
+var configName = ".uisys"
+
 type urlMap struct {
 	pattern string
 	path    string
@@ -177,7 +179,7 @@ func (u *UIServer) SetProject(path string) int {
 		rpath, _ := filepath.Abs(path)
 		u.RootPath = rpath
 		u.fServerList = make(map[string]http.Handler)
-		if Exist(u.RootPath + "/.jus") {
+		if Exist(u.RootPath + "/" + configName) {
 			u.fServerList[rpath] = http.FileServer(http.Dir(path))
 			u.pattern = make(map[string]*urlMap)
 
@@ -1265,7 +1267,7 @@ func relEvt(server *UIServer, sysPath string, rootPath string, path string) []by
  * 获取项目信息
  */
 func (u *UIServer) GetData() [][]string {
-	f := u.RootPath + "/.jus"
+	f := u.RootPath + "/" + configName
 	data, err := GetCode(f)
 	if err != nil {
 		fmt.Println(err)
@@ -1320,7 +1322,7 @@ func (u *UIServer) GetServerVar(key string) string {
  * 设置环境变量
  */
 func (u *UIServer) SetData(cmds []string) {
-	data, err := GetCode(u.RootPath + "/.jus")
+	data, err := GetCode(u.RootPath + "/" + configName)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -1348,9 +1350,9 @@ func (u *UIServer) SetData(cmds []string) {
 	}
 
 	//对源文件备份
-	os.Rename(u.RootPath+"/.jus", u.RootPath+"/.jusb")
+	os.Rename(u.RootPath+"/"+configName, u.RootPath+"/"+configName+"b")
 	//生成新文件
-	f, e := os.Create(u.RootPath + "/.jus")
+	f, e := os.Create(u.RootPath + "/" + configName)
 	defer f.Close()
 	if e == nil {
 		sb := ""
@@ -1368,7 +1370,7 @@ func (u *UIServer) SetData(cmds []string) {
 
 		}
 		f.WriteString(sb)
-		os.Remove(u.RootPath + "/.jusb")
+		os.Remove(u.RootPath + "/" + configName + "b")
 	}
 }
 
@@ -1377,7 +1379,7 @@ func (u *UIServer) SetData(cmds []string) {
  */
 func (u *UIServer) RetData(cmds []string) bool {
 	success := false
-	data, err := GetCode(u.RootPath + "/.jus")
+	data, err := GetCode(u.RootPath + "/" + configName)
 	if err != nil {
 		fmt.Println(err)
 		return success
@@ -1402,9 +1404,9 @@ func (u *UIServer) RetData(cmds []string) bool {
 	if len(command) != len(lst) {
 		command = lst
 		//对源文件备份
-		os.Rename(u.RootPath+"/.jus", u.RootPath+"/.jusb")
+		os.Rename(u.RootPath+"/"+configName, u.RootPath+"/"+configName+"b")
 		//生成新文件
-		f, e := os.Create(u.RootPath + "/.jus")
+		f, e := os.Create(u.RootPath + "/" + configName)
 		defer f.Close()
 		if e == nil {
 			sb := ""
@@ -1422,7 +1424,7 @@ func (u *UIServer) RetData(cmds []string) bool {
 
 			}
 			f.WriteString(sb)
-			os.Remove(u.RootPath + "/.jusb")
+			os.Remove(u.RootPath + "/" + configName + "b")
 		}
 	}
 
