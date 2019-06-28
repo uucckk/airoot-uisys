@@ -223,7 +223,7 @@ func (u *UIServer) CreateModule(cls string, className string) bool {
 	}
 
 	if Index(cls, "s") != -1 { //创建Script文件
-		tPath = path + ".js"
+		tPath = path + ".es"
 		fmt.Println("Module Path: ", tPath)
 		if !Exist(tPath) {
 			f, e := os.Create(tPath)
@@ -243,7 +243,7 @@ func (u *UIServer) CreateModule(cls string, className string) bool {
 				defer f.Close()
 			}
 		}
-		tPath = path + ".js"
+		tPath = path + ".es"
 		fmt.Println("Module Path: ", tPath)
 		if !Exist(tPath) {
 			f, e := os.Create(tPath)
@@ -750,7 +750,7 @@ func (u *UIServer) classList() string {
 		}
 		arr := list[v.attributes["type"]]
 		arr = append(arr, `<tr>
-				<td nowrap><a href ='index.doc?$`+v.name+`' target='_blank'>`+v.name+IfStr(v.cls == 1, " <b>[JS]</b>", "")+`</a></td>
+				<td nowrap><a href ='index.doc?$`+v.name+`' target='_blank'>`+v.name+IfStr(v.cls == 1, " <b>[ES]</b>", "")+`</a></td>
 				<td nowrap>`+v.info.ModTime().Format("2006-01-02 15:04:05")+`</td>
 				<td>`+strings.Replace(strings.TrimSpace(v.comment), "\n", "<br/>", -1)+`</td>
 			</tr>`)
@@ -795,7 +795,7 @@ func (u *UIServer) classList() string {
 
 		}
 		arr = append(arr, `<tr class="`+cls+`">
-				<td nowrap><a href ='index.doc?`+v.name+`'>`+v.name+IfStr(v.cls == 1, " <b>[JS]</b>", "")+`</a></td>
+				<td nowrap><a href ='index.doc?`+v.name+`'>`+v.name+IfStr(v.cls == 1, " <b>[ES]</b>", "")+`</a></td>
 				<td nowrap>`+v.info.ModTime().Format("2006-01-02 15:04:05")+`</td>
 				<td>`+strings.Replace(strings.TrimSpace(v.comment), "\n", "<br/>", -1)+`</td>
 			</tr>`)
@@ -852,7 +852,7 @@ func (u *UIServer) walkClassFiles(src string, pt string) {
 					len := StringLen(src)
 					commet = readCommentForHTML(f)
 					u.useClassList = append(u.useClassList, &element{strings.Replace(Substring(f, len+1, StringLen(f)-3), "\\", ".", -1), fi, commet, toAttrbutes(commet), 0})
-				} else if path.Ext(f) == ".js" && !Exist(Substring(f, 0, StringLen(f)-3)+".ui") {
+				} else if path.Ext(f) == ".es" && !Exist(Substring(f, 0, StringLen(f)-3)+".ui") {
 					len := StringLen(src)
 					commet = readCommentForJS(f)
 					u.useClassList = append(u.useClassList, &element{strings.Replace(Substring(f, len+1, StringLen(f)-3), "\\", ".", -1), fi, commet, toAttrbutes(commet), 1})
@@ -1268,6 +1268,9 @@ func relEvt(server *UIServer, sysPath string, rootPath string, path string) []by
  */
 func (u *UIServer) GetData() [][]string {
 	f := u.RootPath + "/" + configName
+	if Exist(f) {
+		return [][]string{}
+	}
 	data, err := GetCode(f)
 	if err != nil {
 		fmt.Println(err)

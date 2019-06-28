@@ -24,7 +24,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-var version string = "AIroot UI-SYSTEM 0.9.2beta"
+var version string = "AIroot UI-SYSTEM 0.9.3beta"
 var lang map[string]string
 
 var zhCN = make(map[string]string, 0)
@@ -85,8 +85,8 @@ func init() {
 	zhCN["bat"] = "bat 执行本程序的批处理文件，您可以执行多套批处理命令\r\n命令格式：bat <文件名称> [文件名称...]\r\n"
 	zhCN["stat"] = "stat 获取当前文件执行状态，例如时间等\r\n命令格式：stat\r\n"
 	enCH["文件不存在"] = "The '%s' file isn't exist. \r\n"
-	enCH["添加成功"] = "The [%s] Added Successfully."
-	enCH["已经添加"] = "[%s] was Added.\r\n"
+	enCH["添加成功"] = "The [%s] added successfully."
+	enCH["已经添加"] = "[%s] was added.\r\n"
 	enCH["项目已存在"] = "The project [%s] is exist.\r\n"
 	enCH["建立项目"] = "create project [%s].\r\n"
 	enCH["项目挂载在"] = "The project mount at[%s] server."

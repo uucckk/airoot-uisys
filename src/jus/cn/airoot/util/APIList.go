@@ -182,7 +182,7 @@ func (a *APIlist) CreateFrom(jus *UIServer, className string) error {
 		a.html = html
 	}
 
-	file = path + ".js"
+	file = path + ".es"
 	if Exist(file) {
 		code, err := GetCode(file)
 		if err != nil {
