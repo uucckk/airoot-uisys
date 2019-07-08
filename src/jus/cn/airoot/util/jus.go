@@ -180,7 +180,7 @@ func (j *JUS) CreateFrom(root string, domain string, node *HTML, className strin
 		j.html.ReadFromString(t) //j.html.ReadFromString(j.scanMedia(t))
 	} else if j.jsPath != "" {
 		j.scriptFile = true
-		j.PushImportScript(&Attr{className, ""}) //change by sunxy 2018-3-2
+		j.PushImportScript(&Attr{className, className}) //change by sunxy 2018-3-2
 	} else {
 		return false
 
@@ -199,31 +199,31 @@ func (j *JUS) PushImportScript(value *Attr) {
 	if j.GetRoot().scriptElement == nil {
 		j.GetRoot().scriptElement = make(map[string]*Attr, 10)
 	}
-	if j.GetRoot().scriptElement[value.Name] == nil {
-		if Index(value.Name, "/") != -1 || Index(value.Name, "\\") != -1 {
-			//j.ToFormatLine("I", value.Name, "P"+value.Name, sb) //P 代表外部资源包 Package，可以加载/js/JQuery.min.js也可以http://jquery.com/jquery.min.js
-			j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, &ScriptElement{"I", value.Name, "P", value.Name})
+	if j.GetRoot().scriptElement[value.Value] == nil {
+		if Index(value.Value, "\002") != -1 {
+			j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, &ScriptElement{"I", value.Name, "U", value.Value}) //代表UMD规范的包导入
 			return
 		}
-		j.GetRoot().scriptElement[value.Name] = value
+		if Index(value.Value, "/") != -1 || Index(value.Value, "\\") != -1 {
+			j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, &ScriptElement{"I", value.Name, "P", value.Value})
+			return
+		}
+
+		j.GetRoot().scriptElement[value.Value] = value
 		ft := &JUS{SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH}
-		if ft.CreateFromParent(j.root, "", nil, strings.TrimSpace(value.Name), j) {
-			ft.IsImport = value.Name
+		if ft.CreateFromParent(j.root, "", nil, strings.TrimSpace(value.Value), j) {
+			ft.IsImport = value.Value
 			ft.resPath = j.resPath
 			if ft.IsScript() {
 				scriptObj := &Script{}
-				scriptObj.CreateFrom(j, j.root, j.domain, j.paramValue, j.extendsScriptBuffer, strings.TrimSpace(value.Name))
+				scriptObj.CreateFrom(j, j.root, j.domain, j.paramValue, j.extendsScriptBuffer, strings.TrimSpace(value.Value))
 				tpr, _ := ft.GetInitString()
-				//j.ToFormatLine("I", value.Name, "S"+scriptObj.ReadFromString(tpr), sb)
-				j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, &ScriptElement{"I", value.Name, "S", scriptObj.ReadFromString(tpr)}) //j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, "\t_MODULE_CONTENT_LIST_[\f]['"+strings.TrimSpace(value.Name)+"'] = "+scriptObj.ReadFromString(j.scanMedia(tpr))+";\r\n")
+				j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, &ScriptElement{"I", value.Value, "S", scriptObj.ReadFromString(tpr)}) //j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, "\t_MODULE_CONTENT_LIST_[\f]['"+strings.TrimSpace(value.Name)+"'] = "+scriptObj.ReadFromString(j.scanMedia(tpr))+";\r\n")
 			} else {
-				//fmt.Println("H" + ft.ToFormatString())
-				//j.ToFormatLine("I", value.Name, "H"+ft.ToFormatString(), sb)
-				j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, &ScriptElement{"I", value.Name, "H", ft.ToFormatString()})
+				j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, &ScriptElement{"I", value.Value, "H", ft.ToFormatString()})
 			}
 		} else {
-			//j.ToFormatLine("O", value.Name, value.Name+" isn't Exist.", sb)
-			j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, &ScriptElement{"O", value.Name, "", value.Name + " isn't Exist."})
+			j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, &ScriptElement{"O", value.Value, "", value.Value + " isn't Exist."})
 		}
 	}
 }
@@ -536,14 +536,14 @@ func (j *JUS) scanHTML(child []*HTML) {
 				attrName = j.pkgMap[v]
 				if attrName != "" {
 					p.SetAttrName(v, attrName)
-					j.PushCommandScript(&Attr{attrName, "-" + v + "\001" + attrName + "\001" + p.GetAttr("id") + "\001" + attrValue})
-					j.PushImportScript(&Attr{attrName, ""})
+					j.PushCommandScript(&Attr{attrName, "-" + v + "\002" + attrName + "\002" + p.GetAttr("id") + "\002" + attrValue})
+					j.PushImportScript(&Attr{attrName, attrName})
 				}
 			} else {
 				v = v[1:]
 				attrName = strings.ToLower(v)
-				j.PushCommandScript(&Attr{attrName, "-" + v + "\001" + attrName + "\001" + p.GetAttr("id") + "\001" + attrValue})
-				j.PushImportScript(&Attr{attrName, ""})
+				j.PushCommandScript(&Attr{attrName, "-" + v + "\002" + attrName + "\002" + p.GetAttr("id") + "\002" + attrValue})
+				j.PushImportScript(&Attr{attrName, attrName})
 			}
 		}
 		if Index(tagName, ".") != -1 {
@@ -1051,8 +1051,8 @@ func (j *JUS) ReadHTML() *HTML {
 		if j.parent == nil {
 			sb := bytes.NewBufferString("<script>")
 			for _, v := range j.scriptElementBuffer {
+				fmt.Println(v.Cls, v.ModuleName, v.Header+v.Value)
 				j.ToFormatLine(v.Cls, v.ModuleName, v.Header+v.Value, sb)
-				//sb.WriteString(v.Value)
 			}
 			sb.WriteString("</script>")
 			tHTML.ReadFromString(sb.String())
@@ -1132,7 +1132,7 @@ func (j *JUS) ReadHTML() *HTML {
 								*arr = append(*arr, &Attr{v2.GetAttr("id"), v2.GetConstructerCode()})
 							}
 
-							j.PushImportScript(&Attr{v2.TagName(), ""})
+							j.PushImportScript(&Attr{v2.TagName(), v2.TagName()})
 							tst2 := bytes.NewBufferString(tFunc.ReadHTML().Text())
 							tst2.WriteString("var ")
 							tst2.WriteString(v2.GetAttr("id"))
@@ -1278,7 +1278,7 @@ func (j *JUS) ReadHTML() *HTML {
 		st := bytes.NewBufferString("")
 		sb := bytes.NewBufferString("<script>")
 		for _, v := range j.scriptElementBuffer {
-			if v.Header == "P" || v.Header == "S" {
+			if v.Header == "P" || v.Header == "S" || v.Header == "U" {
 				j.ToFormatLine(v.Cls, v.ModuleName, v.Header+v.Value, sb)
 				continue
 			}

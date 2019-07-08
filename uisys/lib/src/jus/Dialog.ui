@@ -140,6 +140,8 @@
 		}
 
 		public function finalize(){
+			$(header).unbind("mousedown",mouseEvt);
+			$(window).unbind("mouseup",mouseEvt);
 			$(window).unbind("mousemove",mouseEvt);
 			_self = null;
 		}

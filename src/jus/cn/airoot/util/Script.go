@@ -25,9 +25,9 @@ type GSetter struct {
 type Script struct {
 	jus          *JUS
 	root         string
-	hMap         map[string]*Attr //导入的类文件
-	eMap         []string         //集成的类文件
-	iMap         []string         //接口文件
+	hMap         []*Attr  //导入的类文件
+	eMap         []string //集成的类文件
+	iMap         []string //接口文件
 	gsMap        map[string]*GSetter
 	domain       string
 	value        *Attr
@@ -43,7 +43,7 @@ func (s *Script) CreateFrom(jus *JUS, root string, domain string, value *Attr, e
 	s.domain = domain
 	s.value = value
 	s.extendScript = extendScript
-	s.hMap = make(map[string]*Attr)
+	s.hMap = make([]*Attr, 0)
 	s.gsMap = make(map[string]*GSetter)
 	s.className = className
 	s.isScript = true
@@ -107,11 +107,14 @@ func (s *Script) initScriptFrom(js *MScript, _this_ string, _pri_ string) string
 				at = p - 1
 			}
 			if Index(tmp, "/") != -1 || Index(tmp, "\\") != -1 {
-				s.hMap[tmp] = &Attr{tmp, ""}
-			} else if Index(tmp, " from ") != -1 { //通过amd和commonjs引入的规范
-				s.hMap[tmp] = &Attr{tmp, "UMD"}
+				//s.hMap[tmp] & Attr{tmp, ""}
+				Single(&s.hMap, &Attr{tmp, tmp})
+				//} else if Index(tmp, " from ") != -1 { //通过amd和commonjs引入的规范
+				//	s.hMap[tmp] = &Attr{tmp, "UMD"}
+				//	Signal(&s.hMap, &Attr{tmp, tmp})
 			} else {
-				s.hMap[lst[point].Value] = &Attr{tmp, ""}
+				//s.hMap[lst[point].Value] = &Attr{tmp, ""}
+				Single(&s.hMap, &Attr{lst[point].Value, tmp})
 			}
 			continue
 		}
@@ -439,8 +442,9 @@ func (s *Script) initScriptFrom(js *MScript, _this_ string, _pri_ string) string
 		t = tl[p]
 		p++
 		if t.Domain == "" && t.TagType == 0 && !t.IsAttr {
-			if s.hMap[t.Value] != nil {
-				tlt = append(tlt, &Tag{Value: "__WINDOW__[__APPDOMAIN__]['" + s.hMap[t.Value].Name + "']", TagType: 0})
+			he := GetSingle(s.hMap, t.Value)
+			if he != nil {
+				tlt = append(tlt, &Tag{Value: "__WINDOW__[__APPDOMAIN__]['" + he.Name + "']", TagType: 0})
 				continue
 			}
 		}
@@ -730,7 +734,13 @@ func (s *Script) initClass(name string, data string) string {
 	if len(s.eMap) > 0 {
 		for _, value := range s.eMap {
 			if Index(value, ".") == -1 {
-				value = s.hMap[value].Name
+				he := GetSingle(s.hMap, value)
+				if he != nil {
+					value = he.Name
+				} else {
+					fmt.Println("Script.go", "未找到对应类", value)
+				}
+
 			}
 			ft := &JUS{SYSTEM_PATH: s.jus.SYSTEM_PATH, CLASS_PATH: s.jus.CLASS_PATH}
 			if ft.CreateFromParent(s.root, "", nil, strings.TrimSpace(value), s.jus) {
@@ -796,8 +806,7 @@ func (s *Script) ReadFromString(script string) string {
 
 	if len(s.hMap) > 0 {
 		for _, v := range s.hMap {
-			value := v.Name
-			s.jus.PushImportScript(&Attr{value, ""})
+			s.jus.PushImportScript(v)
 		}
 	}
 
@@ -812,10 +821,11 @@ func (s *Script) loadClass(path string) string {
 	tmpName := ""
 
 	if Index(className, ".") == -1 {
-		if s.hMap[className] == nil {
+		he := GetSingle(s.hMap, className)
+		if he == nil {
 			tmpName = ""
 		} else {
-			tmpName = s.hMap[className].Name
+			tmpName = he.Value
 		}
 	} else {
 		//s.hMap[Substring(className, LastIndex(className, ".")+1, -1)] = &Attr{className, ""}

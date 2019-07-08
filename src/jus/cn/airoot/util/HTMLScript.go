@@ -16,7 +16,7 @@ import (
 type HTMLScript struct {
 	jus              *JUS
 	root             string
-	hMap             map[string]*Attr //导入的类文件
+	hMap             []*Attr //导入的类文件
 	gsMap            map[string]*GSetter
 	domain           string
 	constructorValue *Attr
@@ -32,7 +32,7 @@ func (s *HTMLScript) CreateFrom(jus *JUS, root string, domain string, constructo
 	s.domain = domain
 	s.constructorValue = constructorValue
 	s.innerValue = innerValue
-	s.hMap = make(map[string]*Attr, 10)
+	s.hMap = make([]*Attr, 0)
 	s.extendScript = extendScript
 	s.gsMap = make(map[string]*GSetter, 10)
 	return s
@@ -285,13 +285,14 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _this_ string, _pri_ string) st
 		// 3.import
 		if t.IsKeyWord && "import" == t.Value {
 			tmp.Reset()
-			point := -1
+			point := -1 //类文件名
 			at := 0
+			isFrom := false
 			for p < len(lst) {
 				f = lst[p]
 				p++
 
-				if f.TagType == -1 {
+				if f.TagType == -1 || f.TagType == 5 {
 					continue
 				}
 				if f.TagType == 9 {
@@ -303,11 +304,18 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _this_ string, _pri_ string) st
 					}
 					break
 				}
+				if f.IsKeyWord && f.Value == "from" { //说明要用commandJS规范导读
+					f.Value = "\002"
+					isFrom = true
+				}
 				tmp.WriteString(f.Value)
 				at = p - 1
 			}
-			s.hMap[lst[point].Value] = &Attr{tmp.String(), ""}
-			s.jus.PushImportScript(&Attr{tmp.String(), ""})
+			Single(&s.hMap, &Attr{lst[point].Value, tmp.String()})
+			s.jus.PushImportScript(&Attr{lst[point].Value, tmp.String()})
+			if isFrom {
+				tl = append(tl, &Tag{Value: ImportFrom(tmp.String()), TagType: 1})
+			}
 			continue
 		}
 
@@ -432,8 +440,9 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _this_ string, _pri_ string) st
 		t = tl[p]
 		p++
 		if t.Domain == "" && t.TagType == 0 && !t.IsAttr {
-			if s.hMap[t.Value] != nil {
-				tlt = append(tlt, &Tag{Value: "__WINDOW__[__APPDOMAIN__]['" + s.hMap[t.Value].Name + "']", TagType: 0})
+			he := GetSingle(s.hMap, t.Value)
+			if he != nil {
+				tlt = append(tlt, &Tag{Value: "__WINDOW__[__APPDOMAIN__]['" + he.Name + "']", TagType: 0})
 				continue
 			}
 		}
@@ -766,10 +775,11 @@ func (s *HTMLScript) loadClass(path string) string {
 	}
 	tmpName := ""
 	if Index(className, ".") == -1 {
-		if s.hMap[className] == nil {
+		he := GetSingle(s.hMap, className)
+		if he == nil {
 			tmpName = ""
 		} else {
-			tmpName = s.hMap[className].Name
+			tmpName = he.Value
 		}
 	} else {
 		//s.hMap[Substring(className, LastIndex(className, ".")+1, -1)] = &Attr{className, ""}

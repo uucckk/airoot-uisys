@@ -1325,7 +1325,11 @@ func (u *UIServer) GetServerVar(key string) string {
  * 设置环境变量
  */
 func (u *UIServer) SetData(cmds []string) {
-	data, err := GetCode(u.RootPath + "/" + configName)
+	path := u.RootPath + "/" + configName
+	if Exist(path) {
+		os.MkdirAll(path, 0777)
+	}
+	data, err := GetCode(path)
 	if err != nil {
 		fmt.Println(err)
 		return

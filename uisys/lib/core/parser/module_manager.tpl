@@ -13,6 +13,9 @@ var __MODULE_INIT__ = {};
 var __MODULE_METHOD__ = {};//模块方法
 var __MODULE_EXTEND__ = {};//模块扩展方法
 var __MODULE_RUNLIST__ = {};//模块初始化项目
+//AMD
+var __AMD_LIST__ = {};
+
 //styleSheets
 var __MODULE_STYLE__ = {};//MODULE 统一样式
 //
@@ -345,11 +348,24 @@ function __INIT_PACKAGE__(){
 	for(var i = 0;i<__PACKAGE_LIST__.length;i++){
 		p = __PACKAGE_LIST__[i];
 		if(p.status == 1){
-			var spt = document.createElement("script");
-			spt.setAttribute("package",p.url);
-			spt.text = p.value;
-			document.head.appendChild(spt);
-			p.status = 2;//表示渲染完毕
+			if(p.type == "U"){
+				new (function(){
+					function define(obj){
+						console.log("AMD",p.url,obj);
+						__AMD_LIST__[p.url] = obj;
+					}
+					define.amd = {};
+					eval(p.value);
+					
+				})();
+			}else{
+				var spt = document.createElement("script");
+				spt.setAttribute("package",p.url);
+				spt.text = p.value;
+				document.head.appendChild(spt);
+				p.status = 2;//表示渲染完毕
+			}
+			
 		}
 		
 	}
@@ -369,12 +385,12 @@ function __PACKAGE__(pkg,func){
 		pkg.status = 1;//表示加载成功
 		if(__PACKAGE_COUNT__ == 0){
 			__INIT_PACKAGE__();
-			func();
+			func(pkg);
 		}
 	});
 	ul.addEventListener("ioError",function(e){
 		__PACKAGE_COUNT__ --;
-		console.error("UI_LOAD_PACKAGE_ERROR:",value);
+		alert("UI_LOAD_PACKAGE_ERROR: " + value);
 		if(__PACKAGE_COUNT__ == 0){
 			__INIT_PACKAGE__();
 			func();
@@ -439,9 +455,10 @@ var __FORMAT__ = function(__DATA__,__APPDOMAIN__,module){
 					__GET_MOUDLE__(__APPDOMAIN__,v.module).html = v.value
 				break;
 				case 'I' ://import
+					console.log("T",v.value);
 					if(v.value.charAt(0) == "P"){//Package 引入外部包
 						var isImport = false;
-						var importStr = v.value.substr(1);
+						var importStr = v.value.substr(1).trim();
 						for(var n = 0;n<__PACKAGE_LIST__.length;n++){
 							if(__PACKAGE_LIST__[n].url == importStr){
 								isImport = true;
@@ -449,10 +466,24 @@ var __FORMAT__ = function(__DATA__,__APPDOMAIN__,module){
 							}
 						}
 						if(!isImport){
-							__PACKAGE_LIST__.push({url:importStr});
+							__PACKAGE_LIST__.push({url:importStr,type:"P"});
 						}
 					}else if(v.value.charAt(0) == "S"){
 						_MODULE_CONTENT_LIST_[__APPDOMAIN__][v.module] = eval("(" + v.value.substr(1) + ")");
+					}else if(v.value.charAt(0) == "U"){//主要支持CommandJS
+						console.log("commandJS");
+						var isImport = false;
+						var tmp = v.value.substr(1).split("\x02");
+						var importStr = tmp[1].trim();
+						for(var n = 0;n<__PACKAGE_LIST__.length;n++){
+							if(__PACKAGE_LIST__[n].url == importStr){
+								isImport = true;
+								break;
+							}
+						}
+						if(!isImport){
+							__PACKAGE_LIST__.push({url:importStr,type:"U"});
+						}
 					}
 				break;
 				case 'M' ://主Script 模块
@@ -604,7 +635,7 @@ function __HAV_MODULE__(module,__APPDOMAIN__){
  * 增加命令到空间
  */
 function AddC2C(uuid,data,__APPDOMAIN__){
-	var param = data.value.split("\x01");
+	var param = data.value.split("\x02");
 	var cls = param[0];
 	var module = param[1];
 	var tgt = window[param[2].replace(/[\b]/g,uuid)];
@@ -897,6 +928,12 @@ UI.addModule = function(target,module){
 }
 
 
+/**
+ * 获取库
+ */
+var __GET_UMD_LIB__ = function(path){
+	return __AMD_LIST__[path]();
+};
 
 
 /**
@@ -905,7 +942,6 @@ UI.addModule = function(target,module){
  * @param value 	不确定长度隐形参数
  */
 var getModule = UI.getModule = function(module,__APPDOMAIN__){
-	console.log("arguments",arguments);
 	__APPDOMAIN__ = __APPDOMAIN__ || "local";
 	if(__HAV_MODULE__(module,__APPDOMAIN__)){
 		return function(){
@@ -1123,7 +1159,11 @@ function gcEvt(){
 				
 				delete __MODULE_COMMAND_LIST__[name];
 				delete _MODULE_CONTENT_LIST_ATTR_[name];
-				document.head.removeChild(document.getElementById("stl_" + name));
+				cl = document.getElementById("stl_" + name);
+				if(cl){
+					document.head.removeChild(cl);
+				}
+				
 				if(window.__DEBUG__ && console){
 					console.log("remove model id:" + name);
 				}
