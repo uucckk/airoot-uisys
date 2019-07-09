@@ -200,9 +200,14 @@ func (j *JUS) PushImportScript(value *Attr) {
 		j.GetRoot().scriptElement = make(map[string]*Attr, 10)
 	}
 	if j.GetRoot().scriptElement[value.Value] == nil {
-		if Index(value.Value, "\002") != -1 {
-			j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, &ScriptElement{"I", value.Name, "U", value.Value}) //代表UMD规范的包导入
-			return
+		pos := Index(value.Value, "\002")
+		if pos != -1 {
+			if Index(value.Value, "/") != -1 || Index(value.Value, "\\") != -1 {
+				j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, &ScriptElement{"I", value.Name, "U", value.Value}) //代表UMD规范的包导入
+				return
+			} else {
+				value.Value = Substring(value.Value, pos+1, -1)
+			}
 		}
 		if Index(value.Value, "/") != -1 || Index(value.Value, "\\") != -1 {
 			j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, &ScriptElement{"I", value.Name, "P", value.Value})
@@ -737,7 +742,6 @@ func (j *JUS) importHTML() {
 						key = Substring(f.Name(), 0, LastIndex(f.Name(), "."))
 						j.pkgMap[strings.ToLower(key)] = path + "." + key
 					}
-					//fmt.Println(strings.ToLower(Substring(f.Name(), 0, LastIndex(f.Name(), "."))), path+"."+Substring(f.Name(), 0, LastIndex(f.Name(), ".")))
 				}
 			}
 		} else {
@@ -1051,7 +1055,6 @@ func (j *JUS) ReadHTML() *HTML {
 		if j.parent == nil {
 			sb := bytes.NewBufferString("<script>")
 			for _, v := range j.scriptElementBuffer {
-				fmt.Println(v.Cls, v.ModuleName, v.Header+v.Value)
 				j.ToFormatLine(v.Cls, v.ModuleName, v.Header+v.Value, sb)
 			}
 			sb.WriteString("</script>")
@@ -1334,7 +1337,6 @@ func (j *JUS) ReadHTML() *HTML {
 	}
 
 	j.html.SetAttr("class_id", j.className)
-	//fmt.Println("jus:", j.className, time.Since(t))
 	return j.testHTML()
 }
 

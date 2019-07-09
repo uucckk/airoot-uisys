@@ -45,28 +45,29 @@ type Function struct {
 
 //----------------------------Tag-------------------------------
 type Tag struct {
-	Level        int    //标签域名级别
-	Domain       string //所属域级别
-	Value        string
-	TagType      int //-4:大注释,-3：中注释,-2:小注释,-1:隐含字符,0：字符，1：字符串,2：运算符,3:域操作符,4:语句结束符,5:换行符,6:数字,7:正则表达式,8:元素自动转换符,9点,10类型声明符,11:三目运算符,12:XML对象
-	Cls          string
-	PType        int  //参数域
-	IsClass      bool //是否为类
-	IsInnerClass bool //是否为内部类
-	IsKeyWord    bool //是否为关键字
-	IsStatic     bool //是否为全局变量
-	IsPublic     bool //是否为公开
-	IsFunction   bool //是否为声明函数
-	IsVar        bool //是否为声明变量
-	IsAttr       bool //是否为前引用的属性
-	IsParameter  bool //是否为参数
-	IsType       bool //是声明变量类型
-	IsParamValue bool //是否为函数参数默认值
-	IsObjectAttr bool //是否为JSON OBject
-	IsSet        bool //是否为Setter
-	IsGet        bool //是否为Getter
-	IsAnonymous  bool //是否为匿名函数
-	Note         *Tag //是否有注释
+	Level         int    //标签域名级别
+	Domain        string //所属域级别
+	Value         string
+	TagType       int //-4:大注释,-3：中注释,-2:小注释,-1:隐含字符,0：字符，1：字符串,2：运算符,3:域操作符,4:语句结束符,5:换行符,6:数字,7:正则表达式,8:元素自动转换符,9点,10类型声明符,11:三目运算符,12:XML对象,13:XML特殊对象
+	Cls           string
+	PType         int  //参数域
+	IsClass       bool //是否为类
+	IsInnerClass  bool //是否为内部类
+	IsKeyWord     bool //是否为关键字
+	IsStatic      bool //是否为全局变量
+	IsPublic      bool //是否为公开
+	IsFunction    bool //是否为声明函数
+	IsVar         bool //是否为声明变量
+	IsAttr        bool //是否为前引用的属性
+	IsParameter   bool //是否为参数
+	IsType        bool //是声明变量类型
+	IsParamValue  bool //是否为函数参数默认值
+	IsObjectAttr  bool //是否为JSON OBject
+	IsObjectDAttr bool //是否为JSON key 与 value 相等，写了一个
+	IsSet         bool //是否为Setter
+	IsGet         bool //是否为Getter
+	IsAnonymous   bool //是否为匿名函数
+	Note          *Tag //是否有注释
 }
 
 //-------------------------Class----------------------
@@ -212,7 +213,6 @@ func (m *MScript) ReadFromString(js string) {
 					tType = 0
 				}
 				p = &Tag{Value: string(tag), TagType: tType}
-
 				m.lst = append(m.lst, p)
 				tag = tag[0:0]
 			}
@@ -306,7 +306,7 @@ func (m *MScript) ReadFromString(js string) {
 		}
 	}
 	m.lst = tlst
-	tlst = tlst[0:0]
+	tlst = make([]*Tag, 0, 1000)
 
 	//03归拢操作符
 	tag = tag[0:0]
@@ -327,7 +327,7 @@ func (m *MScript) ReadFromString(js string) {
 	}
 	tag = tag[0:0]
 	m.lst = tlst
-	tlst = tlst[0:0]
+	tlst = make([]*Tag, 0, 1000)
 	for _, p := range m.lst {
 		if p.TagType == 5 {
 			tag = appendRunes(tag, []rune(p.Value))
@@ -343,7 +343,7 @@ func (m *MScript) ReadFromString(js string) {
 		tlst = append(tlst, &Tag{Value: string(tag), TagType: 5})
 	}
 	m.lst = tlst
-	tlst = tlst[0:0]
+	tlst = make([]*Tag, 0, 1000)
 
 	//04重新归拢语句
 	var note *Tag = nil
@@ -352,6 +352,17 @@ func (m *MScript) ReadFromString(js string) {
 	for i < len(m.lst) {
 		i = m.readArea(i, "class", 0) + 1
 	}
+
+	//修正下es6 json 单值的问题
+	for _, v := range m.lst {
+		tlst = append(tlst, v)
+		if v.IsObjectDAttr {
+			tlst = append(tlst, &Tag{Value: ":", TagType: 2})
+			tlst = append(tlst, &Tag{Value: v.Value, TagType: 0})
+		}
+	}
+	m.lst = tlst
+	tlst = tlst[0:0]
 
 	//分配变量作用域
 	var tagSet *TagSet = nil
@@ -885,6 +896,8 @@ sg:
 func (m *MScript) jsonMethod(i int, domain string, paramType int) int {
 
 	var p *Tag = nil
+	var k *Tag = nil
+	isKey := false
 	isValue := false
 	for i < len(m.lst) {
 		p = m.lst[i]
@@ -895,16 +908,25 @@ func (m *MScript) jsonMethod(i int, domain string, paramType int) int {
 		}
 
 		if p.TagType == 3 && "}" == p.Value {
+			if isKey {
+				k.IsObjectDAttr = true
+				isKey = false
+			}
 			i--
 			break
 		}
 
 		if p.TagType == 2 && "," == p.Value {
+			if isKey {
+				k.IsObjectDAttr = true
+				isKey = false
+			}
 			continue
 		}
 
 		if p.TagType == 0 && !p.IsKeyWord {
-
+			isKey = true
+			k = p
 			p.IsObjectAttr = true
 			continue
 		}
@@ -915,6 +937,7 @@ func (m *MScript) jsonMethod(i int, domain string, paramType int) int {
 
 		if isValue {
 			i = m.readArea(i, domain, paramType)
+			isKey = false
 			isValue = false
 		}
 

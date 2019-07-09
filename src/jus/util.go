@@ -34,6 +34,10 @@ func IfStr(isTrue bool, True string, False string) string {
  * 向数组中添加去重
  */
 func Single(attr *[]*Attr, value *Attr) {
+	p := Index(value.Value, "\002")
+	if p != -1 {
+		value.Value = Substring(value.Value, p+1, -1)
+	}
 	a := *attr
 	for _, v := range a {
 		if v.Name == value.Name {
@@ -58,7 +62,7 @@ func GetSingle(attr []*Attr, name string) *Attr {
 /**
  * UMD 导入方法
  */
-func ImportFrom(value string) string {
+func ImportFrom(name string, value string) string {
 	i := Index(value, "\002")
 	buf := bytes.NewBufferString("")
 	var k = Substring(value, 0, i)
@@ -90,10 +94,10 @@ func ImportFrom(value string) string {
 		key = buf.String()
 		buf.Reset()
 	}
-	buf.WriteString("var _UMD_ = __GET_UMD_LIB__('" + p + "');\n")
+	buf.WriteString("var _UMD_ = __GET_UMD_LIB__('" + p + "','local');\n")
 	buf.WriteString("var " + key + "=_UMD_['default'] ? _UMD_['default']  : _UMD_;\n")
 	for _, v := range keys {
-		buf.WriteString("var " + v + "=_UMD_['" + v + "'];\n")
+		buf.WriteString("var " + v + "=__FMT_UMD__(_UMD_,'" + v + "','" + name + "');\n")
 	}
 
 	return buf.String()

@@ -1,0 +1,795 @@
+                                                                        
+                                                                        
+           " "       " " "                                   "          
+           " "         "     " "   "     " "       " "     " " "        
+         "     "       "       " "     "     "   "     "     "          
+         " " " "       "       "       "     "   "     "     "          
+         "     "       "       "       "     "   "     "     "          
+       " "     " "   " " "   " " "       " "       " "         "        
+                                                                        
+ " " " " " " " " " " " " " " " " " " " " " " " " " " " " " " " " " " " "
+
+  AIroot UI-SYSTEM 0.9.4beta   http://www.airoot.cn/
+  Bootup successful 
+  Date 2019-07-09 15:55:48 
+
+  Sys: E:\Github\AIroot-UI-SYSTEM\uisys
+  Sys Library: E:\Github\AIroot-UI-SYSTEM\uisys/lib
+ARGS add a0 example/v1 :80 
+  The [a0] added successfully.
+  The [a0] setted in [E:\Github\AIroot-UI-SYSTEM\uisys\example\v1].
+  The [a0] starting at  [:80]
+  WEB Server Started At: [:80]. Use protocol http
+  Download Latest Version: http://www.airoot.cn/
+
+		 DisplayObject 
+		var _self = $(dom);
+		private var _x = 0;
+		private var _y = 0;
+		
+	
+	
+		function init(value,target){;
+			var dw = _self.attr("width");
+			if(dw && dw.indexOf("%") == -1 && dw != "auto"){
+				_self.width(parseInt(dw) - (_self.outerWidth(true) - _self.width()));
+			}
+	
+			dw = _self.attr("height");
+			if(dw  && dw.indexOf("%") == -1 && dw != "auto"){
+				_self.height(parseInt(dw) - (_self.outerHeight(true) - _self.height()));
+			}
+		}
+
+
+		 @param value		设置x属性
+		public function set x(value){
+			_x = value;
+			_self.css("left",value);
+		}
+		 @param value		设置x属性
+		public function set y(value){
+			_y = value;
+			_self.css("top",value);
+		}
+		 设定容器宽度 @param value		设置宽度
+		public function set width(value):void{
+			_self.width(value);
+		}
+		 设定容器宽度 @param value		设置高度
+		public function set height(value):void{
+			_self.height(value);
+		}
+		
+		
+		public function get width():Number{
+			return _self.width();
+		}
+		
+		
+		public function get height():Number{
+			return _self.height();
+		}
+
+		 @param value		设置背景颜色
+		public function background(value){
+			
+		}
+		
+		public function set visible(value:Boolean):void{
+			if(value){
+				_self.show();
+			}else{
+				_self.hide();
+			}
+		}
+	
+		public function trigger(event){
+			_self.find(">div").each(function f1(){
+				var $id = window[$(this).attr("id")];
+				if($id && $id.trigger){
+					$id.trigger(event);
+				}
+			});
+		}
+
+		 添加
+		public function append(html){
+			return _self.append(html);
+		}
+	
+	
+	
+		var _self = $(dom);
+		private static function layoutV(_self,event){
+			var $obj = _self.children("div").not(":hidden");
+			var aSum = 0;
+			var rSum = 0;相对内容			$obj.each(function f1(index){
+				var $this = $(this);
+				设置高度				var tmp = $this.attr("height");
+				
+				if(tmp){
+					if(!$this.css("overflow-x")){
+						$this.css("overflow-x","auto");
+					}
+					if(!$this.css("overflow-y")){
+						$this.css("overflow-y","auto");
+					}
+					if(tmp.lastIndexOf("%") == -1){
+						$this.height(parseInt(tmp));
+						aSum += parseInt($this.outerHeight(true));
+					}
+				}else{
+					$this.attr("heightstate","tmp");
+					aSum += parseInt($this.outerHeight(true));
+				}
+				只设置固定高度的div				
+			});
+			
+			$obj.each(function f2(){
+				var $this = $(this);
+				var tmp = $this.attr("height");
+				if(tmp){
+					if(tmp.lastIndexOf("%") != -1){
+						rSum += parseInt(tmp);
+					}
+				}
+			});
+			$obj.each(function f3(){
+				var $this = $(this);
+				
+				设置宽度				var tmp = $this.attr("width");
+				if(tmp){
+					if(tmp.lastIndexOf('%') == -1){
+						if($this.width() != parseInt(tmp)){
+							$this.width(parseInt(tmp));
+						}
+					}else{
+						if(tmp == '100%'){
+							
+						}	
+						else if($this.width() != $this.parent().width() * (parseInt(tmp)/100) - ($this.outerWidth(true) - $this.width())){
+							$this.width($this.parent().width() * (parseInt(tmp)/100) - ($this.outerWidth(true) - $this.width()));
+						}
+					}
+				}
+				
+				设置高度				tmp = $this.attr("height");
+				
+				if(tmp && tmp.lastIndexOf("%") != -1){
+					取出父亲节点的所有height属性					
+					var height = parseInt(tmp);
+					
+					var per = height/(rSum <100 ? 100 : rSum);
+					最终核算					var padding = $this.outerHeight(true) - $this.height();
+					var tHeight = (($this.parent().height() - aSum) * per)- padding
+					var jtmp = 0;
+					
+					jtmp = $this.attr('minHeight');
+					if(jtmp){
+						var minHeight = jtmp.lastIndexOf('%') != -1 ? ($this.parent().height() * parseInt(jtmp)/100) : parseInt(jtmp);
+						if(tHeight<minHeight){
+							tHeight = minHeight - padding;
+							aSum += minHeight;
+							rSum -= (parseInt(jtmp) + height);
+						}
+						
+					}else{
+						jtmp = $this.attr("maxHeight");
+						if(jtmp){
+							var maxHeight = tmp.lastIndexOf('%') != -1 ? ($this.parent().height() * parseInt(jtmp)/100) : parseInt(jtmp);
+							if(tHeight>maxHeight){
+								tHeight = maxHeight - padding;
+								aSum += maxHeight;
+								rSum -= (parseInt(jtmp) + height);
+							}
+						}
+					}
+					
+					if($this.height() != tHeight){
+						$this.height(tHeight);
+					}
+					
+				}
+				
+				
+			});
+			_self.find(">div").each(function f4(){
+				var $id = window[$(this).attr("id")];
+				if($id && $id.trigger){
+					$id.trigger(event);
+				}
+			});
+		}
+
+		
+		private static function Normal(_self,event){
+			_self.css("overflow","auto");
+			var $obj = _self.find(">div").not(":hidden");
+			$obj.each(function f5(){
+				var $this = $(this);
+				$this.css("width","");
+				$this.css("height","");
+			});
+			_self.find(">div").each(function f6(){
+				var $id = window[$(this).attr("id")];
+				if($id && $id.trigger){
+					$id.trigger(event);
+				}
+			});
+		}
+
+		
+			触发变化
+		public function trigger(event){
+			if(event){
+				Normal(_self,event);
+			}else{
+				layoutV(_self,event);
+			}
+			
+		}
+	
+		 DisplayObject 
+		var _self = $(dom);
+		private var _x = 0;
+		private var _y = 0;
+		
+	
+	
+		function init(value,target){;
+			var dw = _self.attr("width");
+			if(dw && dw.indexOf("%") == -1 && dw != "auto"){
+				_self.width(parseInt(dw) - (_self.outerWidth(true) - _self.width()));
+			}
+	
+			dw = _self.attr("height");
+			if(dw  && dw.indexOf("%") == -1 && dw != "auto"){
+				_self.height(parseInt(dw) - (_self.outerHeight(true) - _self.height()));
+			}
+		}
+
+
+		 @param value		设置x属性
+		public function set x(value){
+			_x = value;
+			_self.css("left",value);
+		}
+		 @param value		设置x属性
+		public function set y(value){
+			_y = value;
+			_self.css("top",value);
+		}
+		 设定容器宽度 @param value		设置宽度
+		public function set width(value):void{
+			_self.width(value);
+		}
+		 设定容器宽度 @param value		设置高度
+		public function set height(value):void{
+			_self.height(value);
+		}
+		
+		
+		public function get width():Number{
+			return _self.width();
+		}
+		
+		
+		public function get height():Number{
+			return _self.height();
+		}
+
+		 @param value		设置背景颜色
+		public function background(value){
+			
+		}
+		
+		public function set visible(value:Boolean):void{
+			if(value){
+				_self.show();
+			}else{
+				_self.hide();
+			}
+		}
+	
+		public function trigger(event){
+			_self.find(">div").each(function f1(){
+				var $id = window[$(this).attr("id")];
+				if($id && $id.trigger){
+					$id.trigger(event);
+				}
+			});
+		}
+
+		 添加
+		public function append(html){
+			return _self.append(html);
+		}
+	
+	
+	
+		var _self = $(dom);
+		private static function layoutV(_self,event){
+			var $obj = _self.children("div").not(":hidden");
+			var aSum = 0;
+			var rSum = 0;相对内容			$obj.each(function f1(index){
+				var $this = $(this);
+				设置高度				var tmp = $this.attr("height");
+				
+				if(tmp){
+					if(!$this.css("overflow-x")){
+						$this.css("overflow-x","auto");
+					}
+					if(!$this.css("overflow-y")){
+						$this.css("overflow-y","auto");
+					}
+					if(tmp.lastIndexOf("%") == -1){
+						$this.height(parseInt(tmp));
+						aSum += parseInt($this.outerHeight(true));
+					}
+				}else{
+					$this.attr("heightstate","tmp");
+					aSum += parseInt($this.outerHeight(true));
+				}
+				只设置固定高度的div				
+			});
+			
+			$obj.each(function f2(){
+				var $this = $(this);
+				var tmp = $this.attr("height");
+				if(tmp){
+					if(tmp.lastIndexOf("%") != -1){
+						rSum += parseInt(tmp);
+					}
+				}
+			});
+			$obj.each(function f3(){
+				var $this = $(this);
+				
+				设置宽度				var tmp = $this.attr("width");
+				if(tmp){
+					if(tmp.lastIndexOf('%') == -1){
+						if($this.width() != parseInt(tmp)){
+							$this.width(parseInt(tmp));
+						}
+					}else{
+						if(tmp == '100%'){
+							
+						}	
+						else if($this.width() != $this.parent().width() * (parseInt(tmp)/100) - ($this.outerWidth(true) - $this.width())){
+							$this.width($this.parent().width() * (parseInt(tmp)/100) - ($this.outerWidth(true) - $this.width()));
+						}
+					}
+				}
+				
+				设置高度				tmp = $this.attr("height");
+				
+				if(tmp && tmp.lastIndexOf("%") != -1){
+					取出父亲节点的所有height属性					
+					var height = parseInt(tmp);
+					
+					var per = height/(rSum <100 ? 100 : rSum);
+					最终核算					var padding = $this.outerHeight(true) - $this.height();
+					var tHeight = (($this.parent().height() - aSum) * per)- padding
+					var jtmp = 0;
+					
+					jtmp = $this.attr('minHeight');
+					if(jtmp){
+						var minHeight = jtmp.lastIndexOf('%') != -1 ? ($this.parent().height() * parseInt(jtmp)/100) : parseInt(jtmp);
+						if(tHeight<minHeight){
+							tHeight = minHeight - padding;
+							aSum += minHeight;
+							rSum -= (parseInt(jtmp) + height);
+						}
+						
+					}else{
+						jtmp = $this.attr("maxHeight");
+						if(jtmp){
+							var maxHeight = tmp.lastIndexOf('%') != -1 ? ($this.parent().height() * parseInt(jtmp)/100) : parseInt(jtmp);
+							if(tHeight>maxHeight){
+								tHeight = maxHeight - padding;
+								aSum += maxHeight;
+								rSum -= (parseInt(jtmp) + height);
+							}
+						}
+					}
+					
+					if($this.height() != tHeight){
+						$this.height(tHeight);
+					}
+					
+				}
+				
+				
+			});
+			_self.find(">div").each(function f4(){
+				var $id = window[$(this).attr("id")];
+				if($id && $id.trigger){
+					$id.trigger(event);
+				}
+			});
+		}
+
+		
+		private static function Normal(_self,event){
+			_self.css("overflow","auto");
+			var $obj = _self.find(">div").not(":hidden");
+			$obj.each(function f5(){
+				var $this = $(this);
+				$this.css("width","");
+				$this.css("height","");
+			});
+			_self.find(">div").each(function f6(){
+				var $id = window[$(this).attr("id")];
+				if($id && $id.trigger){
+					$id.trigger(event);
+				}
+			});
+		}
+
+		
+			触发变化
+		public function trigger(event){
+			if(event){
+				Normal(_self,event);
+			}else{
+				layoutV(_self,event);
+			}
+			
+		}
+	
+		import /lib/js/jquery.min.js;
+		var _self = $(dom);
+		var stageWidth = 0.0;
+		var stageHeight = 0.0;
+		var win = null;
+		
+		 新增内容可以增加横屏纵屏幕效果
+		function init(){
+			$("body").css("overflow","hidden");
+			win = $(window);
+			win.bind("resize",resizeEvt);
+			win.trigger("resize");
+		}
+		
+		function resizeEvt(){
+			stageWidth = win.width();
+			stageHeight = win.height();
+			var tmp = _self.attr("width");
+			if(tmp && tmp.indexOf("%") == -1){
+				stageWidth = parseInt(tmp);
+			}
+			
+			tmp = _self.attr("min-width");
+			if(tmp){
+				tmp = parseInt(tmp);
+				if(stageWidth<tmp){
+					stageWidth = tmp;
+					$("body").css({"overflow-x":"auto"});
+					_self.css("position","absolute");
+				}else{
+					$("body").css({"overflow":"hidden","position":"fixed"});				}
+			}
+			
+			var tmp = _self.attr("height");
+			if(tmp && tmp.indexOf("%") == -1){
+				stageHeight = parseInt(tmp);
+			}
+			
+			tmp = _self.attr("min-height");
+			if(tmp){
+				tmp = parseInt(tmp);
+				if(stageHeight<tmp){
+					stageHeight = tmp;
+					$("body").css({"overflow-y":"auto"});
+					_self.css("position","absolute");
+				}else{
+					$("body").css({"overflow":"hidden","position":"fixed"});				}
+				
+			}
+			
+			
+			var padding = _self.outerWidth(true) - _self.width();
+			_self.width(stageWidth - padding);
+			padding = _self.outerHeight(true) - _self.height();
+			_self.height(stageHeight - padding);
+			setTimeout(function f1(){
+				super.trigger(_self.attr("auto") == "true" ? (stageWidth>=stageHeight ? 0 : 1) : 0);
+			},0);
+			
+		}
+		
+		function finalize():void{
+			win.unbind("resize",resizeEvt);
+		}
+	K tab
+
+		import Vue from /lib/js/vue.js;
+		import tab from vue.Tab;
+		import jus.Work;
+		import jus.Dialog;
+		console.log("tab",tab);
+		
+		 默认初始化函数
+		function init():void{
+			for(var i = 0;i<1;i++){
+				pop();
+			}
+			new Work(" now");
+			new Vue({
+				el:"#$contain",
+				data:{Index:"HHHH"},
+				components:{
+					tab:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AAK ez
+import child from vue.Child;
+class Tab{
+	var t = null;
+	var ez = {template:"<div>hhhh</div>"};
+	var template = "<div><div @click='clickEvt()'>{{name}}</div><child></child><child></child><ez></ez></div>";
+	
+	function data(){
+		return t = {
+			name:"Hi"
+		};
+	}
+	
+	var methods = {
+		clickEvt:function f1(){
+			call();
+			this.name = new Date().getTime();
+		}
+	};
+	
+	var components = {
+		child:AA,ez:AA
+	};
+	
+	function call(){
+		t.name = "ABC";
+	}
+	
+	
+}
+	var t = null;
+	var ez = {template:"<div>hhhh</div>"};
+	var template = "<div><div @click='clickEvt()'>{{name}}</div><child></child><child></child><ez></ez></div>";
+	
+	function data(){
+		return t = {
+			name:"Hi"
+		};
+	}
+	
+	var methods = {
+		clickEvt:function f1(){
+			call();
+			
+		}
+	};
+	
+	var components = {
+		child:AA,ez:AA
+	};
+	
+	function call(){
+		t.name = "ABC";
+	}
+	
+	
+class Child{
+	var template = "<div @click='clickEvt'><div>{{name}}</div></div>";
+	function data(){
+		return {
+			name:"child"
+		};
+	}
+	
+	var methods = {
+		clickEvt:function f1(){
+			this.name = new Date().getTime();
+		}
+	}
+	
+	
+}
+	var template = "<div @click='clickEvt'><div>{{name}}</div></div>";
+	function data(){
+		return {
+			name:"child"
+		};
+	}
+	
+	var methods = {
+		clickEvt:function f1(){
+			this.name = new Date().getTime();
+		}
+	}
+	
+	
+class Work{
+	function init(value){
+		console.log("Work" + value);
+	}
+}
+	function init(value){
+		console.log("Work" + value);
+	}
+
+		var _self = $(dom);
+		public function trigger(event){
+			_self.children("div").each(function f1(){
+				var $this = $(this);
+				$this.width($this.width());				$this.height($this.attr("height"));
+				
+				var $id = window[$this.attr("id")];
+				if($id && $id.trigger){
+					$id.trigger(event);
+				}
+			});
+			
+		}
+	
+		 DisplayObject 
+		var _self = $(dom);
+		private var _x = 0;
+		private var _y = 0;
+		
+	
+	
+		function init(value,target){;
+			var dw = _self.attr("width");
+			if(dw && dw.indexOf("%") == -1 && dw != "auto"){
+				_self.width(parseInt(dw) - (_self.outerWidth(true) - _self.width()));
+			}
+	
+			dw = _self.attr("height");
+			if(dw  && dw.indexOf("%") == -1 && dw != "auto"){
+				_self.height(parseInt(dw) - (_self.outerHeight(true) - _self.height()));
+			}
+		}
+
+
+		 @param value		设置x属性
+		public function set x(value){
+			_x = value;
+			_self.css("left",value);
+		}
+		 @param value		设置x属性
+		public function set y(value){
+			_y = value;
+			_self.css("top",value);
+		}
+		 设定容器宽度 @param value		设置宽度
+		public function set width(value):void{
+			_self.width(value);
+		}
+		 设定容器宽度 @param value		设置高度
+		public function set height(value):void{
+			_self.height(value);
+		}
+		
+		
+		public function get width():Number{
+			return _self.width();
+		}
+		
+		
+		public function get height():Number{
+			return _self.height();
+		}
+
+		 @param value		设置背景颜色
+		public function background(value){
+			
+		}
+		
+		public function set visible(value:Boolean):void{
+			if(value){
+				_self.show();
+			}else{
+				_self.hide();
+			}
+		}
+	
+		public function trigger(event){
+			_self.find(">div").each(function f1(){
+				var $id = window[$(this).attr("id")];
+				if($id && $id.trigger){
+					$id.trigger(event);
+				}
+			});
+		}
+
+		 添加
+		public function append(html){
+			return _self.append(html);
+		}
+	
+	
+	
+		var _self = $(dom);
+		var value = null;
+		public function init(title:String = "弹出框",width:int = 700,height:int = 400){
+			$(#title).text(title);
+			$(#content).width(width);
+			$(#content).height(height);
+			
+			_self.find(".close").click(function f1(){
+				_self.remove();
+			});
+
+			$(header).bind("mousedown",mouseEvt);
+			$(window).bind("mouseup",mouseEvt);
+			$(window).bind("mousemove",mouseEvt);
+
+			PopManager.addPopUp(@this);
+			
+			_self.css("left",($(window).width() - width)/2).css("top",($(window).height()*0.80 - height)/2 + "px");
+			$("[class_id='jus.Dialog']").css("z-index",998);
+			_self.css("z-index",999);
+		}
+
+		private var mouseFlag = false;
+		private var tx = 0;
+		private var ty = 0;
+		private var mx = 0;
+		private var my = 0;
+		private function mouseEvt(e){
+			switch(e.type){
+				case "mouseup":
+					mouseFlag = false;
+					document.onselectstart = null;
+					if(_self.offset().top<0){
+						_self.css("top","0px");
+					}
+					break;
+				case "mousedown":
+					mouseFlag = true;
+					document.onselectstart = new Function("return false;");
+					tx = parseInt(_self.css("left"));
+					ty = parseInt(_self.css("top"));
+					mx = e.clientX;
+					my = e.clientY;
+					break;
+				case "mousemove":
+					if(mouseFlag){
+						_self.css({left:tx + (e.clientX - mx),top:ty + (e.clientY - my)});
+					}
+					break;
+				default:
+					trace(e.target.data);
+			}
+		}
+	
+		 加载网页
+		public function load(url,value:Array = [],listener:Function){
+			#content.loadModule(url,value,function f2(e){
+				e.close = function f3(){
+					close();
+				}
+				if(listener){
+					listener(e);
+				}
+				content.trigger(0);
+			});
+		}
+		
+		
+		public function addChild(obj:Object):void{
+			$(#content).addChild(obj);
+			content.trigger();
+			
+		}
+
+		 close Dialog
+		public function close(close:Object){
+			_self.remove();
+		}
+
+		public function finalize(){
+			$(header).unbind("mousedown",mouseEvt);
+			$(window).unbind("mouseup",mouseEvt);
+			$(window).unbind("mousemove",mouseEvt);
+			_self = null;
+		}
+	

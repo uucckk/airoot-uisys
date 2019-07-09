@@ -351,7 +351,6 @@ function __INIT_PACKAGE__(){
 			if(p.type == "U"){
 				new (function(){
 					function define(obj){
-						console.log("AMD",p.url,obj);
 						__AMD_LIST__[p.url] = obj;
 					}
 					define.amd = {};
@@ -455,7 +454,6 @@ var __FORMAT__ = function(__DATA__,__APPDOMAIN__,module){
 					__GET_MOUDLE__(__APPDOMAIN__,v.module).html = v.value
 				break;
 				case 'I' ://import
-					console.log("T",v.value);
 					if(v.value.charAt(0) == "P"){//Package 引入外部包
 						var isImport = false;
 						var importStr = v.value.substr(1).trim();
@@ -471,7 +469,6 @@ var __FORMAT__ = function(__DATA__,__APPDOMAIN__,module){
 					}else if(v.value.charAt(0) == "S"){
 						_MODULE_CONTENT_LIST_[__APPDOMAIN__][v.module] = eval("(" + v.value.substr(1) + ")");
 					}else if(v.value.charAt(0) == "U"){//主要支持CommandJS
-						console.log("commandJS");
 						var isImport = false;
 						var tmp = v.value.substr(1).split("\x02");
 						var importStr = tmp[1].trim();
@@ -931,9 +928,26 @@ UI.addModule = function(target,module){
 /**
  * 获取库
  */
-var __GET_UMD_LIB__ = function(path){
-	return __AMD_LIST__[path]();
+var __GET_UMD_LIB__ = function(path,domain){
+	if(path.indexOf("\\") != -1 || path.indexOf("/") != -1){
+		return __AMD_LIST__[path]();
+	}
+	return getModule(path,domain)();
+	
 };
+
+/**
+ * 
+ */
+var __FMT_UMD__ = function(obj,k,m){
+	var v = obj[k];
+	if(v !== undefined){
+		return v;
+	}else{
+		alert("The " + m + " [" + k + "] is undefind.");
+	}
+	return null;
+}
 
 
 /**

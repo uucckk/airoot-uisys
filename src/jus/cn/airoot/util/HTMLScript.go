@@ -314,7 +314,7 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _this_ string, _pri_ string) st
 			Single(&s.hMap, &Attr{lst[point].Value, tmp.String()})
 			s.jus.PushImportScript(&Attr{lst[point].Value, tmp.String()})
 			if isFrom {
-				tl = append(tl, &Tag{Value: ImportFrom(tmp.String()), TagType: 1})
+				tl = append(tl, &Tag{Value: ImportFrom(s.jus.className, tmp.String()), TagType: 1})
 			}
 			continue
 		}
@@ -362,7 +362,6 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _this_ string, _pri_ string) st
 				tlt = append(tlt, &Tag{Value: newTmp, TagType: 0})
 			} else {
 				tlt = append(tlt, t)
-				//tlt = append(tlt, &Tag{Value: " ", TagType: -1})
 				tlt = append(tlt, &Tag{Value: Replace(tmp.String(), "?", ""), TagType: 1})
 			}
 			tlt = append(tlt, f)
@@ -377,7 +376,7 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _this_ string, _pri_ string) st
 		} else if t.IsKeyWord && "this" == t.Value {
 			tlt = append(tlt, t)
 			if s.getLevel(t) == 1 {
-				t.Value = _pri_
+				//t.Value = _pri_
 				param = t
 				for p < len(tl) {
 					t = tl[p]
@@ -782,7 +781,6 @@ func (s *HTMLScript) loadClass(path string) string {
 			tmpName = he.Value
 		}
 	} else {
-		//s.hMap[Substring(className, LastIndex(className, ".")+1, -1)] = &Attr{className, ""}
 		s.jus.PushImportScript(&Attr{className, ""})
 		tmpName = className
 	}

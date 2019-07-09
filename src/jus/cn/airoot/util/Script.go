@@ -35,6 +35,7 @@ type Script struct {
 	mjs          *MScript
 	className    string
 	isScript     bool
+	fromBuf      string //通过from导入的类
 }
 
 func (s *Script) CreateFrom(jus *JUS, root string, domain string, value *Attr, extendScript string, className string) *Script {
@@ -87,6 +88,7 @@ func (s *Script) initScriptFrom(js *MScript, _this_ string, _pri_ string) string
 			tmp = ""
 			point := -1
 			at := 0
+			isFrom := false
 			for p < len(lst) {
 				f = lst[p]
 				p++
@@ -103,18 +105,21 @@ func (s *Script) initScriptFrom(js *MScript, _this_ string, _pri_ string) string
 					}
 					break
 				}
+				if f.IsKeyWord && f.Value == "from" { //说明要用commandJS规范导读
+					f.Value = "\002"
+					isFrom = true
+				}
 				tmp += f.Value
 				at = p - 1
 			}
 			if Index(tmp, "/") != -1 || Index(tmp, "\\") != -1 {
-				//s.hMap[tmp] & Attr{tmp, ""}
 				Single(&s.hMap, &Attr{tmp, tmp})
-				//} else if Index(tmp, " from ") != -1 { //通过amd和commonjs引入的规范
-				//	s.hMap[tmp] = &Attr{tmp, "UMD"}
-				//	Signal(&s.hMap, &Attr{tmp, tmp})
 			} else {
-				//s.hMap[lst[point].Value] = &Attr{tmp, ""}
 				Single(&s.hMap, &Attr{lst[point].Value, tmp})
+			}
+			if isFrom {
+				s.fromBuf = ImportFrom(s.jus.className, tmp)
+				//tl = append(tl, &Tag{Value: ImportFrom(s.jus.className, tmp), TagType: 1})
 			}
 			continue
 		}
@@ -198,6 +203,7 @@ func (s *Script) initScriptFrom(js *MScript, _this_ string, _pri_ string) string
 		} else if t.TagType == 1 { //初始化$符号
 			t.Value = ScriptInitD(t.Value, s.domain)
 		}
+
 		tl = append(tl, t)
 	}
 
@@ -317,9 +323,10 @@ func (s *Script) initScriptFrom(js *MScript, _this_ string, _pri_ string) string
 		}
 
 		if t.TagType == 12 {
-			tj := &JUS{SYSTEM_PATH: s.jus.SYSTEM_PATH, CLASS_PATH: s.jus.CLASS_PATH}
-			tj.CreateFromString(s.root, "", nil, t.Value, "temp", s.jus)
-			tl = append(tl, &Tag{Value: "Module(\"" + Escape(tj.ReadHTML().ToString()) + "\",\f)", TagType: 0})
+			//tj := &JUS{SYSTEM_PATH: s.jus.SYSTEM_PATH, CLASS_PATH: s.jus.CLASS_PATH}
+			//tj.CreateFromString(s.root, "", nil, t.Value, "temp", s.jus)
+			//tl = append(tl, &Tag{Value: "Module(\"" + Escape(tj.ReadHTML().ToString()) + "\",\f)", TagType: 0})
+			tl = append(tl, &Tag{Value: "\"" + Escape(t.Value) + "\"", TagType: 1})
 			continue
 		}
 
@@ -379,7 +386,7 @@ func (s *Script) initScriptFrom(js *MScript, _this_ string, _pri_ string) string
 		} else if t.IsKeyWord && "this" == t.Value {
 			tlt = append(tlt, t)
 			if s.getLevel(t) == 1 {
-				t.Value = _pri_
+				//t.Value = _pri_
 				param = t
 				for p < len(tl) {
 					t = tl[p]
@@ -404,8 +411,9 @@ func (s *Script) initScriptFrom(js *MScript, _this_ string, _pri_ string) string
 									}
 								}
 								if s.mjs != js && a == nil {
-									a = s.mjs.GetDefine("class").Get(t.Value)
-									if a != nil {
+									c := s.mjs.GetDefine("class")
+									if c != nil {
+										a = c.Get(t.Value)
 										if a.IsPublic {
 											param.Value = "__this__"
 										} else {
@@ -761,6 +769,7 @@ func (s *Script) initClass(name string, data string) string {
 		}
 	}
 	return "function " + name + "(__FLAG__,__VALUE__){\r\n" +
+		s.fromBuf +
 		code +
 		"var __inthis__ = this,__inpri__ = {};" +
 		IfStr(len(code) == 0, "", "__EXTEND__(__inthis__,__UP__);") +
