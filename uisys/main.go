@@ -78,6 +78,7 @@ func init() {
 	zhCN["send"] = "send 通过Websocket向指定节点发送数据\r\n命令格式: send <服务名称> <用户ID> <UUID> <内容>\r\n"
 	zhCN["exit"] = "exit 退出\r\n命令格式: exit\r\n"
 	zhCN["lang"] = "lang 语言设置.\r\n命令格式: lang <zh/cn>\r\n"
+	zhCN["pub"] = "pub 发布网站.\r\n命令格式: pub <path> [HTTP服务IP:端口]\r\n"
 	zhCN["version"] = "version 软件版本号.\r\n命令格式: version\r\n"
 	zhCN["nat"] = "nat 它可以测试HTTP客户端请求的内容代码，并将其打印到屏幕上\r\n"
 	zhCN["-c"] = "-c 关闭控制台输入功能\r\n命令格式: -c\r\n"
@@ -132,6 +133,7 @@ func init() {
 	enCH["send"] = "send push data to Service by websocket.\r\nCOMMAND: send <Service Name> <User ID> <UUID> <Value>\r\n"
 	enCH["exit"] = "exit Exit.\r\nCOMMAND: exit\r\n"
 	enCH["lang"] = "lang Language Setting.\r\nCOMMAND: lang <zh/cn>\r\n"
+	enCH["pub"] = "pub Publishing websites.\r\nCOMMAND: pub <path> [HTTP Service IP:PORT]\r\n"
 	enCH["version"] = "version Software Version.\r\nCOMMAND: version\r\n"
 	enCH["nat"] = "nat It's can test http request medhod and print request code.\r\n"
 	enCH["-c"] = "-c Close Console Input Method.\r\nCOMMAND: -c\r\n"
@@ -638,6 +640,38 @@ func command(cmds []string) (bool, string) {
 				str = DevPrintln(8, lang["add"])
 			}
 			return true, str
+		case "pub": //创建服务
+			if len(cmds) > 1 { //默认两个参数，命令和发布路径，如果有第三个参数就是发布网址:端口号
+				//先遍历节点
+				pNode := ""
+				for i := 0; i < 1000; i++ {
+					t := "p" + strconv.Itoa(i)
+					if serverList[pNode] == nil {
+						pNode = t
+						serverList[pNode] = &UIServer{}
+						serverList[pNode].CreateServer(SysLibPath, "", "", "/")
+						break
+					}
+				}
+				if pNode == "" {
+					return false, "service is out."
+				}
+				if Exist(cmds[1]) {
+					_, str = commandEvt("stp " + pNode + " " + cmds[1])
+				} else {
+					str = DevPrintln(335, lang["不存在工程"], cmds[1])
+					return true, str
+				}
+				if len(cmds) > 2 {
+					_, str = commandEvt("run " + pNode + " " + cmds[2])
+				} else {
+					_, str = commandEvt("run " + pNode)
+				}
+
+			} else {
+				str = DevPrintln(8, lang["pub"])
+			}
+			return true, str
 		case "nat": //添加请求测试服务
 			if len(cmds) > 1 {
 				if cmds[1] == "-add" {
@@ -984,6 +1018,7 @@ func command(cmds []string) (bool, string) {
 
 		case "--help":
 			str += DevPrintln(7, lang["lang"])
+			str += DevPrintln(7, lang["pub"])
 			str += DevPrintln(7, lang["ls"])
 			str += DevPrintln(7, lang["add"])
 			str += DevPrintln(7, lang["ctp"])
@@ -1109,7 +1144,7 @@ func main() {
 		args += v + " "
 	}
 	if args != "" {
-		fmt.Println("ARGS", args)
+		DevPrintln(3, ">> "+args)
 	}
 	running := true
 	if len(os.Args) == 2 && (Index(args, "/") != -1 || Index(args, "\\") != -1) {
