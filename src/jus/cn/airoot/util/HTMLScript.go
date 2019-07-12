@@ -750,11 +750,7 @@ func (s *HTMLScript) ReadFromString(script string) string {
 		//加入执行列表
 		s.jus.AddRun(&RunElem{Type: "E", Name: s.jus.domain, Value: E})
 	}
-	if len(s.jus.CommandCode) > 0 {
-		for _, v := range s.jus.CommandCode {
-			s.jus.AddRun(&RunElem{Type: "C", Name: s.jus.domain, Value: v.Value})
-		}
-	}
+
 	return out.String()
 }
 

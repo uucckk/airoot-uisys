@@ -534,7 +534,6 @@ func (j *JUS) scanHTML(child []*HTML) {
 		for _, v := range c {
 			attrValue = p.GetAttr(v)
 			if Index(v, ".") == -1 {
-
 				p.RemoveAttr(v)
 				v = v[1:]
 				v = strings.ToLower(v)
@@ -1275,6 +1274,12 @@ func (j *JUS) ReadHTML() *HTML {
 		j.ToFormatLine("T", j.className, j.headBuffer.String(), sb) //便是Head
 		head.ReadFromString("<head>" + sb.String() + "</head>")
 		j.html.Insert(head, 0)
+	}
+
+	if len(j.CommandCode) > 0 {
+		for _, v := range j.CommandCode {
+			j.AddRun(&RunElem{Type: "C", Name: j.domain, Value: v.Value})
+		}
 	}
 	//最终加入静态函数变量
 	if j.parent == nil {

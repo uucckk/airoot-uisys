@@ -24,7 +24,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-var version string = "AIroot UI-SYSTEM 0.9.5beta"
+var version string = "AIroot UI-SYSTEM 0.9.5(RC)"
 var lang map[string]string
 
 var zhCN = make(map[string]string, 0)
@@ -69,10 +69,10 @@ func init() {
 	zhCN["release"] = "release 发布工程\r\n命令格式: release <服务名称> [工程路径]\r\n例如:release test C:/jus/project/\r\n"
 	zhCN["run"] = "run 启动服务\r\n命令格式: run <服务名称> [IP:端口], 例如:run test 127.0.0.1:1511\r\n"
 	zhCN["run_not_set"] = "未设置发布目录，不能启动服务器;\r\n您可以使用stp命令设置发布目录。"
-	zhCN["shutdown"] = "shutdown 停止服务\r\n命令格式: shutdown <服务名称>\r\n"
+	zhCN["stop"] = "stop 停止服务\r\n命令格式: stop <服务名称>\r\n"
 	zhCN["rm"] = "rm 移除服务\r\n命令格式: rm <服务名称>\r\n"
 	zhCN["lw"] = "lw 显示指定服务节点下Websocket连接用户\r\n命令格式: lw <服务名称> [-h]\r\n"
-	zhCN["info"] = "info 项目信息\r\n命令格式: rm <服务名称>\r\n"
+	zhCN["info"] = "info 项目信息\r\n命令格式: info <服务名称>\r\n"
 	zhCN["set"] = "set 设置项目信息\r\n命令格式: set <服务名称> <属性名称> <属性值> [属性值...]\r\n"
 	zhCN["ret"] = "ret 移除项目信息\r\n命令格式: ret <服务名称> <属性名称>\r\n"
 	zhCN["send"] = "send 通过Websocket向指定节点发送数据\r\n命令格式: send <服务名称> <用户ID> <UUID> <内容>\r\n"
@@ -124,10 +124,10 @@ func init() {
 	enCH["release"] = "release release project.\r\nCOMMAND: release <Service Name> [Project Path]\r\nFor Example:release test C:/jus/project/\r\n"
 	enCH["run"] = "run Start service.\r\nCOMMAND: run <Service Name> [IP:PORT], For Example:run test 127.0.0.1:1511\r\n"
 	enCH["run_not_set"] = "The publishing directory is not set, the server cannot be started; \r\nYou can use the STP command to set up the publish directory."
-	enCH["shutdown"] = "shutdown Shutdown Service.\r\nCOMMAND: shutdown <Service Name>\r\n"
+	enCH["stop"] = "stop stop Service.\r\nCOMMAND: stop <Service Name>\r\n"
 	enCH["rm"] = "rm Remove Service.\r\nCOMMAND: rm <Service Name>\r\n"
 	enCH["lw"] = "lw display websocket list of Service\r\nCOMMAND: lw <Service Name> [-h]\r\n"
-	enCH["info"] = "info The project infomation\r\nCOMMAND: rm <Service Name>\r\n"
+	enCH["info"] = "info The project infomation\r\nCOMMAND: info <Service Name>\r\n"
 	enCH["set"] = "set Set project attributes.\r\nCOMMAND: set <Service Name> <AttributeName> <Value> [Value...]\r\n"
 	enCH["ret"] = "ret Remove project attributes.\r\nCOMMAND: set <Service Name> <AttributeName>\r\n"
 	enCH["send"] = "send push data to Service by websocket.\r\nCOMMAND: send <Service Name> <User ID> <UUID> <Value>\r\n"
@@ -646,7 +646,7 @@ func command(cmds []string) (bool, string) {
 				pNode := ""
 				for i := 0; i < 1000; i++ {
 					t := "p" + strconv.Itoa(i)
-					if serverList[pNode] == nil {
+					if serverList[t] == nil {
 						pNode = t
 						serverList[pNode] = &UIServer{}
 						serverList[pNode].CreateServer(SysLibPath, "", "", "/")
@@ -689,7 +689,7 @@ func command(cmds []string) (bool, string) {
 
 				} else if cmds[1] == "-remove" {
 					if testHandle[cmds[2]] != nil {
-						testHandle[cmds[2]].Shutdown()
+						testHandle[cmds[2]].Stop()
 						delete(testHandle, cmds[2])
 					}
 				} else if cmds[1] == "-restart" {
@@ -698,7 +698,7 @@ func command(cmds []string) (bool, string) {
 					}
 				} else if cmds[1] == "-stop" {
 					if testHandle[cmds[2]] != nil {
-						testHandle[cmds[2]].Shutdown()
+						testHandle[cmds[2]].Stop()
 					}
 				} else if cmds[1] == "-log" {
 					if testHandle[cmds[2]] != nil {
@@ -826,7 +826,7 @@ func command(cmds []string) (bool, string) {
 				str = DevPrintln(8, lang["run"])
 			}
 			return true, str
-		case "shutdown":
+		case "stop":
 			if len(cmds) > 1 {
 				if serverList[cmds[1]] == nil {
 					str = DevPrintln(335, lang["不存在服务"], cmds[1])
@@ -1028,7 +1028,7 @@ func command(cmds []string) (bool, string) {
 			str += DevPrintln(7, lang["update"])
 			str += DevPrintln(7, lang["send"])
 			str += DevPrintln(7, lang["run"])
-			str += DevPrintln(7, lang["shutdown"])
+			str += DevPrintln(7, lang["stop"])
 			str += DevPrintln(7, lang["rm"])
 			str += DevPrintln(7, lang["lw"])
 			str += DevPrintln(7, lang["info"])
@@ -1069,7 +1069,7 @@ var exitFlag bool = true
 func httpPost() {
 	resp, err := http.Post("http://www.airoot.cn/_version", "application/x-www-form-urlencoded", nil)
 	if err != nil {
-		fmt.Println(err)
+		//fmt.Println(err)
 		return
 	}
 	defer resp.Body.Close()

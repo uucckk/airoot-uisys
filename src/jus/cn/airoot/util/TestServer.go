@@ -197,7 +197,7 @@ func (t *TestServer) SetLog(path string, size int) {
 /**
  * 关闭程序
  */
-func (t *TestServer) Shutdown() {
+func (t *TestServer) Stop() {
 	if t.listen != nil {
 		t.listen.Close()
 	}
