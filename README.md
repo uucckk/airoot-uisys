@@ -76,73 +76,8 @@ UI-SYSTEM 在设计之初，就将模块化、资源管理、整合其他框架�
 
 ## UI-SYSTEM 是重量级框架吗？
 首先，UI-SYSTEM 不是框架，他是一个面向前端的渲染平台，采用Google Golang 开发。UI-SYSTEM的默认发布框架包仅仅只有20KB。UI-SYSTEM的设计初衷就是用最简单的代码解决复杂的问题，平台发布代码均以高扩展性、高复用性、高维护性作为思想基础，你可以想象到，一套轻量级的代码量去构建重量级别的项目。  
-因此，UI-SYSTEM是轻量级的平台，但是可以承接复杂的项目。UI-SYSTEM发布的项目是轻量级的，但是具备重量级项目的表现力。
+因此，UI-SYSTEM是轻量级的平台，但是可以承接复杂的项目。UI-SYSTEM发布的项目是轻量级的，但是具备重量级项目的表现力。 
 
-# 搭建环境
-[点击这里下载 UI-SYSTEM](https://github.com/uucckk/UI-SYSTEM-RELEASE/archive/master.zip)
-<img src='doc/images/01.jpg' />
-添加服务节点和项目目录,我们选择Release/example/下的项目,并运行在80端口：
-```cmd
-    add a0 example/v1 :80
-```
-然后打开Chrome/FireFox/Edge浏览器，输入http://localhost/
-<img src="doc/images/02.jpg" />
-
-# 创建第一个工程
-在main.exe程序直接输入 ctp myproject,这里会在main.exe同级创建一个工程目录：
-```cmd
-ctp myproject
-```
-运行效果：
-<img src="doc/images/03.jpg" />
-然后继续输入 run a0 :80
-```cmd
-run a0 :80
-```
-打开浏览器，输入 http://localhost/
-<img src="doc/images/04.jpg" />
-## Hello World
-```html
-<!--
-    Hello World
-    保存到Hello.ui
- -->
-<style>
-    body{
-        cursor:pointer;
-        text-align:center;
-        color:#789abc;
-        font-size:90px;
-        font-weight:bold;
-        padding-top:10%;
-    }
-</style>
-<div>
-    Hello World！
-</div>
-<script>
-    function init(){
-        dom.addEventListener("click",function(){
-            alert("Hello World!");
-        });
-    }
-</script>
-```
-看到了，在UI-SYSTEM平台写程序这又这些，复杂吗？从外表看来他就是一个HTML页面，但是它是一个模块，一个Module Page。
-
-```html
-<!--
-    Index
-    保存到Index.ui
- -->
-<@pub value="default" />
-<div>
-    <Hello />
-</div>
-```
-好了，我们的模块生效了。
-# UI-SYSTEM-LIB
-Library for UI-SYSTEM
 # 说明
 - UI-SYSTEM 是一套轻巧、高性能、静态前端系统，可以快速构建稳健的WEB服务。  
 整套系统采用了混合式的开发思想，即“选择合适的技术做擅长的事，各尽其职，优势融合”。  
@@ -152,7 +87,7 @@ Library for UI-SYSTEM
 - UI-SYSTEM 采用Go作为开发语言，充分利用了Go的高并发能力，很高兴选择了Go作为服务开发（之前一直使用Java，实际上GO在复杂业务上处理速度已经远远高于Java这门语言，网上很多人用JIT命中高例子和Go对比是不正确的。）
 # 如何使用
 > WINDOWS  
-
+[点击这里下载 UI-SYSTEM 的演示包](https://github.com/uucckk/AIroot-UISYS-LIB/archive/master.zip)
 - <b>方式1</b> 
 1. window系统运行uisys.exe  
 2. 从example里面添加一个工程，写法如下：
