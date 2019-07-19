@@ -16,20 +16,6 @@ HTML页就是控件(模块页)，你可以发布这个模块到任何人的Super
         </td>
     </tr>
     <tr>
-        <td><img src='doc/images/extends.png' /></td>
-        <td valign='top'>
-           <h2>支持复杂的游戏编程</h2>
-它是一个更高级的编译平台，结构和语法更加稳健。
-        </td>
-    </tr>
-    <tr>
-        <td><img src='doc/images/layout.png' /></td>
-        <td valign='top'>
-           <h2>快速响应布局</h2>
-平台默认提供一套布局框架，它让你在页面开发上事半功倍。
-        </td>
-    </tr>
-    <tr>
         <td><img src='doc/images/as.png' /></td>
         <td valign='top'>
             <h2>支持高级Script语法糖</h2>
