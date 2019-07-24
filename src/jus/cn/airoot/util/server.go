@@ -57,6 +57,7 @@ type WsUser struct {
 }
 
 type UIServer struct {
+	IsUIPro       bool   //判断是否为UISYS的工程
 	protocol      string //连接协议http or https
 	Addr          string //连接地址
 	Status        bool   //运行状态
@@ -196,8 +197,9 @@ func (u *UIServer) SetProject(path string) int {
 			for _, v := range u.GetAttrLike("variable") { //添加项目变量
 				u.AddServerVar("variable", "@"+v[0], v[1])
 			}
-
+			u.IsUIPro = true
 		} else {
+			u.IsUIPro = false
 			u.fServerList[rpath] = http.FileServer(http.Dir(path))
 		}
 
@@ -235,7 +237,7 @@ func (u *UIServer) CreateModule(cls string, className string) bool {
 	}
 
 	if Index(cls, "m") != -1 { //创建多个文件，包括*.html,*.js,*.css
-		tPath = path + ".html"
+		tPath = path + ".ui"
 		fmt.Println("Module Path: ", tPath)
 		if !Exist(tPath) {
 			f, e := os.Create(tPath)
@@ -263,7 +265,7 @@ func (u *UIServer) CreateModule(cls string, className string) bool {
 	}
 
 	if Index(cls, "h") != -1 { //默认创建HTML文件
-		tPath = path + ".html"
+		tPath = path + ".ui"
 		fmt.Println("Module Path: ", tPath)
 		if !Exist(tPath) {
 			f, e := os.Create(tPath)
@@ -512,7 +514,7 @@ func (u *UIServer) root(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		if req.URL.Path == "/ui-sys.js" { //如果获取模块包的
+		if req.URL.Path == "/uisys.js" { //如果获取模块包的
 			b, e := GetCode(u.SysPath + "/core/parser/module.tpl")
 			b0, e0 := GetCode(u.SysPath + "/core/parser/module_base.tpl")
 			b1, e1 := GetCode(u.SysPath + "/core/parser/module_manager.tpl")
@@ -1186,38 +1188,46 @@ func (u *UIServer) GetAttrLike(attr string) [][]string {
 /**
  * 发布此工程
  */
-func (u *UIServer) Release() {
-	for _, v := range u.GetAttr("release-path") {
-		if v != "" {
-			os.MkdirAll(v, 0777)
+func (u *UIServer) Release(path string) {
+	if path != "" {
+		u.rel(path)
+	} else {
+		if u.IsUIPro {
+			for _, v := range u.GetAttr("release-path") {
+				u.rel(v)
+			}
 		}
-		fmt.Println("copy static file to [" + v + "].")
-		Copy(u.RootPath, v, ".ui;.es")
-		fmt.Println("complete.")
-		//生成module.js
-		f, e := os.Create(v + "/ui-sys.js")
-		defer f.Close()
-		if e == nil {
-			tpl, fe := GetCode("lib/core/parser/module.tpl")
-			if fe != nil {
-				fmt.Errorf("load module.tpl error.")
-			}
-			inner, ierr := GetCode("lib/core/parser/module_base.tpl")
-			if ierr != nil {
-				fmt.Errorf("load module_base.tpl error.")
-			}
-			tpl = Replace(tpl, "{@base}", inner)
-			inner, ierr = GetCode("lib/core/parser/module_manager.tpl")
-			if ierr != nil {
-				fmt.Errorf("load module_manager.tpl error.")
-			}
-			tpl = Replace(tpl, "{@manager}", inner)
-			f.Write([]byte(tpl))
-		}
-		//发布Code,先遍历
-		u.WalkFiles(FormatSimplePath(u.RootPath+"/"), v)
 	}
-
+}
+func (u *UIServer) rel(v string) {
+	if v != "" {
+		os.MkdirAll(v, 0777)
+	}
+	fmt.Println("copy static file to [" + v + "].")
+	Copy(u.RootPath, v, ".ui;.es")
+	fmt.Println("complete.")
+	//生成module.js
+	f, e := os.Create(v + "/uisys.js")
+	defer f.Close()
+	if e == nil {
+		tpl, fe := GetCode("lib/core/parser/module.tpl")
+		if fe != nil {
+			fmt.Errorf("load module.tpl error.")
+		}
+		inner, ierr := GetCode("lib/core/parser/module_base.tpl")
+		if ierr != nil {
+			fmt.Errorf("load module_base.tpl error.")
+		}
+		tpl = Replace(tpl, "{@base}", inner)
+		inner, ierr = GetCode("lib/core/parser/module_manager.tpl")
+		if ierr != nil {
+			fmt.Errorf("load module_manager.tpl error.")
+		}
+		tpl = Replace(tpl, "{@manager}", inner)
+		f.Write([]byte(tpl))
+	}
+	//发布Code,先遍历
+	u.WalkFiles(FormatSimplePath(u.RootPath+"/"), v)
 }
 
 func (u *UIServer) WalkFiles(src string, dest string) {
@@ -1259,7 +1269,6 @@ func relEvt(server *UIServer, sysPath string, rootPath string, path string) []by
 		fmt.Println(" | " + time.Since(t1).String())
 		return b
 	}
-
 	return []byte("nothing.")
 }
 
@@ -1268,7 +1277,7 @@ func relEvt(server *UIServer, sysPath string, rootPath string, path string) []by
  */
 func (u *UIServer) GetData() [][]string {
 	f := u.RootPath + "/" + configName
-	if Exist(f) {
+	if !Exist(f) {
 		return [][]string{}
 	}
 	data, err := GetCode(f)
@@ -1303,7 +1312,6 @@ func (u *UIServer) AddProxy(pattern string, path string) {
  * 添加服务器环境变量
  */
 func (u *UIServer) AddServerVar(cls string, key string, value string) {
-
 	switch cls {
 	case "string":
 		u.attribute[key] = "\"" + value + "\""

@@ -22,6 +22,7 @@ class Template{
 		defer(node,@this);
 		read(this.node = node);
 		initListener();
+		window[node.getAttribute("id")] = this;
 	}
 	
 	
@@ -69,7 +70,6 @@ class Template{
 	public function set dataContext(value:Object){
 		if(typeof value == "object"){
 			if(_pdata != value){
-				__TPL_MAP_PUSH__(value,{target:_data,domain:@this});
 				_pdata = value;
 			}
 			
@@ -325,7 +325,7 @@ class Template{
 			if(p == '|'){
 				filter.push(str.trim());
 				str = "";
-				continue;;
+				continue;
 			}
 			str += p;
 			
@@ -343,8 +343,6 @@ class Template{
 				var tValue = _value;
 				if(_value && typeof value == "object"){
 					if(V != value){
-						__TPL_MAP_REMOVE__(V,_value);
-						__TPL_MAP_PUSH__(value,{target:_value,domain:@this});
 						V = value;
 					}
 					for(var k in _value){
@@ -367,7 +365,6 @@ class Template{
 							notify(index,value,tValue);
 							p[name] = value;
 						}
-						update(p);
 						
 					}
 					
@@ -433,13 +430,6 @@ class Template{
 	
 	public function destroy(){
 		removeListener();
-		var p = null;
-		for(var i = 0;i<tplMap.length;i++){
-			p = tplMap[i];
-			if(p.domain == @this){
-				p.domain = null;
-			}
-		}
 	}
 	
 }

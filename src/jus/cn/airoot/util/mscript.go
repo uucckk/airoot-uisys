@@ -184,7 +184,6 @@ func (m *MScript) ReadFromString(js string) {
 				fmt.Println("MScript: read note has errors.")
 				continue
 			}
-
 		}
 
 		if ch == '/' && m.isObj() {
@@ -466,9 +465,6 @@ func (m *MScript) readCareNote(noteType int) string {
 			offset++
 			if ch == '\r' || ch == '\n' {
 				result = string(sb)
-				//if offset < len(m.code) && m.code[offset] == '\n' {
-				//	offset++
-				//}
 				break
 			}
 			sb = append(sb, ch)
@@ -498,6 +494,9 @@ func (m *MScript) readCareNote(noteType int) string {
 				}
 			} else {
 				pos = 0
+				if ch == end[0] {
+					pos = 1
+				}
 			}
 			if isNewLine && (ch == ' ' || ch == '\t') {
 				continue

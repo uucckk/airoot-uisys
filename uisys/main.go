@@ -129,7 +129,7 @@ func init() {
 	enCH["lw"] = "lw display websocket list of Service\r\nCOMMAND: lw <Service Name> [-h]\r\n"
 	enCH["info"] = "info The project infomation\r\nCOMMAND: info <Service Name>\r\n"
 	enCH["set"] = "set Set project attributes.\r\nCOMMAND: set <Service Name> <AttributeName> <Value> [Value...]\r\n"
-	enCH["ret"] = "ret Remove project attributes.\r\nCOMMAND: set <Service Name> <AttributeName>\r\n"
+	enCH["ret"] = "ret Remove project attributes.\r\nCOMMAND: ret <Service Name> <AttributeName>\r\n"
 	enCH["send"] = "send push data to Service by websocket.\r\nCOMMAND: send <Service Name> <User ID> <UUID> <Value>\r\n"
 	enCH["exit"] = "exit Exit.\r\nCOMMAND: exit\r\n"
 	enCH["lang"] = "lang Language Setting.\r\nCOMMAND: lang <zh/cn>\r\n"
@@ -835,10 +835,13 @@ func command(cmds []string) (bool, string) {
 						str = DevPrintln(8, lang["服务关闭失败"], cmds[1])
 					}
 				}
+				if str == "" {
+					str = DevPrintln(2, lang["关闭服务"], cmds[1], cmds[1])
+				}
+			} else {
+				str = DevPrintln(8, lang["stop"])
 			}
-			if str == "" {
-				str = DevPrintln(2, lang["关闭服务"], cmds[1], cmds[1])
-			}
+
 			return true, str
 		case "rm":
 			if len(cmds) > 1 {
@@ -866,8 +869,13 @@ func command(cmds []string) (bool, string) {
 				if serverList[cmds[1]] == nil {
 					str = DevPrintln(335, lang["不存在服务"], cmds[1])
 				} else {
-					serverList[cmds[1]].Release()
-					str = DevPrintln(8, lang["发布完成"])
+					if len(cmds) > 2 {
+						serverList[cmds[1]].Release(cmds[2])
+						str = DevPrintln(8, lang["发布完成"])
+					} else {
+						serverList[cmds[1]].Release("")
+						str = DevPrintln(8, lang["发布完成"])
+					}
 				}
 			} else {
 				str = DevPrintln(8, lang["release"])

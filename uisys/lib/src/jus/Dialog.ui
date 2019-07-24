@@ -52,7 +52,7 @@
 	</div>
 
 	<contain id="content" class="dialogContent layoutBox unitBox">
-		
+		<@content/>
 	</contain>
 
 	<script>

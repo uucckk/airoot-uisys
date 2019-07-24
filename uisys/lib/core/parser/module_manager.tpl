@@ -1013,63 +1013,6 @@ var __initLst__ = function(uuid){
 	}
 	
 }
-var _CCC_ = 0;
-window.tplMap = new Map();
-//单项保定更新数据界面
-window.update = function update(obj,name,value){		
-	var a = tplMap.get(obj);
-	if(a){
-		var t = null;
-		for(var i = 0;i<a.length;i++){
-			t = a[i].target;
-			for(var k in t){
-				t[k] = obj[k];
-			}
-		}
-	}
-	
-	for(var o in obj){
-		t = obj[o];
-		if(t instanceof Object){
-			update(t);
-		}
-	}
-}
-
-//添加新元素
-function __TPL_MAP_PUSH__(value,obj){
-	var q = tplMap.get(value);
-	if(!q){
-		tplMap.set(value,q = []);
-	}
-	var p = null;
-	for(var i = 0;i<q.length;i++){
-		p = q[i];
-		if(p.eb == false){
-			q[i] = obj;
-			return;
-		}
-	}
-	q.push(obj);
-}
-
-
-/**
- * 模板移动
- */
-function __TPL_MAP_REMOVE__(value,target){
-	var q = tplMap.get(value);
-	if(q){
-		var p = null;
-		for(var i = 0;i<q.length;i++){
-			p = q[i];
-			if(p.target == target){
-				q.splice(i,1);
-				i--;
-			}
-		}
-	}
-}
 
 
 /**
@@ -1117,7 +1060,6 @@ var gcDefer = function(){
 	while(p){
 		n = p.next;
 		if(!p.dom.parentNode){
-			
 			p.dom = null;
 			p.lst = null;
 			p.next = null;
@@ -1154,6 +1096,7 @@ function gcEvt(){
 					}
 				}catch(e){
 					alert("run [" + name + "] finalize isn't success!");
+					console.log("finalize[" + name + "]",e); 
 				}
 				try{
 					delete window[name];
@@ -1201,6 +1144,8 @@ var __CLEAR_FUNC__ = function(e){
 	
 }
 __CLEAR_ID__ = setTimeout(__CLEAR_FUNC__,5000);
+window.UI = UI;
+window.PopManager = PopManager;
 window.Eval = function(value){
 	console.log(eval(value));
 }
