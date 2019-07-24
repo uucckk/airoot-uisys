@@ -24,7 +24,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-var version string = "AIroot UI-SYSTEM 0.9.5(RC)"
+var version string = "AIroot UI-SYSTEM 0.9.5(RC1)"
 var lang map[string]string
 
 var zhCN = make(map[string]string, 0)
