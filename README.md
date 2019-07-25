@@ -83,7 +83,7 @@ UI-SYSTEM 在设计之初，就将模块化、资源管理、整合其他框架�
 3. 打开chrome浏览器，输入：http://127.0.0.1/
 - <b>方式2</b>  
 1. 也可以直接将您的工程目录拖动到uisys.exe图标上。  
-![conv_ops](README/img/dragstart.gif)
+![conv_ops](doc/img/dragstart.gif)
 2. 确保弹出的控制台没有端口占用错误错误。
 3. 打开chrome浏览器，输入：http://127.0.0.1/
 > LINUX 和 CENTOS
