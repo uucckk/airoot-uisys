@@ -88,6 +88,7 @@
 				case "mouseup":
 					mouseFlag = false;
 					document.onselectstart = null;
+					dframes(true);
 					if(_self.offset().top<0){
 						_self.css("top","0px");
 					}
@@ -95,6 +96,7 @@
 				case "mousedown":
 					mouseFlag = true;
 					document.onselectstart = new Function("return false;");
+					dframes(false);
 					tx = parseInt(_self.css("left"));
 					ty = parseInt(_self.css("top"));
 					mx = e.clientX;
@@ -137,6 +139,31 @@
 		 */
 		public function close(close:Object){
 			_self.remove();
+		}
+		
+		/**
+		 * 控制
+		 */
+		function dframes(value){
+			var f = document.body.getElementsByTagName("iframe");
+			var p = null;
+			if(value){
+				for(var i = 0;i<f.length;i++){
+					p = f[i];
+					if(!p.style){
+						p.style = "";
+					}
+					p.style["pointer-events"] = "unset";
+				}
+			}else{
+				for(var i = 0;i<f.length;i++){
+					p = f[i];
+					if(!p.style){
+						p.style = "";
+					}
+					p.style["pointer-events"] = "none";
+				}
+			}
 		}
 
 		public function finalize(){

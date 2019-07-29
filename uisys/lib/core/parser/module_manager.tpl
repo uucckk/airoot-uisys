@@ -710,6 +710,33 @@ function __UUID__(){
 }
 
 
+//设置HTMLElement
+var ____RC = HTMLElement.prototype.removeChild;
+HTMLElement.prototype.remove = HTMLElement.prototype.removeChild = function(obj){
+	var dom = null;
+	if(obj instanceof Node){
+		dom = obj
+	}else if(obj.dom){
+		dom = obj.dom
+	}
+	//清除自对象
+	var clearFunc = "";
+	if(dom.querySelectorAll){
+		var qtLst = dom.querySelectorAll("div[onremove]");
+		for(var i = 0;i<qtLst.length;i++){
+			clearFunc += qtLst[i].getAttribute("onremove") + ";\r\n";
+		}
+		if(clearFunc != ""){
+			(new Function(clearFunc))();
+		}
+	}
+	
+	
+	
+	return ____RC.call(this,dom);
+};
+
+
 
 //设置HTMLElement
 var ____D = HTMLElement.prototype.appendChild;

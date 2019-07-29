@@ -13,14 +13,40 @@ class Drag{
 		dom.style.left = "0px";
 		dom.style.top = "0px";
 		dom.addEventListener("mousedown",mouseEvt);
-		dom.addEventListener("mouseup",mouseEvt);
+		window.addEventListener("mouseup",mouseEvt);
 		initWin();
+	}
+	
+	/**
+	 * 
+	 */
+	function dframes(value){
+		var f = document.body.getElementsByTagName("iframe");
+		var p = null;
+		if(value){
+			for(var i = 0;i<f.length;i++){
+				p = f[i];
+				if(!p.style){
+					p.style = "";
+				}
+				p.style["pointer-events"] = "unset";
+			}
+		}else{
+			for(var i = 0;i<f.length;i++){
+				p = f[i];
+				if(!p.style){
+					p.style = "";
+				}
+				p.style["pointer-events"] = "none";
+			}
+		}
 	}
 	
 	function mouseEvt(e){
 		switch(e.type){
 			case "mousedown":
 				document.onselectstart = new Function("return false;");
+				dframes(false);
 				mx = e.clientX;
 				my = e.clientY;
 				cx = dom.offsetLeft;
@@ -43,6 +69,7 @@ class Drag{
 			case "mouseup":
 				df = false;
 				document.onselectstart = null;
+				dframes(true);
 			break;
 		}
 	}
