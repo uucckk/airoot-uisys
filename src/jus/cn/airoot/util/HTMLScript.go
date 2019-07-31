@@ -9,12 +9,13 @@ import (
 	. "jus"
 	. "jus/str"
 	. "jus/tool"
+	"path/filepath"
 	"strings"
 )
 
 //--------------------------------Script----------------------------------------
 type HTMLScript struct {
-	jus              *JUS
+	jus              *UI
 	root             string
 	hMap             []*Attr //导入的类文件
 	gsMap            map[string]*GSetter
@@ -26,7 +27,7 @@ type HTMLScript struct {
 	isScript         bool
 }
 
-func (s *HTMLScript) CreateFrom(jus *JUS, root string, domain string, constructorValue *Attr, innerValue string, extendScript string) *HTMLScript {
+func (s *HTMLScript) CreateFrom(jus *UI, root string, domain string, constructorValue *Attr, innerValue string, extendScript string) *HTMLScript {
 	s.jus = jus
 	s.root = root
 	s.domain = domain
@@ -271,7 +272,7 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _this_ string, _pri_ string) st
 			md5Ctx.Write([]byte(t.Value))
 			cipherStr := md5Ctx.Sum(nil)
 			bs := hex.EncodeToString(cipherStr)
-			ft := &JUS{SYSTEM_PATH: s.jus.SYSTEM_PATH, CLASS_PATH: s.jus.CLASS_PATH}
+			ft := &UI{SYSTEM_PATH: s.jus.SYSTEM_PATH, CLASS_PATH: s.jus.CLASS_PATH}
 			for _, v := range s.jus.pkgMap {
 				t.Value = "<@import value='" + v + "'/>" + t.Value
 			}
@@ -291,14 +292,17 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _this_ string, _pri_ string) st
 			for p < len(lst) {
 				f = lst[p]
 				p++
-
-				if f.TagType == -1 || f.TagType == 5 {
+				if f.TagType == 1 {
+					f.Value = Replace(f.Value, "\"", "")
+					f.Value = Replace(f.Value, "'", "")
+				}
+				if f.TagType == -1 {
 					continue
 				}
-				if f.TagType == 9 {
+				if f.TagType == 9 || f.Value == "\\" || f.Value == "/" {
 					point = p
 				}
-				if f.TagType == 4 {
+				if f.TagType == 4 || f.TagType == 5 {
 					if point == -1 {
 						point = at
 					}
@@ -311,11 +315,24 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _this_ string, _pri_ string) st
 				tmp.WriteString(f.Value)
 				at = p - 1
 			}
-			Single(&s.hMap, &Attr{lst[point].Value, tmp.String()})
-			s.jus.PushImportScript(&Attr{lst[point].Value, tmp.String()})
-			if isFrom {
-				tl = append(tl, &Tag{Value: ImportFrom(s.jus.className, tmp.String()), TagType: 1})
+			value := tmp.String()
+			if Index(value, ".") == 0 { //说明是获取自己本地路径
+				value = Substring(s.jus.dirPath, StringLen(s.jus.root), -1) + "/" + value
+				value = filepath.Clean(value)
+				value = Replace(value, "\\", ".")
+				value = Replace(value, "/", ".")
+				if CharAt(value, 0) == "." {
+					value = Substring(value, 1, -1)
+				}
 			}
+			if strings.TrimSpace(lst[point].Value) != "" {
+				Single(&s.hMap, &Attr{lst[point].Value, value})
+				s.jus.PushImportScript(&Attr{lst[point].Value, value})
+				if isFrom {
+					tl = append(tl, &Tag{Value: ImportFrom(s.jus.className, value), TagType: 1})
+				}
+			}
+
 			continue
 		}
 

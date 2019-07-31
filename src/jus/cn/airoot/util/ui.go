@@ -10,6 +10,7 @@ import (
 	. "jus"
 	. "jus/str"
 	. "jus/tool"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -24,7 +25,7 @@ type HTMLObject struct {
 }
 
 //----------------------------------JUS-----------------------------------------
-type JUS struct {
+type UI struct {
 	Debug               bool      //判断是否被测试
 	SERVER              *UIServer //服务器引用
 	resPath             string    //资源生成目录（例如index.lib）
@@ -36,7 +37,7 @@ type JUS struct {
 	SYSTEM_PATH         string    //系统路径
 	CLASS_PATH          string
 	root                string
-	parent              *JUS
+	parent              *UI
 	domain              string
 	className           string
 	relativePath        string  //相对路径
@@ -82,7 +83,7 @@ type JUS struct {
  * @param file			读取文件路径
  * @throws IOException
  */
-func (j *JUS) CreateFromString(root string, domain string, node *HTML, code string, className string, parent *JUS) bool {
+func (j *UI) CreateFromString(root string, domain string, node *HTML, code string, className string, parent *UI) bool {
 	j.parent = parent
 	j.moduleMap = make(map[string]*Attr, 10)
 	j.pkgMap = make(map[string]string, 10)
@@ -121,7 +122,7 @@ func (j *JUS) CreateFromString(root string, domain string, node *HTML, code stri
  * @param file			读取文件路径
  * @throws IOException
  */
-func (j *JUS) CreateFrom(root string, domain string, node *HTML, className string) bool {
+func (j *UI) CreateFrom(root string, domain string, node *HTML, className string) bool {
 	className = Replace(className, "/", ".")
 	className = Replace(className, "\\", ".")
 	className = TrimClassName(className)
@@ -195,7 +196,7 @@ func (j *JUS) CreateFrom(root string, domain string, node *HTML, className strin
 	return true
 }
 
-func (j *JUS) PushImportScript(value *Attr) {
+func (j *UI) PushImportScript(value *Attr) {
 	if j.GetRoot().scriptElement == nil {
 		j.GetRoot().scriptElement = make(map[string]*Attr, 10)
 	}
@@ -215,7 +216,7 @@ func (j *JUS) PushImportScript(value *Attr) {
 		}
 
 		j.GetRoot().scriptElement[value.Value] = value
-		ft := &JUS{SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH}
+		ft := &UI{SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH}
 		if ft.CreateFromParent(j.root, "", nil, strings.TrimSpace(value.Value), j) {
 			ft.IsImport = value.Value
 			ft.resPath = j.resPath
@@ -236,7 +237,7 @@ func (j *JUS) PushImportScript(value *Attr) {
 /**
  * 加入指令语言
  */
-func (j *JUS) PushCommandScript(value *Attr) {
+func (j *UI) PushCommandScript(value *Attr) {
 	if j.CommandCode == nil {
 		j.CommandCode = make([]*Attr, 0)
 	}
@@ -246,7 +247,7 @@ func (j *JUS) PushCommandScript(value *Attr) {
 /**
  * 获取初始化导入的数据，html，js文件
  */
-func (j *JUS) GetInitString() (string, bool) {
+func (j *UI) GetInitString() (string, bool) {
 	if j.htmlPath != "" {
 		t, err := GetCode(j.htmlPath)
 		if err != nil {
@@ -274,30 +275,30 @@ func (j *JUS) GetInitString() (string, bool) {
  * @param parent
  * @throws IOException
  */
-func (j *JUS) CreateFromParent(root string, domain string, node *HTML, className string, parent *JUS) bool {
+func (j *UI) CreateFromParent(root string, domain string, node *HTML, className string, parent *UI) bool {
 	j.parent = parent
 	return j.CreateFrom(root, domain, node, className)
 
 }
 
-func (j *JUS) SetConstructor(value *Attr) *JUS {
+func (j *UI) SetConstructor(value *Attr) *UI {
 	j.paramValue = value
 	return j
 }
 
-func (j *JUS) SetValue(value string) {
+func (j *UI) SetValue(value string) {
 	j.innerValue = value
 }
 
-func (j *JUS) GetDomain() string {
+func (j *UI) GetDomain() string {
 	return j.domain
 }
 
-func (j *JUS) GetClassName() string {
+func (j *UI) GetClassName() string {
 	return j.className
 }
 
-func (j *JUS) GetStaticMap() map[string][]*Attr {
+func (j *UI) GetStaticMap() map[string][]*Attr {
 	if j.parent != nil {
 		return j.parent.GetStaticMap()
 	}
@@ -308,7 +309,7 @@ func (j *JUS) GetStaticMap() map[string][]*Attr {
 	return j.staticScript
 }
 
-func (j *JUS) GetConstructorCode() *[]*Attr {
+func (j *UI) GetConstructorCode() *[]*Attr {
 	if j.parent != nil {
 		return j.parent.GetConstructorCode()
 	}
@@ -318,7 +319,7 @@ func (j *JUS) GetConstructorCode() *[]*Attr {
 /**
  * 获取参数集合
  */
-func (j *JUS) GetComponentParamSet() *[]string {
+func (j *UI) GetComponentParamSet() *[]string {
 	if j.parent != nil {
 		return j.parent.GetComponentParamSet()
 	}
@@ -329,7 +330,7 @@ func (j *JUS) GetComponentParamSet() *[]string {
 
 }
 
-func (j *JUS) GetStaticCodeMap() map[string][]*Attr {
+func (j *UI) GetStaticCodeMap() map[string][]*Attr {
 	if j.parent != nil {
 		return j.parent.GetStaticCodeMap()
 	}
@@ -339,7 +340,7 @@ func (j *JUS) GetStaticCodeMap() map[string][]*Attr {
 	return j.staticCode
 }
 
-func (j *JUS) GetStyleCodeMap() map[string]string {
+func (j *UI) GetStyleCodeMap() map[string]string {
 	//if j.parent != nil {
 	//	return j.parent.GetStyleCodeMap()
 	//}
@@ -352,7 +353,7 @@ func (j *JUS) GetStyleCodeMap() map[string]string {
 /**
  * 获取顶级
  */
-func (j *JUS) GetRoot() *JUS {
+func (j *UI) GetRoot() *UI {
 	if j.parent != nil {
 		return j.parent.GetRoot()
 	}
@@ -364,7 +365,7 @@ func (j *JUS) GetRoot() *JUS {
  * @param className
  * @param func
  */
-func (j *JUS) AddStaticScript(className string, funcName string, value string) {
+func (j *UI) AddStaticScript(className string, funcName string, value string) {
 	j.staticScript = j.GetStaticMap()
 	fun := j.staticScript[className]
 	if fun == nil {
@@ -385,7 +386,7 @@ func (j *JUS) AddStaticScript(className string, funcName string, value string) {
  * @param className
  * @param func
  */
-func (j *JUS) AddStaticCode(className string, funcName string, value string) {
+func (j *UI) AddStaticCode(className string, funcName string, value string) {
 	j.staticCode = j.GetStaticCodeMap()
 	fun := j.staticCode[className]
 	if fun == nil {
@@ -401,7 +402,7 @@ func (j *JUS) AddStaticCode(className string, funcName string, value string) {
 	j.staticCode[className] = fun
 }
 
-func (j *JUS) AddStyleCode(className string, value string) {
+func (j *UI) AddStyleCode(className string, value string) {
 	if j.styleCode == nil {
 		j.styleCode = make(map[string]string, 10)
 	}
@@ -412,7 +413,7 @@ func (j *JUS) AddStyleCode(className string, value string) {
 
 }
 
-func (j *JUS) overHTML(node []*HTML) {
+func (j *UI) overHTML(node []*HTML) {
 	child := &HTML{}
 	child.InsertList(node, 0)
 	overList := child.Filter("@override")
@@ -486,7 +487,7 @@ func (j *JUS) overHTML(node []*HTML) {
 
 } //overHTML
 
-func (j *JUS) clearMark(child []*HTML) []*HTML {
+func (j *UI) clearMark(child []*HTML) []*HTML {
 	var p *HTML = nil
 	for i := 0; i < len(child); i++ {
 		p = child[i]
@@ -497,7 +498,7 @@ func (j *JUS) clearMark(child []*HTML) []*HTML {
 	return child
 }
 
-func (j *JUS) scanHTML(child []*HTML) {
+func (j *UI) scanHTML(child []*HTML) {
 	tagName := ""
 	attrName := ""
 	attrValue := ""
@@ -555,7 +556,7 @@ func (j *JUS) scanHTML(child []*HTML) {
 			if len(arr) > 1 {
 				tagName = arr[1]
 			}
-			var tFunc *JUS = &JUS{SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH, IsImport: j.IsImport}
+			var tFunc *UI = &UI{SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH, IsImport: j.IsImport}
 
 			if tFunc.CreateFromParent(j.root, p.GetAttr("id"), p, tagName, j) {
 				tFunc.resPath = j.resPath
@@ -601,7 +602,7 @@ func (j *JUS) scanHTML(child []*HTML) {
 	}
 }
 
-func (j *JUS) componentInitParam(value *Attr) string {
+func (j *UI) componentInitParam(value *Attr) string {
 	s := j.componentInitCode(value)
 	script := &HTMLScript{}
 	script.CreateFrom(j, j.root, j.domain, j.paramValue, j.innerValue, j.extendsScriptBuffer)
@@ -614,7 +615,7 @@ func (j *JUS) componentInitParam(value *Attr) string {
  * @param flag
  * @return
  */
-func (j *JUS) setExtend(flag bool) *JUS {
+func (j *UI) setExtend(flag bool) *UI {
 	j.extendFlag = flag
 	return j
 }
@@ -623,7 +624,7 @@ func (j *JUS) setExtend(flag bool) *JUS {
  * 对所有控件的ID进行记录
  * @param html
  */
-func (j *JUS) componentId(child []*HTML) {
+func (j *UI) componentId(child []*HTML) {
 	for _, p := range child {
 		if p.GetAttr("domain") != "" && p.GetAttr("domain") == j.domain {
 			if p.GetAttr("class_id") != "" {
@@ -638,7 +639,7 @@ func (j *JUS) componentId(child []*HTML) {
 
 }
 
-func (j *JUS) cssComponent(child []*HTML) {
+func (j *UI) cssComponent(child []*HTML) {
 	var tagName string
 	c := 0
 	for _, p := range child {
@@ -664,7 +665,7 @@ func (j *JUS) cssComponent(child []*HTML) {
 
 }
 
-func (j *JUS) styleFormat() string {
+func (j *UI) styleFormat() string {
 	j.style.AddDomain("." + j.domain)
 	j.style.ReplaceSelecter("body", "."+j.domain)
 	j.cssTag = j.style.GetComponentClass()
@@ -676,7 +677,7 @@ func (j *JUS) styleFormat() string {
 /**
  * 公共css属性，也可以认为某个控件的全局css样式
  */
-func (j *JUS) cssFormat() string {
+func (j *UI) cssFormat() string {
 	//j.css.AddDomain("[class_id='" + j.className + "']")
 	//j.css.ReplaceSelecter("body", "[class_id='"+j.className+"']")
 	j.css.AddDomain(".-" + Replace(j.className, ".", "-"))
@@ -688,7 +689,7 @@ func (j *JUS) cssFormat() string {
  * 加载网页配置信息
  * 例如判断网页是否可以发布，发布的方式和模板是什么
  */
-func (j *JUS) loadSetting() {
+func (j *UI) loadSetting() {
 	sets := j.html.GetElementsByTagName("@pub")
 	for _, v := range sets {
 		j.pub = v.GetAttr("value")
@@ -699,7 +700,7 @@ func (j *JUS) loadSetting() {
 	j.html.RemoveChildByTagName("@pub")
 }
 
-func (j *JUS) importHTML() {
+func (j *UI) importHTML() {
 	sets := j.html.GetElementsByTagName("@import")
 	attrsMap := make(map[string]string, 10)
 	attrsMap["value"] = ""
@@ -715,8 +716,9 @@ func (j *JUS) importHTML() {
 
 	for i := 0; i < len(sets); i++ {
 		value = sets[i].GetAttr("value")
-		if Index(value, "./") == 0 { //说明是获取自己本地路径
-			value = Substring(j.dirPath, StringLen(j.root), -1) + value[1:]
+		if Index(value, ".") == 0 { //说明是获取自己本地路径
+			value = Substring(j.dirPath, StringLen(j.root), -1) + value
+			value = filepath.Clean(value)
 			value = Replace(value, "\\", ".")
 			value = Replace(value, "/", ".")
 		}
@@ -732,7 +734,27 @@ func (j *JUS) importHTML() {
 		}
 
 		fl := j.CLASS_PATH + "/" + strings.Replace(path, ".", "/", -1)
-		lst, err := ioutil.ReadDir(fl)
+		var lst []os.FileInfo
+		var err error
+		if Exist(fl) {
+			lst, err = ioutil.ReadDir(fl)
+			if err == nil {
+				for _, f := range lst {
+					if !f.IsDir() && (fileName == "" || fileName == f.Name()) {
+						cls = filepath.Ext(f.Name())
+						if cls == ".ui" || cls == ".es" {
+							key = Substring(f.Name(), 0, LastIndex(f.Name(), "."))
+							j.pkgMap[strings.ToLower(key)] = path + "." + key
+						}
+					}
+				}
+			} else {
+				fmt.Println(err)
+			}
+		}
+
+		fl = j.root + "/" + strings.Replace(path, ".", "/", -1)
+		lst, err = ioutil.ReadDir(fl)
 		if err == nil {
 			for _, f := range lst {
 				if !f.IsDir() && (fileName == "" || fileName == f.Name()) {
@@ -746,19 +768,6 @@ func (j *JUS) importHTML() {
 		} else {
 			fmt.Println(err)
 		}
-		fl = j.root + "/" + strings.Replace(path, ".", "/", -1)
-		lst, err = ioutil.ReadDir(fl)
-		if err == nil {
-			for _, f := range lst {
-				if !f.IsDir() && (fileName == "" || fileName == f.Name()) {
-					cls = filepath.Ext(f.Name())
-					if cls == ".ui" || cls == ".es" {
-						key = Substring(f.Name(), 0, LastIndex(f.Name(), "."))
-						j.pkgMap[strings.ToLower(key)] = path + "." + key
-					}
-				}
-			}
-		}
 		path = ""
 		fileName = ""
 	}
@@ -768,7 +777,7 @@ func (j *JUS) importHTML() {
 /**
  * 获取注释信息
  */
-func (j *JUS) rootHTML() {
+func (j *UI) rootHTML() {
 	child := j.html.Filter("!")
 	for _, v := range child {
 		v.Remove()
@@ -799,7 +808,7 @@ func (j *JUS) rootHTML() {
 /**
  *
  */
-func (j *JUS) packageHTML(child []*HTML) {
+func (j *UI) packageHTML(child []*HTML) {
 	tagName := ""
 	extName := ""
 	var arr []string
@@ -832,7 +841,7 @@ func (j *JUS) packageHTML(child []*HTML) {
  * 对Module内部的innerHTML 做提前本域名下id绑定
  * @param html
  */
-func (j *JUS) domainHTML(child []*HTML) {
+func (j *UI) domainHTML(child []*HTML) {
 	tagName := ""
 	for _, p := range child {
 		if p.tagType == -1 {
@@ -876,7 +885,7 @@ func (j *JUS) domainHTML(child []*HTML) {
 	}
 }
 
-func (j *JUS) GetPackageMap() map[string]string {
+func (j *UI) GetPackageMap() map[string]string {
 	return j.pkgMap
 }
 
@@ -885,7 +894,7 @@ func (j *JUS) GetPackageMap() map[string]string {
  * @param name
  * @return
  */
-func (j *JUS) GetDefine(name string) *HTMLObject {
+func (j *UI) GetDefine(name string) *HTMLObject {
 	if name[0] == '$' && len(name) > 1 {
 		name = string([]rune(name)[1:])
 		if j.idMap[name] == nil {
@@ -900,7 +909,7 @@ func (j *JUS) GetDefine(name string) *HTMLObject {
  * @param value
  * @return
  */
-func (j *JUS) scanMedia(value string) string {
+func (j *UI) scanMedia(value string) string {
 	data := []rune(value)
 	sb := bytes.NewBufferString("")
 	tmp := make([]rune, 0, 1000)
@@ -966,7 +975,7 @@ func (j *JUS) scanMedia(value string) string {
 /**
  * 获取ClassPath 位置路径
  */
-func (j *JUS) GetRootRealPath() string {
+func (j *UI) GetRootRealPath() string {
 	return ""
 }
 
@@ -974,7 +983,7 @@ func (j *JUS) GetRootRealPath() string {
  * 判断事否为纯Script文件
  * @return
  */
-func (j *JUS) IsScript() bool {
+func (j *UI) IsScript() bool {
 	return j.scriptFile
 }
 
@@ -982,7 +991,7 @@ func (j *JUS) IsScript() bool {
  * 初始化Attr里的@this
  * @param html
  */
-func (j *JUS) useHTML(html *HTML) {
+func (j *UI) useHTML(html *HTML) {
 	arr := make([]*HTML, 0)
 	useFunc(html, &arr)
 	for _, p := range arr {
@@ -1029,7 +1038,7 @@ func useFunc(html *HTML, arr *[]*HTML) {
  * 初始化Attr里的@this
  * @param html
  */
-func (j *JUS) initObj(html *HTML) {
+func (j *UI) initObj(html *HTML) {
 	for _, p := range html.Child() {
 		for _, attr := range p.Attrs() {
 			if "id" == strings.ToLower(attr.Name) {
@@ -1042,11 +1051,11 @@ func (j *JUS) initObj(html *HTML) {
 	}
 }
 
-func (j *JUS) testHTML() *HTML {
+func (j *UI) testHTML() *HTML {
 	return j.html
 }
 
-func (j *JUS) ReadHTML() *HTML {
+func (j *UI) ReadHTML() *HTML {
 	if j.scriptFile {
 
 		tHTML := &HTML{}
@@ -1110,7 +1119,7 @@ func (j *JUS) ReadHTML() *HTML {
 							v2.SetAttr("id", v2.GetAttr("domain")+v2.GetAttr("id"))
 						}
 					}
-					var tFunc *JUS = &JUS{SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH}
+					var tFunc *UI = &UI{SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH}
 					j.idMap[v2.GetAttr("src_id")] = &HTMLObject{Name: v2.GetAttr("id"), HTMLObjectType: 1}
 					if tFunc.CreateFromParent(j.root, v2.GetAttr("id"), v2, v2.TagName(), j) {
 						if tFunc.IsScript() {
@@ -1348,7 +1357,7 @@ func (j *JUS) ReadHTML() *HTML {
 /**
  * 初始化空间默认代码
  */
-func (j *JUS) componentInitCode(value *Attr) string {
+func (j *UI) componentInitCode(value *Attr) string {
 	ms := &MScript{}
 	ms.ReadFromString(value.Value)
 	sb := bytes.NewBufferString("")
@@ -1368,7 +1377,7 @@ func (j *JUS) componentInitCode(value *Attr) string {
 /**
  * 获取模块地图
  */
-func (j *JUS) GetModuleMap() map[string]*Attr {
+func (j *UI) GetModuleMap() map[string]*Attr {
 	if j.parent != nil {
 		return j.parent.GetModuleMap()
 	}
@@ -1378,7 +1387,7 @@ func (j *JUS) GetModuleMap() map[string]*Attr {
 /**
  * 添加执行命令
  */
-func (j *JUS) AddRun(attr *RunElem) {
+func (j *UI) AddRun(attr *RunElem) {
 	if j.IsImport != "" {
 		if j.parent != nil && j.parent.IsImport != "" && j.parent.IsImport == j.IsImport {
 			j.parent.AddRun(attr)
@@ -1393,7 +1402,7 @@ func (j *JUS) AddRun(attr *RunElem) {
 	j.runList = append(j.runList, attr)
 }
 
-func (j *JUS) getName() string {
+func (j *UI) getName() string {
 	if j.parent != nil {
 		return j.parent.getName()
 	}
@@ -1407,7 +1416,7 @@ func (j *JUS) getName() string {
  * @param moduleName	模块名称
  * @param value		内容
  */
-func (j *JUS) ToFormatLine(cls string, moduleName string, value string, data *bytes.Buffer) string {
+func (j *UI) ToFormatLine(cls string, moduleName string, value string, data *bytes.Buffer) string {
 
 	md5Ctx := md5.New()
 	md5Ctx.Write([]byte(value))
@@ -1434,7 +1443,7 @@ func (j *JUS) ToFormatLine(cls string, moduleName string, value string, data *by
  * @param moduleName	模块名称
  * @param value		内容
  */
-func (j *JUS) ToFormatRun(cls string, domain string, value string, data *bytes.Buffer) {
+func (j *UI) ToFormatRun(cls string, domain string, value string, data *bytes.Buffer) {
 	data.WriteString(cls)
 	data.WriteByte(' ')
 	data.WriteString(j.className)
@@ -1449,7 +1458,7 @@ func (j *JUS) ToFormatRun(cls string, domain string, value string, data *bytes.B
  * JUServer使用的字节流
  * cls 模块生成类型，有可预览和不可预览的
  */
-func (j *JUS) ToFormatBytes() []byte {
+func (j *UI) ToFormatBytes() []byte {
 	result := j.ReadHTML()
 	stls := result.GetElementsByTagName("css") //获取公共css属性
 	json := bytes.NewBufferString("\x01")
@@ -1490,18 +1499,18 @@ func (j *JUS) ToFormatBytes() []byte {
 	return json.Bytes()
 }
 
-func (j *JUS) ToFormatString() string {
+func (j *UI) ToFormatString() string {
 	return string(j.ToFormatBytes())
 }
 
 /**
  * 对外暴露接口
  */
-func (j *JUS) GetCode(path string) (string, error) {
+func (j *UI) GetCode(path string) (string, error) {
 	return GetCode(path)
 }
 
-func (j *JUS) ToFormatHTMLString(result string) string {
+func (j *UI) ToFormatHTMLString(result string) string {
 	vm := goja.New()
 	console := &Console{}
 	vm.Set("__goja_log__", console.Log)
@@ -1528,7 +1537,7 @@ func (j *JUS) ToFormatHTMLString(result string) string {
 /**
  * 生成最终字节流
  */
-func (j *JUS) Bytes() []byte {
+func (j *UI) Bytes() []byte {
 	bs := j.ToFormatBytes()
 	if j.pub != "" {
 		return []byte(j.ToFormatHTMLString(string(bs)))

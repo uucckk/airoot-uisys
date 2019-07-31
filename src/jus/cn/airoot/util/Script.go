@@ -7,6 +7,7 @@ import (
 	. "jus"
 	. "jus/str"
 	. "jus/tool"
+	"path/filepath"
 	"strings"
 )
 
@@ -23,7 +24,7 @@ type GSetter struct {
 
 //--------------------------------Script----------------------------------------
 type Script struct {
-	jus          *JUS
+	jus          *UI
 	root         string
 	hMap         []*Attr  //导入的类文件
 	eMap         []string //集成的类文件
@@ -38,7 +39,7 @@ type Script struct {
 	fromBuf      string //通过from导入的类
 }
 
-func (s *Script) CreateFrom(jus *JUS, root string, domain string, value *Attr, extendScript string, className string) *Script {
+func (s *Script) CreateFrom(jus *UI, root string, domain string, value *Attr, extendScript string, className string) *Script {
 	s.jus = jus
 	s.root = root
 	s.domain = domain
@@ -92,14 +93,17 @@ func (s *Script) initScriptFrom(js *MScript, _this_ string, _pri_ string) string
 			for p < len(lst) {
 				f = lst[p]
 				p++
-
+				if f.TagType == 1 {
+					f.Value = Replace(f.Value, "\"", "")
+					f.Value = Replace(f.Value, "'", "")
+				}
 				if f.TagType == -1 {
 					continue
 				}
-				if f.TagType == 9 {
+				if f.TagType == 9 || f.Value == "\\" || f.Value == "/" {
 					point = p
 				}
-				if f.TagType == 4 {
+				if f.TagType == 4 || f.TagType == 5 {
 					if point == -1 {
 						point = at
 					}
@@ -111,6 +115,15 @@ func (s *Script) initScriptFrom(js *MScript, _this_ string, _pri_ string) string
 				}
 				tmp += f.Value
 				at = p - 1
+			}
+			if Index(tmp, ".") == 0 { //说明是获取自己本地路径
+				tmp = Substring(s.jus.dirPath, StringLen(s.jus.root), -1) + "/" + tmp
+				tmp = filepath.Clean(tmp)
+				tmp = Replace(tmp, "\\", ".")
+				tmp = Replace(tmp, "/", ".")
+				if CharAt(tmp, 0) == "." {
+					tmp = Substring(tmp, 1, -1)
+				}
 			}
 			if Index(tmp, "/") != -1 || Index(tmp, "\\") != -1 {
 				Single(&s.hMap, &Attr{tmp, tmp})
@@ -750,7 +763,7 @@ func (s *Script) initClass(name string, data string) string {
 				}
 
 			}
-			ft := &JUS{SYSTEM_PATH: s.jus.SYSTEM_PATH, CLASS_PATH: s.jus.CLASS_PATH}
+			ft := &UI{SYSTEM_PATH: s.jus.SYSTEM_PATH, CLASS_PATH: s.jus.CLASS_PATH}
 			if ft.CreateFromParent(s.root, "", nil, strings.TrimSpace(value), s.jus) {
 				if ft.IsScript() {
 					code += "var __UP__ = new " + ft.ReadHTML().ToString() + ";\r\n"

@@ -83,7 +83,7 @@ func (p *HTML) init() {
 			continue
 		}
 
-		if ch == ' ' || ch == '\t' || ch == '\n' || ch == '\t' {
+		if ch == ' ' || ch == '\t' || ch == '\n' {
 			if len(tmp) > 0 {
 				lst = append(lst, &Ch{string(tmp), 0})
 				tmp = tmp[0:0]

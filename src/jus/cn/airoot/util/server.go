@@ -468,7 +468,7 @@ func (u *UIServer) havUser(cmds []string) (bool, string, string) {
 
 ///param ext 文件扩展名
 func (u *UIServer) jusEvt(w http.ResponseWriter, req *http.Request, ext string) {
-	jus := &JUS{SERVER: u, SYSTEM_PATH: u.SysPath, CLASS_PATH: u.SysPath + "/src/", Debug: true}
+	jus := &UI{SERVER: u, SYSTEM_PATH: u.SysPath, CLASS_PATH: u.SysPath + "/src/", Debug: true}
 	className := Substring(req.URL.Path, 0, LastIndex(req.URL.Path, ext))
 	className = Replace(className, "/", ".")
 	if jus.CreateFrom(u.RootPath+"/", "", nil, className) {
@@ -1020,7 +1020,7 @@ func (u *UIServer) apiEvt(req *http.Request) string {
 			return ""
 		}
 	case "module":
-		jus := &JUS{SERVER: u, SYSTEM_PATH: u.SysPath, CLASS_PATH: u.SysPath + "/"}
+		jus := &UI{SERVER: u, SYSTEM_PATH: u.SysPath, CLASS_PATH: u.SysPath + "/"}
 		className := Substring(req.RequestURI, 0, LastIndex(req.RequestURI, "."))
 		className = Replace(className, "/", ".")
 		if jus.CreateFromString(u.RootPath+"/", "", nil, req.FormValue("value"), className, nil) {
@@ -1243,12 +1243,15 @@ func (u *UIServer) WalkFiles(src string, dest string) {
 			if fi.IsDir() {
 				os.MkdirAll(aPath, 0777) //建立文件目录
 			} else {
-				//fmt.Println(dPath)
 				fileType = Substring(aPath, LastIndex(aPath, "."), -1)
-				if fileType == ".ui" || fileType == ".es" || fileType == ".css" { //2018-5-4
+				if fileType == ".ui" || fileType == ".es" || fileType == ".css" {
+					if fileType == ".es" && Exist(Substring(aPath, 0, LastIndex(aPath, "."))+".ui") {
+						return nil
+					}
 					d, _ := os.Create(aPath[0:(len(aPath)-len(fileType))] + ".ui.html")
 					d.Write(relEvt(u, u.SysPath, u.RootPath, dPath))
 					defer d.Close()
+
 				} else {
 					CopyFile(aPath, f)
 				}
@@ -1259,7 +1262,7 @@ func (u *UIServer) WalkFiles(src string, dest string) {
 }
 
 func relEvt(server *UIServer, sysPath string, rootPath string, path string) []byte {
-	jus := &JUS{SERVER: server, SYSTEM_PATH: sysPath, CLASS_PATH: sysPath + "/src/"}
+	jus := &UI{SERVER: server, SYSTEM_PATH: sysPath, CLASS_PATH: sysPath + "/src/"}
 	lp := LastIndex(path, ".")
 	className := Substring(path, 0, lp)
 	fmt.Print("export:", className)

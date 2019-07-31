@@ -71,7 +71,7 @@ var res [3]rune = [3]rune{'l', 'i', 'b'}
 //转为JUS定制的CSS样式解析器
 type CSS struct {
 	selecter    []*Selecter
-	jus         *JUS
+	jus         *UI
 	CurrentPath string
 }
 

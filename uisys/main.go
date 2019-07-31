@@ -24,7 +24,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-var version string = "AIroot UI-SYSTEM 0.9.5(RC1)"
+var version string = "AIroot UI-SYSTEM 0.9.5(RC2)"
 var lang map[string]string
 
 var zhCN = make(map[string]string, 0)
@@ -157,11 +157,10 @@ var _Count_ int = 0
  * 创建工程目录
  * @param path 	目录路径
  */
-func CreateProjectDir(path string) string {
+func CreateProjectDir(path string) (string, bool) {
 	abs, _ := filepath.Abs(path)
 	if Exist(path) {
-		DevPrintln(335, lang["项目已存在"], abs)
-		return lang["项目已存在"]
+		return fmt.Sprintf(lang["项目已存在"], abs), false
 	}
 	os.MkdirAll(path, 0777)
 	os.MkdirAll(path+"/lib/img", 0777)   //图片
@@ -183,7 +182,7 @@ func CreateProjectDir(path string) string {
 		data, _ := GetBytes("./lib/core/template/index.template")
 		f.Write(data)
 	} else {
-		return e.Error()
+		return e.Error(), false
 	}
 
 	f, e = os.Create(path + "/Index.ui")
@@ -193,7 +192,7 @@ func CreateProjectDir(path string) string {
 		data = strings.Replace(data, "{@content}", abs, -1)
 		f.Write([]byte(data))
 	} else {
-		return e.Error()
+		return e.Error(), false
 	}
 
 	f, e = os.Create(path + "/.uisys")
@@ -201,14 +200,14 @@ func CreateProjectDir(path string) string {
 	if e == nil {
 		f.WriteString("release-path " + filepath.Dir(abs) + "/" + filepath.Base(abs) + "-release/")
 	} else {
-		return e.Error()
+		return e.Error(), false
 	}
 	DevPrintln(2, lang["建立项目"], abs)
 	tName := GetName()
 	commandEvt("add " + tName + " " + abs)
-	DevPrintln(240, lang["项目挂载在"], tName)
+	//DevPrintln(240, lang["项目挂载在"], tName)
 	_Count_++
-	return ""
+	return fmt.Sprintf(lang["项目挂载在"], tName), true
 }
 
 func GetName() string {
@@ -300,7 +299,7 @@ func jusEvt(w http.ResponseWriter, req *http.Request, ext string) {
 	if Exist(path) {
 		root(w, req)
 	} else {
-		jus := &JUS{SYSTEM_PATH: "lib", CLASS_PATH: "lib/src/"}
+		jus := &UI{SYSTEM_PATH: "lib", CLASS_PATH: "lib/src/"}
 		className := Substring(req.RequestURI, 0, LastIndex(req.RequestURI, ext))
 		className = Replace(className, "/", ".")
 		if jus.CreateFrom("lib/manager/", "", nil, className) {
@@ -859,7 +858,14 @@ func command(cmds []string) (bool, string) {
 			return true, str
 		case "ctp": //增加一个项目
 			if len(cmds) > 1 {
-				str = DevPrintln(2, CreateProjectDir(cmds[1]))
+				e := false
+				str, e = CreateProjectDir(cmds[1])
+				if e {
+					DevPrintln(2, str)
+				} else {
+					DevPrintln(335, str)
+				}
+
 			} else {
 				str = DevPrintln(8, lang["ctp"])
 			}
