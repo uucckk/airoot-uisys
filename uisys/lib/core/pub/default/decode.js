@@ -71,7 +71,8 @@ function main(){
 	run += UI.GetCode(UI.SYSTEM_PATH + "/core/parser/module_base.tpl");
 	run += "var fExt=" + (UI.Debug ? " '.ui'" : "'.ui.html'") + ";";
 	run += UI.GetCode(UI.SYSTEM_PATH + "/core/parser/module_manager.tpl");
-	run += "\r\nUI.decode(document.body,'" + UI.GetClassName() + "',_data.innerText);";
+	//此处兼容ie11 不能用innerText 只能用innerHTML
+	run += "\r\nUI.decode(document.body,'" + UI.GetClassName() + "',_data.innerHTML);";
 	run += "</script>";
 	return html + data + run + "</body></html>";
 }
