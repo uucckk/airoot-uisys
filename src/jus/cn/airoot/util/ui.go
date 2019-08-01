@@ -754,20 +754,23 @@ func (j *UI) importHTML() {
 		}
 
 		fl = j.root + "/" + strings.Replace(path, ".", "/", -1)
-		lst, err = ioutil.ReadDir(fl)
-		if err == nil {
-			for _, f := range lst {
-				if !f.IsDir() && (fileName == "" || fileName == f.Name()) {
-					cls = filepath.Ext(f.Name())
-					if cls == ".ui" || cls == ".es" {
-						key = Substring(f.Name(), 0, LastIndex(f.Name(), "."))
-						j.pkgMap[strings.ToLower(key)] = path + "." + key
+		if Exist(fl) {
+			lst, err = ioutil.ReadDir(fl)
+			if err == nil {
+				for _, f := range lst {
+					if !f.IsDir() && (fileName == "" || fileName == f.Name()) {
+						cls = filepath.Ext(f.Name())
+						if cls == ".ui" || cls == ".es" {
+							key = Substring(f.Name(), 0, LastIndex(f.Name(), "."))
+							j.pkgMap[strings.ToLower(key)] = path + "." + key
+						}
 					}
 				}
+			} else {
+				fmt.Println(err)
 			}
-		} else {
-			fmt.Println(err)
 		}
+
 		path = ""
 		fileName = ""
 	}

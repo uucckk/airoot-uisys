@@ -1190,11 +1190,24 @@ func (u *UIServer) GetAttrLike(attr string) [][]string {
  */
 func (u *UIServer) Release(path string) {
 	if path != "" {
-		u.rel(path)
+		path = filepath.Clean(u.RootPath + "/" + path)
+		if filepath.Clean(u.RootPath) != filepath.Clean(path) {
+			u.rel(path)
+		} else {
+			fmt.Println("destination", path, "is exist uisys project.")
+		}
+
 	} else {
 		if u.IsUIPro {
-			for _, v := range u.GetAttr("release-path") {
-				u.rel(v)
+			for k, v := range u.GetAttr("release-path") {
+				if CharAt(v, 0) == "." { //说明是相对路径
+					v = filepath.Clean(u.RootPath + "/" + v)
+				}
+				if filepath.Clean(u.RootPath) != filepath.Clean(v) {
+					u.rel(v)
+				} else {
+					fmt.Println("destination", k, "is exist uisys project.")
+				}
 			}
 		}
 	}
