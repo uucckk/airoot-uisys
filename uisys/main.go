@@ -198,7 +198,7 @@ func CreateProjectDir(path string) (string, bool) {
 	f, e = os.Create(path + "/.uisys")
 	defer f.Close()
 	if e == nil {
-		f.WriteString("release-path " + filepath.Dir(abs) + "/" + filepath.Base(abs) + "-release/")
+		f.WriteString("release-path " + "../" + filepath.Base(abs) + "-release/")
 	} else {
 		return e.Error(), false
 	}
