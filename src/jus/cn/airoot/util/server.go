@@ -58,6 +58,7 @@ type WsUser struct {
 
 type UIServer struct {
 	IsUIPro       bool   //判断是否为UISYS的工程
+	IsStatic      bool   //判断是否为静态发布
 	protocol      string //连接协议http or https
 	Addr          string //连接地址
 	Status        bool   //运行状态
@@ -136,7 +137,18 @@ func (u *UIServer) WebsocketList() []*connectElement {
 	return u.connectedList
 }
 
-func (u *UIServer) Start(addr string, printf func(string, int, string)) string {
+func (u *UIServer) Start(addr string, cfg string, printf func(string, int, string)) string {
+	if Index(cfg, "s") != -1 {
+		u.IsStatic = true
+	} else {
+		u.IsStatic = false
+	}
+
+	if u.IsStatic {
+		printf("", 2, "web server is a static server.")
+	} else {
+		printf("", 2, "web server is a ui-system server.")
+	}
 	if u.Status {
 		return "服务已经开启."
 	}
@@ -491,7 +503,7 @@ func (u *UIServer) jusEvt(w http.ResponseWriter, req *http.Request, ext string) 
 }
 
 func (u *UIServer) root(w http.ResponseWriter, req *http.Request) {
-	if req.URL.Path != "/" {
+	if !u.IsStatic && req.URL.Path != "/" {
 		if IsType(req.URL.Path, ".ui") {
 			u.jusEvt(w, req, ".ui")
 			return
@@ -499,7 +511,7 @@ func (u *UIServer) root(w http.ResponseWriter, req *http.Request) {
 
 		if IsType(req.URL.Path, ".ui.html") {
 			if !Exist(u.RootPath + "/" + req.URL.Path) {
-				u.jusEvt(w, req, ".ui")
+				u.jusEvt(w, req, ".ui.html")
 				return
 			}
 		}
@@ -1187,16 +1199,19 @@ func (u *UIServer) GetAttrLike(attr string) [][]string {
 
 /**
  * 发布此工程
+ * path 发布路径
+ * settings	设置参数
  */
-func (u *UIServer) Release(path string) {
+func (u *UIServer) Release(path string, settings string) {
 	if path != "" {
-		path = filepath.Clean(u.RootPath + "/" + path)
-		if filepath.Clean(u.RootPath) != filepath.Clean(path) {
-			u.rel(path)
+		if CharAt(path, 0) == "." { //说明是相对路径
+			path = filepath.Clean(u.RootPath + "/" + path)
+		}
+		if filepath.Clean(u.RootPath) != filepath.Clean(path) || Index(settings, "m") != -1 {
+			u.rel(path, settings)
 		} else {
 			fmt.Println("destination", path, "is exist uisys project.")
 		}
-
 	} else {
 		if u.IsUIPro {
 			for k, v := range u.GetAttr("release-path") {
@@ -1204,7 +1219,7 @@ func (u *UIServer) Release(path string) {
 					v = filepath.Clean(u.RootPath + "/" + v)
 				}
 				if filepath.Clean(u.RootPath) != filepath.Clean(v) {
-					u.rel(v)
+					u.rel(v, settings)
 				} else {
 					fmt.Println("destination", k, "is exist uisys project.")
 				}
@@ -1212,32 +1227,40 @@ func (u *UIServer) Release(path string) {
 		}
 	}
 }
-func (u *UIServer) rel(v string) {
+
+/**
+ * 发布实际执行函数
+ * v 发布路径
+ * s	设置参数
+ */
+func (u *UIServer) rel(v string, s string) {
 	if v != "" {
 		os.MkdirAll(v, 0777)
 	}
-	fmt.Println("copy static file to [" + v + "].")
-	Copy(u.RootPath, v, ".ui;.es")
-	fmt.Println("complete.")
-	//生成module.js
-	f, e := os.Create(v + "/uisys.js")
-	defer f.Close()
-	if e == nil {
-		tpl, fe := GetCode("lib/core/parser/module.tpl")
-		if fe != nil {
-			fmt.Errorf("load module.tpl error.")
+	if Index(s, "m") == -1 { //如果不为-1，代表只发布模块
+		fmt.Println("copy static file to [" + v + "].")
+		Copy(u.RootPath, v, ".ui;.es")
+		fmt.Println("complete.")
+		//生成module.js
+		f, e := os.Create(v + "/uisys.js")
+		defer f.Close()
+		if e == nil {
+			tpl, fe := GetCode("lib/core/parser/module.tpl")
+			if fe != nil {
+				fmt.Errorf("load module.tpl error.")
+			}
+			inner, ierr := GetCode("lib/core/parser/module_base.tpl")
+			if ierr != nil {
+				fmt.Errorf("load module_base.tpl error.")
+			}
+			tpl = Replace(tpl, "{@base}", inner)
+			inner, ierr = GetCode("lib/core/parser/module_manager.tpl")
+			if ierr != nil {
+				fmt.Errorf("load module_manager.tpl error.")
+			}
+			tpl = Replace(tpl, "{@manager}", inner)
+			f.Write([]byte(tpl))
 		}
-		inner, ierr := GetCode("lib/core/parser/module_base.tpl")
-		if ierr != nil {
-			fmt.Errorf("load module_base.tpl error.")
-		}
-		tpl = Replace(tpl, "{@base}", inner)
-		inner, ierr = GetCode("lib/core/parser/module_manager.tpl")
-		if ierr != nil {
-			fmt.Errorf("load module_manager.tpl error.")
-		}
-		tpl = Replace(tpl, "{@manager}", inner)
-		f.Write([]byte(tpl))
 	}
 	//发布Code,先遍历
 	u.WalkFiles(FormatSimplePath(u.RootPath+"/"), v)
@@ -1264,7 +1287,6 @@ func (u *UIServer) WalkFiles(src string, dest string) {
 					d, _ := os.Create(aPath[0:(len(aPath)-len(fileType))] + ".ui.html")
 					d.Write(relEvt(u, u.SysPath, u.RootPath, dPath))
 					defer d.Close()
-
 				} else {
 					CopyFile(aPath, f)
 				}
@@ -1286,6 +1308,29 @@ func relEvt(server *UIServer, sysPath string, rootPath string, path string) []by
 		return b
 	}
 	return []byte("nothing.")
+}
+
+/**
+ * 清除生成过的ui.html
+ */
+func (u *UIServer) Clean() {
+	//发布Code,先遍历
+	u.WalkDelFiles(FormatSimplePath(u.RootPath + "/"))
+}
+func (u *UIServer) WalkDelFiles(src string) {
+	t := time.Now()
+	filepath.Walk(src,
+		func(f string, fi os.FileInfo, err error) error { //遍历目录
+			if IsType(f, ".ui.html") {
+				if err := os.Remove(f); err == nil {
+					fmt.Println("del", f)
+				} else {
+					fmt.Println("err", f)
+				}
+			}
+			return nil
+		})
+	fmt.Println("use time:", time.Since(t))
 }
 
 /**

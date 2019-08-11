@@ -24,7 +24,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-var version string = "AIroot UI-SYSTEM 0.9.5(RC2)"
+var version string = "AIroot UI-SYSTEM 0.9.5(RC3)"
 var lang map[string]string
 
 var zhCN = make(map[string]string, 0)
@@ -264,7 +264,14 @@ func root(w http.ResponseWriter, req *http.Request) {
 		jusEvt(w, req, ".ui")
 		return
 	}
-	if req.URL.Path == "/ui-sys.js" {
+
+	if IsType(req.URL.Path, ".ui.html") {
+		req.URL.Path = Substring(req.URL.Path, 0, StringLen(req.URL.Path)-5)
+		jusEvt(w, req, ".ui.html")
+		return
+	}
+
+	if req.URL.Path == "/uisys.js" {
 		b, e := GetCode("lib/core/parser/module.tpl")
 		b0, e0 := GetCode("lib/core/parser/module_base.tpl")
 		b1, e1 := GetCode("lib/core/parser/module_manager.tpl")
@@ -287,12 +294,11 @@ func root(w http.ResponseWriter, req *http.Request) {
 	path, _ = filepath.Abs(path)
 	value, err := GetBytes(path)
 	if err != nil {
+		w.WriteHeader(404)
 		value = []byte("404")
 	}
 	w.Write(value)
 }
-
-var jusDirName string = "/juis/"
 
 func jusEvt(w http.ResponseWriter, req *http.Request, ext string) {
 	path := "lib/manager" + req.URL.Path
@@ -588,7 +594,7 @@ func command(cmds []string) (bool, string) {
 				str += "<tr><th>ID</th><th>Name</th><th>Create Time</th><th>Init Status</th><th>Index Address</th></tr>"
 				i := 0
 				for key, value := range serverList {
-					str += "<tr>"
+					str += "<tr " + IfStr(value.Status && value.IsStatic, "style='color:#1e6fbf'", "") + ">"
 					if value.Status { //Connect.
 						str += "<td>" + strconv.Itoa(i) + "</td><td>" + key + "</td><td>" + value.Datetime.Format("2006-01-02 15:04:05") + "</td><td>" + IfStr(value.RootPath == "", lang["遍历未初始化"], value.RootPath) + "</td><td>" + value.GetProtocol() + "://" + IfStr(Index(value.Addr, ":") == 0, "0.0.0.0"+value.Addr, value.Addr) + "/" + "</td>"
 					} else {
@@ -602,7 +608,12 @@ func command(cmds []string) (bool, string) {
 				i := 0
 				for key, value := range serverList {
 					if value.Status {
-						str += DevPrintln(7, lang["遍历运行"], strconv.Itoa(i), key, value.Datetime.Format("2006-01-02 15:04:05"), IfStr(value.RootPath == "", lang["遍历未初始化"], value.RootPath), value.GetProtocol()+"://"+IfStr(Index(value.Addr, ":") == 0, "0.0.0.0"+value.Addr, value.Addr)+"/")
+						if value.IsStatic {
+							str += DevPrintln(3, lang["遍历运行"], strconv.Itoa(i), key, value.Datetime.Format("2006-01-02 15:04:05"), IfStr(value.RootPath == "", lang["遍历未初始化"], value.RootPath), value.GetProtocol()+"://"+IfStr(Index(value.Addr, ":") == 0, "0.0.0.0"+value.Addr, value.Addr)+"/")
+						} else {
+							str += DevPrintln(7, lang["遍历运行"], strconv.Itoa(i), key, value.Datetime.Format("2006-01-02 15:04:05"), IfStr(value.RootPath == "", lang["遍历未初始化"], value.RootPath), value.GetProtocol()+"://"+IfStr(Index(value.Addr, ":") == 0, "0.0.0.0"+value.Addr, value.Addr)+"/")
+						}
+
 					} else {
 						str += DevPrintln(8, lang["遍历停止"], strconv.Itoa(i), key, value.Datetime.Format("2006-01-02 15:04:05"), IfStr(value.RootPath == "", lang["遍历未初始化"], value.RootPath), value.GetProtocol()+"://"+IfStr(Index(value.Addr, ":") == 0, "0.0.0.0"+value.Addr, value.Addr)+"/")
 					}
@@ -662,7 +673,11 @@ func command(cmds []string) (bool, string) {
 					return true, str
 				}
 				if len(cmds) > 2 {
-					_, str = commandEvt("run " + pNode + " " + cmds[2])
+					param := ""
+					for i := 2; i < len(cmds); i++ {
+						param += " " + cmds[i]
+					}
+					_, str = commandEvt("run " + pNode + " " + param)
 				} else {
 					_, str = commandEvt("run " + pNode)
 				}
@@ -808,15 +823,22 @@ func command(cmds []string) (bool, string) {
 		case "run": //运行工程
 			if len(cmds) > 1 {
 				port := ":80"
+				cfg := ""
 				if len(cmds) > 2 {
-					port = cmds[2]
+					for i := 2; i < len(cmds); i++ {
+						if Index(cmds[i], "-") == 0 {
+							cfg += Substring(cmds[i], 1, -1)
+						} else {
+							port = cmds[i]
+						}
+					}
 				}
 				if serverList[cmds[1]] == nil {
 					str = DevPrintln(335, lang["不存在服务"], cmds[1])
 				} else {
 					if serverList[cmds[1]].RootPath != "" {
 						str = DevPrintln(2, lang["服务正在启动"], cmds[1], port)
-						serverList[cmds[1]].Start(port, BroadCast)
+						serverList[cmds[1]].Start(port, cfg, BroadCast)
 					} else {
 						str = DevPrintln(335, lang["run_not_set"])
 					}
@@ -876,12 +898,34 @@ func command(cmds []string) (bool, string) {
 					str = DevPrintln(335, lang["不存在服务"], cmds[1])
 				} else {
 					if len(cmds) > 2 {
-						serverList[cmds[1]].Release(cmds[2])
+						//release a0 -l 代表只发布到当前目录下
+						settings := ""
+						path := ""
+						for i := 2; i < len(cmds); i++ {
+							if Index(cmds[i], "-") == 0 {
+								settings += Substring(cmds[i], 1, -1)
+							} else {
+								path = cmds[i]
+							}
+						}
+						serverList[cmds[1]].Release(path, settings)
 						str = DevPrintln(8, lang["发布完成"])
 					} else {
-						serverList[cmds[1]].Release("")
+						serverList[cmds[1]].Release("", "")
 						str = DevPrintln(8, lang["发布完成"])
 					}
+				}
+			} else {
+				str = DevPrintln(8, lang["release"])
+			}
+			return true, str
+		case "clean":
+			if len(cmds) > 1 {
+				if serverList[cmds[1]] == nil {
+					str = DevPrintln(335, lang["不存在服务"], cmds[1])
+				} else {
+					serverList[cmds[1]].Clean()
+					str = DevPrintln(8, lang["发布完成"])
 				}
 			} else {
 				str = DevPrintln(8, lang["release"])
