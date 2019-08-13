@@ -28,7 +28,6 @@ type HTMLObject struct {
 type UI struct {
 	Debug               bool      //判断是否被测试
 	SERVER              *UIServer //服务器引用
-	resPath             string    //资源生成目录（例如index.lib）
 	dirPath             string    //所在目录地址
 	path                string    //记录类的文件夹路径
 	htmlPath            string    //html模块的绝对路径
@@ -219,7 +218,6 @@ func (j *UI) PushImportScript(value *Attr) {
 		ft := &UI{SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH}
 		if ft.CreateFromParent(j.root, "", nil, strings.TrimSpace(value.Value), j) {
 			ft.IsImport = value.Value
-			ft.resPath = j.resPath
 			if ft.IsScript() {
 				scriptObj := &Script{}
 				scriptObj.CreateFrom(j, j.root, j.domain, j.paramValue, j.extendsScriptBuffer, strings.TrimSpace(value.Value))
@@ -557,9 +555,7 @@ func (j *UI) scanHTML(child []*HTML) {
 				tagName = arr[1]
 			}
 			var tFunc *UI = &UI{SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH, IsImport: j.IsImport}
-
 			if tFunc.CreateFromParent(j.root, p.GetAttr("id"), p, tagName, j) {
-				tFunc.resPath = j.resPath
 				if tFunc.IsScript() {
 					tFunc.SetConstructor(&Attr{tagName, p.GetConstructerParameter()}).setExtend(p.GetAttr("id") == j.domain)
 					if p.GetConstructerCode() != "" {
@@ -1048,7 +1044,7 @@ func (j *UI) initObj(html *HTML) {
 				continue
 			}
 			p.SetAttr(attr.Name, ScriptInitD(strings.Replace(p.GetAttr(attr.Name), "@this", j.domain, -1), j.domain))
-			p.SetAttr(attr.Name, ScriptInitD(strings.Replace(p.GetAttr(attr.Name), "@lib", j.resPath+"/"+j.relativePath+".lib", -1), j.domain))
+			p.SetAttr(attr.Name, ScriptInitD(strings.Replace(p.GetAttr(attr.Name), "@lib", "./"+j.relativePath+".lib", -1), j.domain))
 		}
 		j.initObj(p)
 	}
@@ -1197,7 +1193,7 @@ func (j *UI) ReadHTML() *HTML {
 	j.packageHTML([]*HTML{j.html})
 	j.domainHTML([]*HTML{j.html})
 	if j.styleBuffer.Len() > 0 {
-		j.style = &CSS{jus: j, CurrentPath: j.resPath + "/" + j.relativePath + ".lib"}
+		j.style = &CSS{jus: j, CurrentPath: "./" + j.relativePath + ".lib"}
 		j.style.ReadFromString(j.scanMedia(j.styleBuffer.String()))
 	}
 
@@ -1265,7 +1261,7 @@ func (j *UI) ReadHTML() *HTML {
 	}
 
 	if j.cssBuffer.Len() > 0 {
-		j.css = &CSS{jus: j, CurrentPath: j.resPath + "/" + j.relativePath + ".lib"}
+		j.css = &CSS{jus: j, CurrentPath: "./" + j.relativePath + ".lib"}
 		j.css.ReadFromString(j.scanMedia(j.cssBuffer.String()))
 		j.AddStyleCode(j.className, j.cssFormat())
 	}

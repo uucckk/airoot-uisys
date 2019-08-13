@@ -394,8 +394,8 @@ func (s *Script) initScriptFrom(js *MScript, _this_ string, _pri_ string) string
 		}
 		if t.IsKeyWord && "@this" == t.Value {
 			t.Value = _this_
-		} else if t.IsKeyWord && "@res" == t.Value {
-			t.Value = "\"" + s.jus.resPath + "/" + s.jus.relativePath + ".RES/\""
+		} else if t.IsKeyWord && "@lib" == t.Value {
+			t.Value = "\"" + "./" + s.jus.relativePath + ".lib/\""
 		} else if t.IsKeyWord && "this" == t.Value {
 			tlt = append(tlt, t)
 			if s.getLevel(t) == 1 {

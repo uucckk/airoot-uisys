@@ -1237,36 +1237,42 @@ func (u *UIServer) rel(v string, s string) {
 	if v != "" {
 		os.MkdirAll(v, 0777)
 	}
+	havF := true
 	if Index(s, "m") == -1 { //如果不为-1，代表只发布模块
+		havF = true
 		fmt.Println("copy static file to [" + v + "].")
 		Copy(u.RootPath, v, ".ui;.es")
 		fmt.Println("complete.")
-		//生成module.js
-		f, e := os.Create(v + "/uisys.js")
-		defer f.Close()
-		if e == nil {
-			tpl, fe := GetCode("lib/core/parser/module.tpl")
-			if fe != nil {
-				fmt.Errorf("load module.tpl error.")
-			}
-			inner, ierr := GetCode("lib/core/parser/module_base.tpl")
-			if ierr != nil {
-				fmt.Errorf("load module_base.tpl error.")
-			}
-			tpl = Replace(tpl, "{@base}", inner)
-			inner, ierr = GetCode("lib/core/parser/module_manager.tpl")
-			if ierr != nil {
-				fmt.Errorf("load module_manager.tpl error.")
-			}
-			tpl = Replace(tpl, "{@manager}", inner)
-			f.Write([]byte(tpl))
+
+	} else {
+		havF = false
+		fmt.Println("== ONLY MOUDLE ==")
+	}
+	//生成module.js
+	f, e := os.Create(v + "/uisys.js")
+	defer f.Close()
+	if e == nil {
+		tpl, fe := GetCode("lib/core/parser/module.tpl")
+		if fe != nil {
+			fmt.Errorf("load module.tpl error.")
 		}
+		inner, ierr := GetCode("lib/core/parser/module_base.tpl")
+		if ierr != nil {
+			fmt.Errorf("load module_base.tpl error.")
+		}
+		tpl = Replace(tpl, "{@base}", inner)
+		inner, ierr = GetCode("lib/core/parser/module_manager.tpl")
+		if ierr != nil {
+			fmt.Errorf("load module_manager.tpl error.")
+		}
+		tpl = Replace(tpl, "{@manager}", inner)
+		f.Write([]byte(tpl))
 	}
 	//发布Code,先遍历
-	u.WalkFiles(FormatSimplePath(u.RootPath+"/"), v)
+	u.WalkFiles(FormatSimplePath(u.RootPath+"/"), v, havF)
 }
 
-func (u *UIServer) WalkFiles(src string, dest string) {
+func (u *UIServer) WalkFiles(src string, dest string, havF bool) {
 	fileType := ""
 	t := time.Now()
 	filepath.Walk(src,
@@ -1280,16 +1286,20 @@ func (u *UIServer) WalkFiles(src string, dest string) {
 				os.MkdirAll(aPath, 0777) //建立文件目录
 			} else {
 				fileType = Substring(aPath, LastIndex(aPath, "."), -1)
-				if fileType == ".ui" || fileType == ".es" || fileType == ".css" {
+				if fileType == ".ui" || fileType == ".es" {
 					if fileType == ".es" && Exist(Substring(aPath, 0, LastIndex(aPath, "."))+".ui") {
 						return nil
 					}
 					d, _ := os.Create(aPath[0:(len(aPath)-len(fileType))] + ".ui.html")
 					d.Write(relEvt(u, u.SysPath, u.RootPath, dPath))
 					defer d.Close()
-				} else {
-					CopyFile(aPath, f)
 				}
+				/*else {
+					if havF {
+						CopyFile(aPath, f)
+					}
+
+				}*/
 			}
 			return nil
 		})

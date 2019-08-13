@@ -386,8 +386,8 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _this_ string, _pri_ string) st
 		}
 		if t.IsKeyWord && "@this" == t.Value {
 			t.Value = _this_
-		} else if t.IsKeyWord && "@res" == t.Value {
-			t.Value = "\"" + s.jus.resPath + "/" + s.jus.relativePath + ".RES/\""
+		} else if t.IsKeyWord && "@lib" == t.Value {
+			t.Value = "\"" + "./" + s.jus.relativePath + ".lib/\""
 		} else if t.Value[0] == '@' {
 			t.Value = s.jus.SERVER.GetServerVar(t.Value)
 		} else if t.IsKeyWord && "this" == t.Value {
