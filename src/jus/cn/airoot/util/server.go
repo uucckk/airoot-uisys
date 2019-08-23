@@ -510,10 +510,8 @@ func (u *UIServer) root(w http.ResponseWriter, req *http.Request) {
 		}
 
 		if IsType(req.URL.Path, ".ui.html") {
-			if !Exist(u.RootPath + "/" + req.URL.Path) {
-				u.jusEvt(w, req, ".ui.html")
-				return
-			}
+			u.jusEvt(w, req, ".ui.html")
+			return
 		}
 
 		if req.URL.Path == "/index.doc" {
@@ -1203,28 +1201,18 @@ func (u *UIServer) GetAttrLike(attr string) [][]string {
  * settings	设置参数
  */
 func (u *UIServer) Release(path string, settings string) {
-	if path != "" {
-		if CharAt(path, 0) == "." { //说明是相对路径
-			path = filepath.Clean(u.RootPath + "/" + path)
-		}
-		if filepath.Clean(u.RootPath) != filepath.Clean(path) || Index(settings, "m") != -1 {
-			u.rel(path, settings)
-		} else {
-			fmt.Println("destination", path, "is exist uisys project.")
-		}
+	if path == "" {
+		path = "./"
+		settings = "m"
+		fmt.Println("local project distribute") //本地发布
+	}
+	if CharAt(path, 0) == "." { //说明是相对路径
+		path = filepath.Clean(u.RootPath + "/" + path)
+	}
+	if filepath.Clean(u.RootPath) != filepath.Clean(path) || Index(settings, "m") != -1 {
+		u.rel(path, settings)
 	} else {
-		if u.IsUIPro {
-			for k, v := range u.GetAttr("release-path") {
-				if CharAt(v, 0) == "." { //说明是相对路径
-					v = filepath.Clean(u.RootPath + "/" + v)
-				}
-				if filepath.Clean(u.RootPath) != filepath.Clean(v) {
-					u.rel(v, settings)
-				} else {
-					fmt.Println("destination", k, "is exist uisys project.")
-				}
-			}
-		}
+		fmt.Println("destination", path, "is exist uisys project.")
 	}
 }
 
@@ -1331,7 +1319,7 @@ func (u *UIServer) WalkDelFiles(src string) {
 	t := time.Now()
 	filepath.Walk(src,
 		func(f string, fi os.FileInfo, err error) error { //遍历目录
-			if IsType(f, ".ui.html") {
+			if IsType(f, ".ui.html") || fi.Name() == "uisys.js" {
 				if err := os.Remove(f); err == nil {
 					fmt.Println("del", f)
 				} else {

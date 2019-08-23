@@ -425,7 +425,7 @@ func (j *UI) overHTML(node []*HTML) {
 			lst = overList[k].Child()
 			for i := 0; i < len(lst); i++ {
 				p = lst[i]
-				if "script" == p.TagName() {
+				if "script" == p.TagName() && p.GetAttr("type") == "" {
 					j.extendsScriptBuffer += ListToHTMLString(p.Child())
 					continue
 				}
@@ -510,6 +510,10 @@ func (j *UI) scanHTML(child []*HTML) {
 		}
 		if "module" == p.TagName() {
 			tagName = "core.module"
+		}
+
+		if "script" == p.TagName() && p.GetAttr("type") == "" {
+			continue
 		}
 
 		if p.GetAttr("isroot") != "" {
@@ -793,8 +797,11 @@ func (j *UI) rootHTML() {
 	}
 	child = j.html.Filter("script")
 	for _, v := range child {
-		j.scriptBuffer.Write(ListToHTMLStringBytes(v.Child()))
-		v.Remove()
+		if v.GetAttr("type") == "" {
+			j.scriptBuffer.Write(ListToHTMLStringBytes(v.Child()))
+			v.Remove()
+		}
+
 	}
 	child = j.html.Filter("head")
 	for _, v := range child {
@@ -857,7 +864,7 @@ func (j *UI) domainHTML(child []*HTML) {
 			continue
 		}
 
-		if "script" == tagName || "~script" == tagName {
+		if ("script" == tagName || "~script" == tagName) && p.GetAttr("type") == "" {
 			j.scriptBuffer.Write(ListToHTMLStringBytes(p.Child()))
 			p.Remove()
 			continue
@@ -1474,8 +1481,11 @@ func (j *UI) ToFormatBytes() []byte {
 
 	spts := result.GetElementsByTagName("script") //获取Script属性
 	for _, v := range spts {
-		json.Write(ListToHTMLStringBytes(v.Child()))
-		v.Remove()
+		if v.GetAttr("type") == "" {
+			json.Write(ListToHTMLStringBytes(v.Child()))
+			v.Remove()
+		}
+
 	}
 	if j.pub != "" {
 		head := result.GetElementsByTagName("head") //获取Head属性

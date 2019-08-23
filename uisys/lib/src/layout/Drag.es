@@ -59,6 +59,10 @@ class Drag{
 					dy = e.clientY - my;
 					cx += dx;
 					cy += dy;
+					cx = cx < 0 ? 0 : cx;
+					cy = cy < 0 ? 0 : cy;
+					cx = cx + dom.offsetWidth>window.innerWidth ? window.innerWidth - dom.offsetWidth : cx;
+					cy = cy + dom.offsetHeight>window.innerHeight ? window.innerHeight - dom.offsetHeight : cy;
 					dom.style.left = cx + "px";
 					dom.style.top = cy + "px";
 					mx = e.clientX;

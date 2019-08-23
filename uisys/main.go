@@ -24,7 +24,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-var version string = "AIroot UI-SYSTEM 0.9.5(RC3)"
+var version string = "AIroot UI-SYSTEM 0.9.5(RC4)"
 var lang map[string]string
 
 var zhCN = make(map[string]string, 0)
@@ -57,6 +57,7 @@ func init() {
 	zhCN["服务正在启动"] = "[%s] 服务在[%s]"
 	zhCN["关闭服务"] = "%s 服务关闭[%s]"
 	zhCN["发布完成"] = "----发布完成----"
+	zhCN["清理完成"] = "----清理完成----"
 	zhCN["添加WEB用户成功"] = "添加WEB用户成功."
 	zhCN["移除WEB用户成功"] = "移除WEB用户成功."
 	zhCN["模块创建成功"] = "模块创建成功."
@@ -67,6 +68,7 @@ func init() {
 	zhCN["stp"] = "stp 设置工程目录\r\n命令格式: stp <服务名称> <工程路径>\r\n例如:stp test C:/jus/project/\r\n"
 	zhCN["ctf"] = "ctf 创建模块页\r\n命令格式: ctf [-创建方式(-h|m|s|r)] <服务名称> <模块全路径>\r\n例如:ctf test component.Test\r\nctf test -hr component.Test\r\n"
 	zhCN["release"] = "release 发布工程\r\n命令格式: release <服务名称> [工程路径]\r\n例如:release test C:/jus/project/\r\n"
+	zhCN["clean"] = "clean 清理工程\r\n命令格式: clean <服务名称>\r\n例如:clean test"
 	zhCN["run"] = "run 启动服务\r\n命令格式: run <服务名称> [IP:端口], 例如:run test 127.0.0.1:1511\r\n"
 	zhCN["run_not_set"] = "未设置发布目录，不能启动服务器;\r\n您可以使用stp命令设置发布目录。"
 	zhCN["stop"] = "stop 停止服务\r\n命令格式: stop <服务名称>\r\n"
@@ -111,6 +113,7 @@ func init() {
 	enCH["服务正在启动"] = "The [%s] starting at  [%s]"
 	enCH["关闭服务"] = "%s Stop [%s]"
 	enCH["发布完成"] = "----Release Complete----"
+	zhCN["清理完成"] = "----Deleted Complete----"
 	enCH["添加WEB用户成功"] = "Add Web Controller [%s] Success."
 	enCH["移除WEB用户成功"] = "Remove Web Controller [%s] Success."
 	enCH["模块创建成功"] = "Create Module Success."
@@ -122,6 +125,7 @@ func init() {
 	enCH["stp"] = "stp set project dir.\r\nCOMMAND: stp <Service Name> <Project Path>\r\nFor Example:stp test C:/jus/project/\r\n"
 	enCH["ctf"] = "ctf create module file.\r\nCOMMAND: ctf [-Create Method(-h|m|s|r)] <Service Name> <Project Path>\r\nFor Example:ctf test component.Test\r\nctf test -hr component.Test\r\n"
 	enCH["release"] = "release release project.\r\nCOMMAND: release <Service Name> [Project Path]\r\nFor Example:release test C:/jus/project/\r\n"
+	enCH["clean"] = "clean clean project.\r\nCOMMAND: clean <Service Name>\r\nFor Example:clean test\r\n"
 	enCH["run"] = "run Start service.\r\nCOMMAND: run <Service Name> [IP:PORT], For Example:run test 127.0.0.1:1511\r\n"
 	enCH["run_not_set"] = "The publishing directory is not set, the server cannot be started; \r\nYou can use the STP command to set up the publish directory."
 	enCH["stop"] = "stop stop Service.\r\nCOMMAND: stop <Service Name>\r\n"
@@ -925,7 +929,7 @@ func command(cmds []string) (bool, string) {
 					str = DevPrintln(335, lang["不存在服务"], cmds[1])
 				} else {
 					serverList[cmds[1]].Clean()
-					str = DevPrintln(8, lang["发布完成"])
+					str = DevPrintln(8, lang["清理完成"])
 				}
 			} else {
 				str = DevPrintln(8, lang["release"])
@@ -1083,6 +1087,7 @@ func command(cmds []string) (bool, string) {
 			str += DevPrintln(7, lang["stp"])
 			str += DevPrintln(7, lang["ctf"])
 			str += DevPrintln(7, lang["release"])
+			str += DevPrintln(7, lang["clean"])
 			str += DevPrintln(7, lang["update"])
 			str += DevPrintln(7, lang["send"])
 			str += DevPrintln(7, lang["run"])
