@@ -69,6 +69,7 @@ type UIServer struct {
 	SysPath       string
 	RootPath      string
 	pattern       map[string]*urlMap //映射列表
+	cross         map[string]string  //跨域列表
 	attribute     map[string]string  //服务环境变量
 	useClassList  []*element
 	wsUser        *WsUser
@@ -90,6 +91,7 @@ func (u *UIServer) CreateServer(SysPath string, rootPath string, srcPath string,
 		u.SetProject(rootPath)
 	}
 	u.pattern = make(map[string]*urlMap, 0)
+	u.cross = make(map[string]string, 0)
 	u.attribute = make(map[string]string, 0)
 	u.wsUser = &WsUser{list: make(map[string]*connectElement)} //初始化
 	u.connectedList = make([]*connectElement, 0)
@@ -199,6 +201,9 @@ func (u *UIServer) SetProject(path string) int {
 			for _, v := range u.GetAttrLike("pattern") {
 				u.AddProxy(v[0], v[1])
 			}
+			for _, v := range u.GetAttrLike("cross") { //添加可以跨域路由
+				u.AddCross(v[0])
+			}
 			for _, v := range u.GetAttrLike("ws_accept") { //添加websocket用户验证url
 				fmt.Println("ws_accept", v[0])
 				u.wsURL = v[0]
@@ -273,7 +278,6 @@ func (u *UIServer) CreateModule(cls string, className string) bool {
 				defer f.Close()
 			}
 		}
-
 	}
 
 	if Index(cls, "h") != -1 { //默认创建HTML文件
@@ -503,6 +507,29 @@ func (u *UIServer) jusEvt(w http.ResponseWriter, req *http.Request, ext string) 
 }
 
 func (u *UIServer) root(w http.ResponseWriter, req *http.Request) {
+	if u.hasCross(req.URL) {
+		if req.Method == "OPTIONS" {
+			o := req.Header.Get("Origin")
+			if o == "" {
+				o = "*"
+			}
+			w.Header().Set("Access-Control-Allow-Origin", o) //
+			w.Header().Add("Access-Control-Allow-Headers", req.Header.Get("Access-Control-Request-Headers"))
+			w.Header().Add("Access-Control-Allow-Methods", req.Method)
+			return
+		}
+		o := req.Header.Get("Origin")
+		if o == "" {
+			o = "*"
+		}
+		w.Header().Set("Access-Control-Allow-Origin", o) //x-openstack-nova-api-version
+		for k, _ := range w.Header() {
+			w.Header().Add("Access-Control-Expose-Headers", k)
+		}
+		w.Header().Add("Access-Control-Allow-Methods", req.Method)
+		w.Header().Add("Access-Control-Allow-Credentials", "true")
+	}
+
 	if !u.IsStatic && req.URL.Path != "/" {
 		if IsType(req.URL.Path, ".ui") {
 			u.jusEvt(w, req, ".ui")
@@ -566,6 +593,7 @@ func (u *UIServer) root(w http.ResponseWriter, req *http.Request) {
 	} else if Substring(path, LastIndex(path, "."), -1) == ".css" {
 		w.Header().Add("Content-Type", "text/css; charset=utf-8")
 	}
+
 	//w.Header().Add("ETag", "1")
 	u.fServerList[u.RootPath].ServeHTTP(w, req)
 
@@ -1096,22 +1124,24 @@ func (u *UIServer) hasUrl(urlPath *url.URL, w http.ResponseWriter, req *http.Req
 			}
 			proxy := NewSingleHostReverseProxy(remote) //httputil.NewSingleHostReverseProxy(remote)
 			req.URL.Path = Substring(urlPath.Path, StringLen(p.pattern), -1)
-			//scheme := "http://"
-			//if req.TLS != nil {
-			//	scheme = "https://"
-			//}
-			//fmt.Println(">>")
-			//fmt.Println(req)
-			if req.Method == "OPTIONS" {
-				w.Header().Set("Access-Control-Allow-Origin", req.Header.Get("Origin")) //
-				w.Header().Add("Access-Control-Allow-Headers", req.Header.Get("Access-Control-Request-Headers"))
-				w.Header().Add("Access-Control-Allow-Methods", req.Method)
-				return true
-			}
 			proxy.ServeHTTP(w, req)
 		}
 		return true
 	}
+	return false
+}
+
+/**
+ * 判断是否有为可跨域访问
+ */
+func (u *UIServer) hasCross(urlPath *url.URL) bool {
+	for _, v := range u.cross {
+		fmt.Println(urlPath.Path, v)
+		if Index(urlPath.Path, v) == 0 {
+			return true
+		}
+	}
+
 	return false
 }
 
@@ -1127,7 +1157,6 @@ func NewSingleHostReverseProxy(target *url.URL) *httputil.ReverseProxy {
 			req.URL.RawQuery = targetQuery + "&" + req.URL.RawQuery
 		}
 		if _, ok := req.Header["User-Agent"]; !ok {
-			// explicitly disable User-Agent so it's not set to default value
 			req.Header.Set("User-Agent", "")
 		}
 	}
@@ -1144,7 +1173,11 @@ func (f roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 func rt(req *http.Request) (*http.Response, error) {
 	res, err := http.DefaultTransport.RoundTrip(req)
 	if err == nil {
-		res.Header.Set("Access-Control-Allow-Origin", req.Header.Get("Origin")) //x-openstack-nova-api-version
+		o := req.Header.Get("Origin")
+		if o == "" {
+			o = "*"
+		}
+		res.Header.Set("Access-Control-Allow-Origin", o) //x-openstack-nova-api-version
 		for k, _ := range res.Header {
 			res.Header.Add("Access-Control-Expose-Headers", k)
 		}
@@ -1365,6 +1398,14 @@ func (u *UIServer) AddProxy(pattern string, path string) {
 
 	}
 	u.pattern[pattern] = &urlMap{pattern, path, cls}
+}
+
+/**
+ * 增加虚拟目录和反向代理
+ */
+func (u *UIServer) AddCross(pattern string) {
+	fmt.Println("cross", pattern)
+	u.cross[pattern] = pattern
 }
 
 /**

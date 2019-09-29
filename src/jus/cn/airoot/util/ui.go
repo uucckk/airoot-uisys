@@ -785,6 +785,11 @@ func (j *UI) rootHTML() {
 	for _, v := range child {
 		v.Remove()
 	}
+	child = j.html.Filter("head")
+	for _, v := range child {
+		j.headBuffer.Write(ListToHTMLStringBytes(v.Child()))
+		v.Remove()
+	}
 	child = j.html.Filter("style")
 	for _, v := range child {
 		j.styleBuffer.Write(ListToHTMLStringBytes(v.Child()))
@@ -801,12 +806,6 @@ func (j *UI) rootHTML() {
 			j.scriptBuffer.Write(ListToHTMLStringBytes(v.Child()))
 			v.Remove()
 		}
-
-	}
-	child = j.html.Filter("head")
-	for _, v := range child {
-		j.headBuffer.Write(ListToHTMLStringBytes(v.Child()))
-		v.Remove()
 	}
 
 }
@@ -1468,7 +1467,13 @@ func (j *UI) ToFormatBytes() []byte {
 	result := j.ReadHTML()
 	stls := result.GetElementsByTagName("css") //获取公共css属性
 	json := bytes.NewBufferString("\x01")
-
+	if j.pub != "" {
+		head := result.GetElementsByTagName("head") //获取Head属性
+		for _, v := range head {
+			json.Write(ListToHTMLStringBytes(v.Child()))
+			v.Remove()
+		}
+	}
 	for _, v := range stls {
 		json.WriteString(ListToHTMLString(v.Child()))
 		v.Remove()
@@ -1486,13 +1491,6 @@ func (j *UI) ToFormatBytes() []byte {
 			v.Remove()
 		}
 
-	}
-	if j.pub != "" {
-		head := result.GetElementsByTagName("head") //获取Head属性
-		for _, v := range head {
-			json.Write(ListToHTMLStringBytes(v.Child()))
-			v.Remove()
-		}
 	}
 
 	if j.IsScript() {

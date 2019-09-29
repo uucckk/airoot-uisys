@@ -23,9 +23,13 @@ var __FORMAT__ = function(__DATA__,__APPDOMAIN__,module){
 		}else{
 			v = __READ_DATA__(p.substring(1));
 			switch(t){
+				case 'T'://HEAD
+					getObj(v.module).head = v.value;
+				break;
 				case 'H' ://HTML
 					getObj(v.module).html = v.value;
 				break;
+				
 			}
 		}
 		
@@ -61,9 +65,9 @@ var __READ_DATA__ = function(value){
 }
 
 function main(){
-	var html = "<!DOCTYPE html><html><head><meta charset='utf-8' ><style>body{margin:0px;padding:0px;}</style></head><body>";
 	__FORMAT__(code);
-	html += mod[UI.GetClassName()].html.replace(/[\b]/g,uuid);
+	var html = "<!DOCTYPE html><html><head><meta charset='utf-8' >" + mod[UI.GetClassName()].head + "</head><body>";
+	html += "<div style='display:none;'>" + mod[UI.GetClassName()].html.replace(/[\b]/g,uuid) + "</div>";
 	var data = "<script id='_data' type='text/plain'>";
 	data += code;
 	data += "</script>";

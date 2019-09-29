@@ -350,12 +350,19 @@ function __INIT_PACKAGE__(){
 		if(p.status == 1){
 			if(p.type == "U"){
 				new (function(){
+					var f = true;
 					function define(obj){
 						__AMD_LIST__[p.url] = obj;
+						f = false;
 					}
 					define.amd = {};
-					eval(p.value);
-					
+					try{
+						eval(p.value);
+					}catch(e){}
+					if(f){
+						var _TMP_ = eval("(" + p.value + ")");
+						__AMD_LIST__[p.url] = function(){return _TMP_};
+					}
 				})();
 			}else{
 				var spt = document.createElement("script");
@@ -957,7 +964,8 @@ UI.addModule = function(target,module){
  */
 var __GET_UMD_LIB__ = function(path,domain){
 	if(path.indexOf("\\") != -1 || path.indexOf("/") != -1){
-		return __AMD_LIST__[path]();
+		var t = __AMD_LIST__[path]
+		return t instanceof Function ? t() : t;
 	}
 	return getModule(path,domain)();
 	

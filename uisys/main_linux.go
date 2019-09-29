@@ -28,37 +28,3 @@ func DevPrint(i int, value ...interface{}) string {
 func SetConsoleTitle(title string) int {
 	return 0
 }
-
-func drawImage(a []int, width int) {
-	count := 0
-	row := 0
-	for i := 0; i < len(a); i += 4 {
-		fmt.Print(toOneColor(a[i], a[i+1], a[i+2], a[i+3]))
-
-		if count > 0 && (count+1)%width == 0 {
-			fmt.Println()
-			row++
-			if row > 9 {
-				break
-			}
-		}
-		count++
-	}
-
-}
-
-func toOneColor(R, G, B, A int) string {
-
-	t := ""
-	if R < 50 {
-		t = "  "
-	} else if R < 120 {
-		t = "=="
-	} else if R < 200 {
-		t = "=="
-	} else if R <= 255 {
-		t = "=="
-	}
-	return t
-
-}
