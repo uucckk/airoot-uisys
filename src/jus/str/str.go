@@ -209,31 +209,38 @@ func FmtCmd(s string) []string {
 	i := 0
 	var ch rune
 	str := ""
+	f := false
 	for i < len(code) {
 		ch = code[i]
-
 		if ch == '"' || ch == '\'' {
 			if len(tmp) > 0 {
 				lst = append(lst, string(tmp))
 				tmp = tmp[0:0]
 			}
-			str, i = readString(code, i)
+			if f {
+				str, i = readSimpleString(code, i)
+				f = false
+			} else {
+				str, i = readString(code, i)
+			}
+
 			lst = append(lst, str)
 			continue
 		}
-
 		if ch == ' ' || ch == '\t' {
 			if len(tmp) > 0 {
 				lst = append(lst, string(tmp))
 				tmp = tmp[0:0]
 			}
-
 		} else {
-			tmp = append(tmp, ch)
+			if ch == '@' && len(tmp) == 0 {
+				f = true
+			} else {
+				tmp = append(tmp, ch)
+			}
+
 		}
-
 		i++
-
 	}
 	if len(tmp) > 0 {
 		lst = append(lst, string(tmp))
@@ -283,6 +290,21 @@ func readString(code []rune, position int) (string, int) {
 		sb = append(sb, ch)
 	}
 
+	return string(sb), position
+}
+func readSimpleString(code []rune, position int) (string, int) {
+	sb := make([]rune, 0)
+	var t = code[position]
+	position++
+	var ch rune
+	for position < len(code) {
+		ch = code[position]
+		position++
+		if ch == t {
+			break
+		}
+		sb = append(sb, ch)
+	}
 	return string(sb), position
 }
 

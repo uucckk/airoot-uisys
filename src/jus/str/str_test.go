@@ -7,5 +7,6 @@ import (
 )
 
 func TestIndex(t *testing.T) {
-	fmt.Println(Index("s", "s"))
+	a := FmtCmd("a 'c b' c")
+	fmt.Println(a, len(a))
 }

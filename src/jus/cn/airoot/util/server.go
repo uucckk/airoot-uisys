@@ -1136,7 +1136,6 @@ func (u *UIServer) hasUrl(urlPath *url.URL, w http.ResponseWriter, req *http.Req
  */
 func (u *UIServer) hasCross(urlPath *url.URL) bool {
 	for _, v := range u.cross {
-		fmt.Println(urlPath.Path, v)
 		if Index(urlPath.Path, v) == 0 {
 			return true
 		}

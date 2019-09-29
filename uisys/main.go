@@ -629,6 +629,7 @@ func command(cmds []string) (bool, string) {
 
 			return true, str
 		case "add": //创建服务
+			fmt.Println(cmds, len(cmds))
 			if len(cmds) > 1 && (zhCN[cmds[1]] == "" || len(cmds[1]) != len([]rune(cmds[1]))) {
 				if serverList[cmds[1]] == nil {
 					serverList[cmds[1]] = &UIServer{}
@@ -639,9 +640,10 @@ func command(cmds []string) (bool, string) {
 				}
 				if len(cmds) > 2 {
 					if Exist(cmds[2]) {
-						_, str = commandEvt("stp " + cmds[1] + " " + cmds[2])
+						_, str = commandEvt("stp " + cmds[1] + " @\"" + cmds[2] + "\"")
 					} else {
 						str = DevPrintln(335, lang["不存在工程"], cmds[2])
+						commandEvt("rm " + cmds[1])
 						return true, str
 					}
 
@@ -671,9 +673,10 @@ func command(cmds []string) (bool, string) {
 					return false, "service is out."
 				}
 				if Exist(cmds[1]) {
-					_, str = commandEvt("stp " + pNode + " " + cmds[1])
+					_, str = commandEvt("stp " + pNode + " @\"" + cmds[1] + "\"")
 				} else {
 					str = DevPrintln(335, lang["不存在工程"], cmds[1])
+					commandEvt("rm " + pNode)
 					return true, str
 				}
 				if len(cmds) > 2 {
@@ -1183,7 +1186,7 @@ func main() {
 	}
 	running := true
 	if len(os.Args) == 2 && (Index(args, "/") != -1 || Index(args, "\\") != -1) {
-		args = "add d0 " + args + " :80"
+		args = "add d0 @\"" + strings.TrimSpace(args) + "\\\" :80"
 	} else {
 		if !Exist("boot.conf") {
 			f, _ := os.Create("boot.conf")
