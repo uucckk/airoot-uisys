@@ -693,7 +693,7 @@ function __InitModule__(__APPDOMAIN__,moduleName,uuid,value,target,append){
 						if(!_MODULE_INNER_[uuid]){
 							_MODULE_INNER_[uuid] = [];
 						}
-						_MODULE_INNER_[uuid].push(eval(p.value)());
+						_MODULE_INNER_[uuid].push(eval(p.value.replace(/[\b]/g,uuid))());
 					break;
 				}
 			}

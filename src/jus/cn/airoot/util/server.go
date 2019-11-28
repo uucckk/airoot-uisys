@@ -406,9 +406,7 @@ func (u *UIServer) wsHandler(ws *websocket.Conn) {
 							}
 						}
 						u.wsUser.RUnlock()
-
 					}
-
 				} else {
 					ws.Write([]byte(value))
 				}

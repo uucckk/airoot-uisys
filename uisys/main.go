@@ -5,6 +5,7 @@ import (
 	"bufio"
 	"fmt"
 	"io/ioutil"
+	. "jus/tool"
 
 	//_ "image/jpeg"
 	//_ "image/png"
@@ -21,10 +22,11 @@ import (
 
 	. "jus"
 
+	"github.com/dop251/goja"
 	"golang.org/x/net/websocket"
 )
 
-var version string = "AIroot UI-SYSTEM 0.9.5"
+var version string = "AIroot UI-SYSTEM 0.9.7"
 var lang map[string]string
 
 var zhCN = make(map[string]string, 0)
@@ -1080,7 +1082,6 @@ func command(cmds []string) (bool, string) {
 		case "stat": //转换地址，获取当前程序
 			str = DevPrintln(7, SysStartDate+"\r\nNow  "+time.Now().Format("2006-01-02 15:04:05"))
 			return true, str
-
 		case "--help":
 			str += DevPrintln(7, lang["lang"])
 			str += DevPrintln(7, lang["pub"])
@@ -1119,7 +1120,27 @@ func command(cmds []string) (bool, string) {
 					cmds[0] = t
 					return command(cmds)
 				} else {
-					str = DevPrintln(335, lang["不存在服务"], cmds[0])
+
+				}
+			}
+
+			v, e := GetCode("lib/cmd/" + cmds[0])
+			if e != nil {
+				fmt.Println(cmds[0] + " 没有这个文件")
+			} else {
+				vm := goja.New()
+				console := &Console{Name: str}
+				vm.Set("__goja_log__", console.Log)
+				vm.RunString(`var console = {};console.log = __goja_log__;`)
+				vm.Set("__ARG__", cmds)
+				//首先先加载这个地址执行的文件
+				vm.RunString(v) //执行str内部的函数
+				//将这个文件里的内容，交给js执行。
+				_, re := vm.RunString("main(__ARG__)")
+				if re != nil {
+					str = DevPrintln(335, re.Error(), cmds[0])
+				} else {
+					str = DevPrintln(7, "")
 				}
 			}
 			return true, str

@@ -337,3 +337,42 @@ func ToJUSString(value string) string {
 	}
 	return lst.String()
 }
+
+type Cmd struct {
+	Cmds []string          //命令list
+	Attr map[string]string //命令挂载属性
+}
+
+/**
+ * 格式化命令行
+ */
+func FmtCmdAdv(s string) *Cmd {
+	cmd := &Cmd{}
+	l := FmtCmd(s)
+	c := make([]string, 0, 3)
+	m := make(map[string]string)
+	f := false
+	var k, v string
+	for _, t := range l {
+		if t[0] == '-' {
+			if f {
+				v = ""
+				m[k] = v
+			}
+			f = true
+			k = t[1:]
+		} else {
+			if f {
+				v = t
+				f = false
+				m[k] = v
+			} else {
+				c = append(c, t)
+			}
+		}
+	}
+	cmd.Cmds = c
+	cmd.Attr = m
+	return cmd
+
+}

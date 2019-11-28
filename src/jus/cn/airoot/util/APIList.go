@@ -2,11 +2,21 @@
 package util
 
 import (
-	"strings"
-
 	. "jus"
 	. "jus/str"
+	"strings"
 )
+
+//修饰符
+type Modifier struct {
+	IsStatic     bool
+	Setter       bool
+	Getter       bool
+	Description  string
+	Param        []*Var
+	Name         string
+	FunctionType string
+}
 
 type Note struct {
 	am    map[string]string
@@ -107,6 +117,7 @@ type APIlist struct {
 	sb        string
 	html      *HTML
 	style     string
+	attr      []*Modifier
 }
 
 /**
@@ -154,10 +165,10 @@ func (a *APIlist) CreateFrom(jus *UIServer, className string) error {
 			}
 			
 			div.address{
-				font-size:9pt;
+				font-size:12pt;
 				color:#dddddd;
 				padding-left:10px;
-				padding-top:2px;
+				padding-top:5px;
 			}
 			
 		</style>`
@@ -202,6 +213,31 @@ func (a *APIlist) CreateFrom(jus *UIServer, className string) error {
 	return nil
 }
 
+//添加属性
+func (a *APIlist) appendAttr(f *Function) {
+	var p *Modifier = nil
+	for _, v := range a.attr {
+		if v.Name == f.Name && v.IsStatic == f.IsStatic {
+			p = v
+		}
+	}
+	if p == nil {
+		p = &Modifier{Name: f.Name, IsStatic: f.IsStatic, Param: f.Param}
+		a.attr = append(a.attr, p)
+	}
+	if f.IsGet {
+		p.Getter = true
+		p.FunctionType = f.FunctionType
+	}
+	if f.IsSet {
+		p.Setter = true
+	}
+	if f.Note != "" {
+		p.Description += f.Note + "\r\n"
+	}
+
+}
+
 func (a *APIlist) init(name string) {
 	tsb := ""
 	sb := a.style
@@ -235,7 +271,8 @@ func (a *APIlist) init(name string) {
 	sb += "</table><br/>"
 
 	svc = js.GetVar(true, false)
-	if len(svc) > 0 {
+	fc := js.GetFunctionAndStatic(true, false)
+	if len(svc) > 0 || len(fc) > 0 {
 		sb += "<b style='padding-bottom:5px;display:block;'>公共属性</b>"
 	}
 	sb += ("<table>")
@@ -245,28 +282,57 @@ func (a *APIlist) init(name string) {
 		sb += v.Note
 		sb += "</td></tr>"
 	}
+
+	for _, f := range fc { //遍历所有setter getter 函数
+		if f.IsSet || f.IsGet {
+			a.appendAttr(f)
+		}
+	}
+	for _, f := range a.attr {
+		note := &Note{}
+		note.ReadFromString(f.Description)
+		sb += "<tr><td>"
+		sb += ("<span>")
+		sb += IfStr(f.IsStatic, "static ", "")
+		ut := ""
+		if f.Setter && !f.Getter {
+			ut = "<b style='color:#cc0000'>[只写]</b>"
+			sb += "<a href='javascript:void(0);' style='font-size:14px;'>" + f.Name + "</a> : <b style='color:#888888;'>" + f.Param[0].VarType + "</b>"
+		} else if f.Getter && !f.Setter {
+			ut = "<b style='color:#00cc00'>[只读]</b>"
+			sb += "<a href='javascript:void(0);' style='font-size:14px;'>" + f.Name + "</a>" + IfStr(f.FunctionType != "", " : <b style='color:#888888;'>"+f.FunctionType+"</b>", "")
+		} else {
+			sb += "<a href='javascript:void(0);' style='font-size:14px;'>" + f.Name + "</a>" + IfStr(f.FunctionType != "", " : <b style='color:#888888;'>"+f.FunctionType+"</b>", "")
+		}
+
+		sb += "</span>\r\n"
+		sb += "<div style='padding:10px 0px;padding-bottom:0px;font-size:13px;'>"
+		sb += IfStr(ut == "", "", ut+" ") + Replace(note.GetNote(), "\n", "<br/>")
+		sb += "</div>"
+		sb += "</td></tr>"
+	}
+
 	sb += ("</table>")
 	sb += ("<br/>")
 
-	fc := js.GetFunctionAndStatic(true, true)
+	fc = js.GetFunctionAndStatic(true, true)
 
 	if len(fc) > 0 {
 		sb += "<b style='padding-bottom:5px;display:block;'>静态方法</b>"
 	}
 	sb += "<table>"
+
 	for _, f := range fc {
+		if f.IsSet || f.IsGet {
+			continue
+		}
 		note := &Note{}
 		note.ReadFromString(f.Note)
 		sb += "<tr><td>"
 		sb += ("<span>")
 		sb += IfStr(f.IsStatic, "static ", "")
-		if f.IsSet {
-			sb += "<b>set</b> <a href='javascript:void(0);' style='font-size:14px;'>" + f.Name + "</a> <b>" + f.Param[0].VarType + "</b>"
-		} else if f.IsGet {
-			sb += "<b>get</b> <a href='javascript:void(0);' style='font-size:14px;'>" + f.Name + "</a>" + IfStr(f.FunctionType != "", " <b style='color:#888888;'>"+f.FunctionType+"</b>", "")
-		} else {
-			sb += "<a href='javascript:void(0);' style='font-size:14px;'>" + f.Name + "</a> " + "(" + paramToString(f.Param) + ")" + IfStr(f.FunctionType != "", " : <b style='color:#888888;'>"+f.FunctionType+"</b>", "")
-		}
+
+		sb += "<a href='javascript:void(0);' style='font-size:14px;'>" + f.Name + "</a> " + "(" + paramToString(f.Param) + ")" + IfStr(f.FunctionType != "", " : <b style='color:#888888;'>"+f.FunctionType+"</b>", "")
 
 		sb += "</span>\r\n"
 		sb += "<div style='padding:10px;padding-bottom:0px;font-size:13px;'>"
@@ -321,19 +387,15 @@ func (a *APIlist) init(name string) {
 	}
 	sb += "<table>"
 	for _, f := range fc {
+		if f.IsGet || f.IsSet {
+			continue
+		}
 		note := &Note{}
 		note.ReadFromString(f.Note)
 		sb += "<tr><td>"
 		sb += ("<span>")
 		sb += IfStr(f.IsStatic, "static ", "")
-		if f.IsSet {
-			sb += "<b>set</b> <a href='javascript:void(0);' style='font-size:14px;'>" + f.Name + "</a> <b>" + f.Param[0].VarType + "</b>"
-		} else if f.IsGet {
-			sb += "<b>get</b> <a href='javascript:void(0);' style='font-size:14px;'>" + f.Name + "</a>" + IfStr(f.FunctionType != "", " <b style='color:#888888;'>"+f.FunctionType+"</b>", "")
-		} else {
-			sb += "<a href='javascript:void(0);' style='font-size:14px;'>" + f.Name + "</a> " + "(" + paramToString(f.Param) + ")" + IfStr(f.FunctionType != "", " : <b style='color:#888888;'>"+f.FunctionType+"</b>", "")
-		}
-
+		sb += "<a href='javascript:void(0);' style='font-size:14px;'>" + f.Name + "</a> " + "(" + paramToString(f.Param) + ")" + IfStr(f.FunctionType != "", " : <b style='color:#888888;'>"+f.FunctionType+"</b>", "")
 		sb += "</span>\r\n"
 		sb += "<div style='padding:10px;padding-bottom:0px;font-size:13px;'>"
 		sb += Replace(note.GetNote(), "\n", "<br/>")
@@ -377,19 +439,50 @@ func (a *APIlist) initClass(path string, cls []*Class) {
 		}
 		sb += "</table><br/>"
 		fv = a.script.GetVarByClassName(v.Name, true, false)
-		if len(fv) > 0 {
+		fc := a.script.GetFunctionByClassName(v.Name, true)
+		if len(fv) > 0 || len(fc) > 0 {
 			sb += "<b style='padding-bottom:5px;display:block;'>公共属性</b>"
 		}
 		sb += ("<table>")
+
 		for _, v := range fv {
 			sb += ("<tr><td>")
 			sb += IfStr(v.IsStatic, "static ", "") + "<a href='javascript:void(0);'>" + v.Name + "</a>" + IfStr(v.VarType != "", " : <a href='javascript:void(0);' style='color:#888888'>"+v.VarType+"</a>", "") + "<br/>"
 			sb += v.Note
 			sb += "</td></tr>"
 		}
+
+		for _, f := range fc { //遍历所有setter getter 函数
+			if f.IsSet || f.IsGet {
+				a.appendAttr(f)
+			}
+		}
+		for _, f := range a.attr {
+			note := &Note{}
+			note.ReadFromString(f.Description)
+			sb += "<tr><td>"
+			sb += ("<span>")
+			sb += IfStr(f.IsStatic, "static ", "")
+			ut := ""
+			if f.Setter && !f.Getter {
+				ut = "<b style='color:#cc0000'>[只写]</b>"
+				sb += "<a href='javascript:void(0);' style='font-size:14px;'>" + f.Name + "</a> : <b style='color:#888888;'>" + f.Param[0].VarType + "</b>"
+			} else if f.Getter && !f.Setter {
+				ut = "<b style='color:#00cc00'>[只读]</b>"
+				sb += "<a href='javascript:void(0);' style='font-size:14px;'>" + f.Name + "</a>" + IfStr(f.FunctionType != "", " : <b style='color:#888888;'>"+f.FunctionType+"</b>", "")
+			} else {
+				sb += "<a href='javascript:void(0);' style='font-size:14px;'>" + f.Name + "</a>" + IfStr(f.FunctionType != "", " : <b style='color:#888888;'>"+f.FunctionType+"</b>", "")
+			}
+
+			sb += "</span>\r\n"
+			sb += "<div style='padding:10px 0px;padding-bottom:0px;font-size:13px;'>"
+			sb += IfStr(ut == "", "", ut+" ") + Replace(note.GetNote(), "\n", "<br/>")
+			sb += "</div>"
+			sb += "</td></tr>"
+		}
 		sb += "</table><br/>"
 
-		fc := a.script.GetFunctionAndStaticByClassName(v.Name, true, true)
+		fc = a.script.GetFunctionAndStaticByClassName(v.Name, true, true)
 
 		if len(fc) > 0 {
 			sb += "<b style='padding-bottom:5px;display:block;'>静态方法</b>"
@@ -460,20 +553,16 @@ func (a *APIlist) initClass(path string, cls []*Class) {
 			sb += "<b style='padding-bottom:5px;display:block;'>公共方法</b>"
 		}
 		sb += "<table>"
-
 		for _, f := range fc {
+			if f.IsGet || f.IsSet {
+				continue
+			}
 			note := &Note{}
 			note.ReadFromString(f.Note)
 			sb += "<tr><td>"
 			sb += ("<span>")
 			sb += IfStr(f.IsStatic, "static ", "")
-			if f.IsSet {
-				sb += "<b>set</b> <a href='javascript:void(0);' style='font-size:14px;'>" + f.Name + "</a> <b>" + f.Param[0].VarType + "</b>"
-			} else if f.IsGet {
-				sb += "<b>get</b> <a href='javascript:void(0);' style='font-size:14px;'>" + f.Name + "</a>" + IfStr(f.FunctionType != "", " <b style='color:#888888;'>"+f.FunctionType+"</b>", "")
-			} else {
-				sb += "<a href='javascript:void(0);' style='font-size:14px;'>" + f.Name + "</a> " + "(" + paramToString(f.Param) + ")" + IfStr(f.FunctionType != "", " : <b style='color:#888888;'>"+f.FunctionType+"</b>", "")
-			}
+			sb += "<a href='javascript:void(0);' style='font-size:14px;'>" + f.Name + "</a> " + "(" + paramToString(f.Param) + ")" + IfStr(f.FunctionType != "", " : <b style='color:#888888;'>"+f.FunctionType+"</b>", "")
 
 			sb += "</span>\r\n"
 			sb += "<div style='padding:10px;padding-bottom:0px;font-size:13px;'>"

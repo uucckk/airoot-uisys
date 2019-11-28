@@ -1093,7 +1093,12 @@ func (j *UI) ReadHTML() *HTML {
 				tst.WriteString("$$.")
 				tst.WriteString(va.Name)
 				tst.WriteString("=\"")
-				tst.WriteString(Escape(va.Value))
+				if Index(va.Value, "\b") == -1 {
+					tst.WriteString(Escape(va.Value))
+				} else {
+					tst.WriteString(va.Value)
+				}
+
 				tst.WriteString("\";\r\n")
 			}
 		}
@@ -1133,8 +1138,8 @@ func (j *UI) ReadHTML() *HTML {
 								var arr *[]*Attr = j.GetConstructorCode()
 								*arr = append(*arr, &Attr{v2.GetAttr("id"), v2.GetConstructerCode()})
 							}
-							tst2 := bytes.NewBufferString(tFunc.ReadHTML().Text())
-							tst2.WriteString("\r\n")
+							tst2 := bytes.NewBufferString("var " + v2.GetAttr("id") + "=" + tFunc.ReadHTML().Text())
+							tst2.WriteString("()\r\n")
 							tst2.Write(tst.Bytes())
 							tst = tst2
 						} else {
@@ -1161,7 +1166,8 @@ func (j *UI) ReadHTML() *HTML {
 							tst = tst2
 						}
 					}
-					tst.WriteString(Replace(j.domain, "\b", "____"))
+					//tst.WriteString(Replace(j.domain, "\b", "____"))
+					tst.WriteString("$$")
 					tst.WriteRune('.')
 					tst.WriteString(v.TagName())
 					tst.WriteString("=")
