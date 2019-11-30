@@ -4,6 +4,7 @@ package util
 import (
 	"bytes"
 	"fmt"
+	. "jus/tool"
 	"strconv"
 	"strings"
 )
@@ -67,6 +68,7 @@ type Tag struct {
 	IsSet         bool //是否为Setter
 	IsGet         bool //是否为Getter
 	IsAnonymous   bool //是否为匿名函数
+	IsFrom        bool //是否为外部导入属性
 	Note          *Tag //是否有注释
 }
 
@@ -959,6 +961,7 @@ func (m *MScript) varMethod(i int, domain string, tag *Tag, isFuncParam bool, pa
 	var name *Tag = nil
 	var p *Tag = nil
 	isF := false
+	isFrom := false
 	for i < len(m.lst) {
 		p = m.lst[i]
 		i++
@@ -983,35 +986,41 @@ func (m *MScript) varMethod(i int, domain string, tag *Tag, isFuncParam bool, pa
 		}
 
 		if p.TagType == 0 {
-			if isF {
-				p.IsType = true
-				name.Cls = p.Value
-				isF = false
+			if p.Value == "from" {
+				isFrom = true
 			} else {
-				name = p
-				p.IsVar = true
-				p.IsParameter = isFuncParam
-				p.Domain = domain
-				m.copyTag(p, tag)
-				p.Note = m.defNode
-				m.addVar(domain, p)
+				if isF {
+					p.IsType = true
+					name.Cls = p.Value
+					isF = false
+				} else {
+					name = p
+					p.IsVar = true
+					p.IsParameter = isFuncParam
+					p.Domain = domain
+					m.copyTag(p, tag)
+					p.Note = m.defNode
+					m.addVar(domain, p)
+				}
 			}
+
+		}
+		if isFrom && p.TagType == 1 {
+			p.IsFrom = true
+			isFrom = false
+			p.Note = name.Note
 		}
 
 		if p.TagType == 2 && ":" == p.Value {
 			isF = true
 			p.TagType = 10
-		}
-
-		if p.TagType == 2 && "=" == p.Value {
+		} else if p.TagType == 2 && "=" == p.Value {
 			if isFuncParam {
 				i = m.readArea(i, domain, paramType+1)
 			} else {
 				i = m.readArea(i, domain, paramType)
 			}
-		}
-
-		if p.IsKeyWord && "in" == p.Value {
+		} else if p.IsKeyWord && "in" == p.Value {
 			if isFuncParam {
 				i = m.readArea(i, domain, paramType+1)
 			} else {
@@ -1464,6 +1473,20 @@ func (m *MScript) GetClass() []*Class {
 		}
 		if t.IsClass {
 			arr = append(arr, &Class{Name: t.Value, Note: m.nil2Str(t.Note), IsInner: t.IsInnerClass})
+		}
+	}
+	return arr
+}
+
+//获取外部导入属性
+func (m *MScript) GetFromOther() []*Attr {
+	arr := make([]*Attr, 0)
+	for _, t := range m.lst {
+		if t.TagType < 0 || t.TagType == 5 {
+			continue
+		}
+		if t.IsFrom {
+			arr = append(arr, &Attr{Name: t.Value, Value: t.Note.Value})
 		}
 	}
 	return arr

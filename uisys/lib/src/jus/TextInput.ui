@@ -1,4 +1,9 @@
-<!-- 文本输入控件 -->
+<!--
+	文本输入控件
+	@author			sunxy
+	@type			JUS 控件
+	@description	
+-->
 <div>
 	<style>
 		body{

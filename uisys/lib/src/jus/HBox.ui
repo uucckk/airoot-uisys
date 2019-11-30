@@ -1,159 +1,164 @@
+<!--
+	@author			sunxy
+	@type			JUS 布局框架
+	@description	水平布局
+-->
 <jus.DisplayObject width="100%" height="100%" gap="0">
 	<@content />
-	<script>
-		var _self = $(dom);
-		private static function layoutH(_self,event){
-			_self.css("position","relative");
-			var gap = parseInt(_self.attr("gap"));
-			var tArr = null;
-			var padding = 0;
-			var hSum = parseInt(_self.css("padding-left"));
-			var $obj = _self.find(">div").not(":hidden");
-			var len = $obj.length;
-			$obj.css({"position":"absolute","top":0});
-			
-			var isAuto = _self.attr("height") == "auto";
-			
-			var contentHeight = _self.height();
-			if(isAuto){
-				tArr = [];
-				contentHeight = 0;
-			}
-			
-			
-			
-			
-			var aSum = 0;
-			var rSum = 0;
-			$obj.each(function(index){
-				var $this = $(this);
-				var tmp = $this.attr("width");
-				if(tmp){
-					if(tmp.lastIndexOf("%") != -1){
-						rSum += parseInt(tmp);
-					}else{
-						tmp = parseInt(tmp) - gap;
-						$this.width(tmp);
-						
-						aSum += parseInt($this.outerWidth(true));
-					}
-				}
-				
-			});
-			
-			//水平布局
-			
-			$obj.each(function(){
-				var $this = $(this);
-				var tmp = $this.attr("width");
-				var width = parseInt(tmp);
-				var padding = $this.outerWidth(true) - $this.width();
-				if(tmp){
-					if(tmp.lastIndexOf("%") != -1){
-						$this.width();
-						var per = width/(rSum <100 ? 100 : rSum);
-						//最终核算
-						if($this.width() != ((_self.width() - aSum) * per)- padding - gap){
-							$this.width(parseInt(((_self.width() - aSum) * per)- padding) - gap);
-						}
-					}
-				}
-				$this.css("left",hSum);
-				hSum += $this.outerWidth(true) + gap;
-			
-			});
-			
-			
-			
-			$obj.each(function(){
-				var $this = $(this);
-				var tmp = $this.attr("height");
-				padding = $this.outerHeight(true) - $this.height();
-				if(isAuto){
-					if(tmp == "auto"){
-							if($this.height()>contentHeight){
-							_self.height(contentHeight = $this.height());
-						}
-					}else{
-						tArr.push($this);
-					}
-					
-				}else{
-					if(tmp && tmp.lastIndexOf("%") == -1){
-						$this.height(parseInt(tmp) - padding);
-					}else{
-						$this.height(contentHeight - padding);
-					}
-				
-				}
-				
-				tmp = $this.attr("width");
-				padding = $this.outerWidth(true) - $this.width();
-				if(!tmp){
-					$this.attr("width",parseInt(tmp) - padding);
-					$this.width(parseInt($this.attr("width")));
-				}
-			});
-			if(tArr){
-				var obp = null;
-				for(var i = 0;i<tArr.length;i++){
-					obp = tArr[i];
-					tmp = obp.attr("height");
-					padding = obp.outerHeight(true) - obp.height();
-					if(tmp && tmp.lastIndexOf("%") == -1){
-						obp.height(parseInt(tmp) - padding);
-					}else{
-						obp.height(contentHeight - padding);
-					}
-				}
-			}
-
-			if(_self.attr("vertical")){
-				$obj.each(function(){
-					var $this = $(this);
-					$this.css("top",(_self.outerHeight() - $this.outerHeight(true))/2);
-					
-				});
-
-			}
-			
-			_self.find(">div").each(function(){
-				var $id = window[$(this).attr("id")];
-				if($id && $id.trigger){
-					$id.trigger(event);
-				}
-			});
-		}
-
-		private static function layoutV(_self,event){
-			_self.css("overflow","auto");
-			var $obj = _self.find(">div").not(":hidden");
-			$obj.each(function(){
-				var $this = $(this);
-				$this.css("position","static");
-				$this.css("width","");
-				$this.css("height","");
-			});
-			_self.find(">div").each(function(){
-				var $id = window[$(this).attr("id")];
-				if($id && $id.trigger){
-					
-					$id.trigger(event);
-				}
-			});
-		}
-	
-		/**
-		 *	触发变化
-		 */
-		public function trigger(event){
-			if(event){
-				layoutV(_self,event);
-			}else{
-				layoutH(_self,event);
-			}
-			
+</jus.DisplayObject>
+<script>
+	var _self = $(dom);
+	private static function layoutH(_self,event){
+		_self.css("position","relative");
+		var gap = parseInt(_self.attr("gap"));
+		var tArr = null;
+		var padding = 0;
+		var hSum = parseInt(_self.css("padding-left"));
+		var $obj = _self.find(">div").not(":hidden");
+		var len = $obj.length;
+		$obj.css({"position":"absolute","top":0});
+		
+		var isAuto = _self.attr("height") == "auto";
+		
+		var contentHeight = _self.height();
+		if(isAuto){
+			tArr = [];
+			contentHeight = 0;
 		}
 		
-	</script>
-</jus.DisplayObject>
+		
+		
+		
+		var aSum = 0;
+		var rSum = 0;
+		$obj.each(function(index){
+			var $this = $(this);
+			var tmp = $this.attr("width");
+			if(tmp){
+				if(tmp.lastIndexOf("%") != -1){
+					rSum += parseInt(tmp);
+				}else{
+					tmp = parseInt(tmp) - gap;
+					$this.width(tmp);
+					
+					aSum += parseInt($this.outerWidth(true));
+				}
+			}
+			
+		});
+		
+		//水平布局
+		
+		$obj.each(function(){
+			var $this = $(this);
+			var tmp = $this.attr("width");
+			var width = parseInt(tmp);
+			var padding = $this.outerWidth(true) - $this.width();
+			if(tmp){
+				if(tmp.lastIndexOf("%") != -1){
+					$this.width();
+					var per = width/(rSum <100 ? 100 : rSum);
+					//最终核算
+					if($this.width() != ((_self.width() - aSum) * per)- padding - gap){
+						$this.width(parseInt(((_self.width() - aSum) * per)- padding) - gap);
+					}
+				}
+			}
+			$this.css("left",hSum);
+			hSum += $this.outerWidth(true) + gap;
+		
+		});
+		
+		
+		
+		$obj.each(function(){
+			var $this = $(this);
+			var tmp = $this.attr("height");
+			padding = $this.outerHeight(true) - $this.height();
+			if(isAuto){
+				if(tmp == "auto"){
+						if($this.height()>contentHeight){
+						_self.height(contentHeight = $this.height());
+					}
+				}else{
+					tArr.push($this);
+				}
+				
+			}else{
+				if(tmp && tmp.lastIndexOf("%") == -1){
+					$this.height(parseInt(tmp) - padding);
+				}else{
+					$this.height(contentHeight - padding);
+				}
+			
+			}
+			
+			tmp = $this.attr("width");
+			padding = $this.outerWidth(true) - $this.width();
+			if(!tmp){
+				$this.attr("width",parseInt(tmp) - padding);
+				$this.width(parseInt($this.attr("width")));
+			}
+		});
+		if(tArr){
+			var obp = null;
+			for(var i = 0;i<tArr.length;i++){
+				obp = tArr[i];
+				tmp = obp.attr("height");
+				padding = obp.outerHeight(true) - obp.height();
+				if(tmp && tmp.lastIndexOf("%") == -1){
+					obp.height(parseInt(tmp) - padding);
+				}else{
+					obp.height(contentHeight - padding);
+				}
+			}
+		}
+
+		if(_self.attr("vertical")){
+			$obj.each(function(){
+				var $this = $(this);
+				$this.css("top",(_self.outerHeight() - $this.outerHeight(true))/2);
+				
+			});
+
+		}
+		
+		_self.find(">div").each(function(){
+			var $id = window[$(this).attr("id")];
+			if($id && $id.trigger){
+				$id.trigger(event);
+			}
+		});
+	}
+
+	private static function layoutV(_self,event){
+		_self.css("overflow","auto");
+		var $obj = _self.find(">div").not(":hidden");
+		$obj.each(function(){
+			var $this = $(this);
+			$this.css("position","static");
+			$this.css("width","");
+			$this.css("height","");
+		});
+		_self.find(">div").each(function(){
+			var $id = window[$(this).attr("id")];
+			if($id && $id.trigger){
+				
+				$id.trigger(event);
+			}
+		});
+	}
+
+	/**
+	 *	触发变化
+	 */
+	public function trigger(event){
+		if(event){
+			layoutV(_self,event);
+		}else{
+			layoutH(_self,event);
+		}
+		
+	}
+	
+</script>

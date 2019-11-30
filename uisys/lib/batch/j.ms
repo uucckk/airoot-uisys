@@ -1,1 +1,2 @@
+{@CLASS_NAME}
 {@jscode}

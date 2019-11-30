@@ -808,6 +808,7 @@ func (s *Script) ReadFromString(script string) string {
 	}
 	out := ""
 	templ, err := GetCode(s.jus.SYSTEM_PATH + "/batch/j.ms")
+	templ = strings.Replace(templ, "{@CLASS_NAME}", "//@ sourceURL=[ES]"+s.className+"\r\n", -1)
 	if err != nil {
 		return ""
 	}

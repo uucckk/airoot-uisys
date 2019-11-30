@@ -2,6 +2,7 @@
 	Tree组件
 	@author sunxy
 	@version 0.0
+	@type	JUS 控件
  -->
 <@import value="jus.*" />
 <vbox height="100%">

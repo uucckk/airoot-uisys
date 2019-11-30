@@ -1,5 +1,5 @@
+{@CLASS_NAME}
 (function(__NAME__,__DOMAIN__,__APPDOMAIN__){
-	{@CLASS_NAME}
 	var __UP__= window[__NAME__];var ____ = {};if(__UP__ instanceof HTMLElement){____.dom = __UP__}else{__EXTEND__(____,__UP__);}
 	var dom = ____.dom;
 	{@jscode}

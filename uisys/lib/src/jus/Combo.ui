@@ -1,33 +1,36 @@
+<!--
+	Combo 控件
+	@author			sunxy
+	@type			JUS 控件
+	@description	垂直可变化布局
+-->
 <@import value="jus.*" />
-<div name="">
-	<css>
-		body{
-			float:left;
-			border:1px solid #eeeeee;
-			
-
-			font-size:13px;
-			height:26px;
-		}
-		input{
-			border:none;
-		}
-		.submit{
-			background:url(@lib('down.png'));
-			background-size:100% 100%;
-		}
-		
-		.label{
-			line-height:26px;
-			height:26px;
-			padding-left:3px;
-			padding-right:3px;
-			
-		}
-		
-		
-	</css>
+<css>
+	body{
+		float:left;
+		border:1px solid #eeeeee;
+		font-size:13px;
+		height:26px;
+	}
+	input{
+		border:none;
+	}
+	.submit{
+		background:url(@lib('down.png'));
+		background-size:100% 100%;
+	}
 	
+	.label{
+		line-height:26px;
+		height:26px;
+		padding-left:3px;
+		padding-right:3px;
+		
+	}
+	
+	
+</css>
+<div name="">
 	<div id="label" class="label" style="float:left;min-width:100px;padding-right:2px;" ></div>
 	<div id="submit" class="submit" style="float:right;border-left:1px solid #eeeeee;width:22px;height:100%;" onclick="@this.onClick(this);"></div>
 	<input id="txt" type="text" style="display:none" />
@@ -42,74 +45,74 @@
 		</@content>
 		
 	</div>
-	<script>
-		var _self = $(dom);
-		private var content:Object = null;
-
-		public var onChange:Function = null;
-		
-		function init(){
-			content = #content;
-			content.css({"position":"absolute","top":0});
-			content.hide();
-			
-			var disId = null;
-			if(content.children().length>0){
-				
-				disId = content.find(">").attr("id");
-				disId = window[disId];
-				
-				if(disId){
-					disId.onClick = setData;
-					#txt.attr("name",_self.attr("name"));
-					#label.text(disId.selectedLabel);
-				}
-				
-			}
-			
-		}
-		
-		function onClick(obj):void{
-			content.show();
-			content.css("left",_self.offset().left).css("top",_self.offset().top + _self.outerHeight(true));
-			
-			if(_self.width()>content.width()){
-				content.width(_self.width());
-			}
-
-			
-			$("body").append(content);
-			$(window).unbind("mousedown",rectEvt);
-			$(window).bind("mousedown",rectEvt);
-			if(content.offset().left + content.width()>$(window).width()){
-				content.css("left", - content.width()+$(window).width() -  4);
-			}
-		}
-
-		
-		function rectEvt(e){
-			var left = content.offset().left;
-			var top = content.offset().top;
-			var right = left + content.width();
-			var bottom = top + content.height();
-			if(e.pageX<left || e.pageX>right || e.pageY<top || e.pageY>bottom){
-				hideList();
-				$(window).unbind("mousedown",rectEvt);
-			}
-		}
-
-		private function hideList():void{
-			content.hide();
-		}
-
-
-		private function setData(e:Event){
-			#label.text(e.target.label);
-			#txt.attr("value",e.target.value);
-			hideList();
-			if(onChange){
-				onChange(e);
-			}
-		}
-	</script>
 </div>
+<script>
+	var _self = $(dom);
+	private var content:Object = null;
+
+	public var onChange:Function = null;
+	
+	function init(){
+		content = #content;
+		content.css({"position":"absolute","top":0});
+		content.hide();
+		
+		var disId = null;
+		if(content.children().length>0){
+			
+			disId = content.find(">").attr("id");
+			disId = window[disId];
+			
+			if(disId){
+				disId.onClick = setData;
+				#txt.attr("name",_self.attr("name"));
+				#label.text(disId.selectedLabel);
+			}
+			
+		}
+		
+	}
+	
+	function onClick(obj):void{
+		content.show();
+		content.css("left",_self.offset().left).css("top",_self.offset().top + _self.outerHeight(true));
+		
+		if(_self.width()>content.width()){
+			content.width(_self.width());
+		}
+
+		
+		$("body").append(content);
+		$(window).unbind("mousedown",rectEvt);
+		$(window).bind("mousedown",rectEvt);
+		if(content.offset().left + content.width()>$(window).width()){
+			content.css("left", - content.width()+$(window).width() -  4);
+		}
+	}
+
+	
+	function rectEvt(e){
+		var left = content.offset().left;
+		var top = content.offset().top;
+		var right = left + content.width();
+		var bottom = top + content.height();
+		if(e.pageX<left || e.pageX>right || e.pageY<top || e.pageY>bottom){
+			hideList();
+			$(window).unbind("mousedown",rectEvt);
+		}
+	}
+
+	private function hideList():void{
+		content.hide();
+	}
+
+
+	private function setData(e:Event){
+		#label.text(e.target.label);
+		#txt.attr("value",e.target.value);
+		hideList();
+		if(onChange){
+			onChange(e);
+		}
+	}
+</script>

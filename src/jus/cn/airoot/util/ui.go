@@ -558,7 +558,7 @@ func (j *UI) scanHTML(child []*HTML) {
 			if len(arr) > 1 {
 				tagName = arr[1]
 			}
-			var tFunc *UI = &UI{SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH, IsImport: j.IsImport}
+			var tFunc *UI = &UI{SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH, IsImport: j.IsImport, Debug: j.Debug}
 			if tFunc.CreateFromParent(j.root, p.GetAttr("id"), p, tagName, j) {
 				if tFunc.IsScript() {
 					tFunc.SetConstructor(&Attr{tagName, p.GetConstructerParameter()}).setExtend(p.GetAttr("id") == j.domain)

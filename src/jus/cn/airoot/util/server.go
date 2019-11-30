@@ -787,7 +787,15 @@ func (u *UIServer) classList() string {
 			}
 		}
 		arr := list[v.attributes["type"]]
-		arr = append(arr, `<tr>
+		cls := ""
+		if v.attributes["status"] == "debug" {
+			cls = "debug"
+		} else if v.attributes["status"] == "complete" {
+			cls = "complete"
+		} else {
+
+		}
+		arr = append(arr, `<tr class="`+cls+`">
 				<td nowrap><a href ='index.doc?$`+v.name+`' target='_blank'>`+v.name+IfStr(v.cls == 1, " <b>[ES]</b>", "")+`</a></td>
 				<td nowrap>`+v.info.ModTime().Format("2006-01-02 15:04:05")+`</td>
 				<td>`+strings.Replace(strings.TrimSpace(v.comment), "\n", "<br/>", -1)+`</td>
@@ -833,7 +841,7 @@ func (u *UIServer) classList() string {
 
 		}
 		arr = append(arr, `<tr class="`+cls+`">
-				<td nowrap><a href ='index.doc?`+v.name+`'>`+v.name+IfStr(v.cls == 1, " <b>[ES]</b>", "")+`</a></td>
+				<td nowrap><a href ='index.doc?`+v.name+`' target='_blank'>`+v.name+IfStr(v.cls == 1, " <b>[ES]</b>", "")+`</a></td>
 				<td nowrap>`+v.info.ModTime().Format("2006-01-02 15:04:05")+`</td>
 				<td>`+strings.Replace(strings.TrimSpace(v.comment), "\n", "<br/>", -1)+`</td>
 			</tr>`)

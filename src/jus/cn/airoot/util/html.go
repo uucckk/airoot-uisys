@@ -5,6 +5,8 @@ import (
 	"fmt"
 	. "jus/str"
 	. "jus/tool"
+	"sort"
+	"strings"
 )
 
 //特殊关键字
@@ -801,8 +803,13 @@ func (h *HTML) ToString() string {
 	if h.parent != nil {
 		sb.WriteString("<")
 		sb.WriteString(h.tag)
-		for i, v := range h.tagData {
-			sb.WriteString(" " + i + "=" + "\"" + v + "\"")
+		var keys []string
+		for k := range h.tagData {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		for _, v := range keys {
+			sb.WriteString(" " + v + "=" + "\"" + h.tagData[v] + "\"")
 		}
 		if h.tagType == 0 {
 			sb.WriteString("/>")
@@ -821,6 +828,107 @@ func (h *HTML) ToString() string {
 	return sb.String()
 }
 
+func (h *HTML) ToTextStringBytes() []byte {
+	if h.tag == "!" {
+		return []byte("&lt;!" + h.value + "&gt;<br/>")
+	}
+	if h.tagType == -1 {
+		return []byte(h.value)
+	}
+	sb := bytes.NewBufferString("")
+	if h.parent != nil {
+		sb.WriteString("&lt;")
+		if strings.ToLower(h.tag) == "style" || strings.ToLower(h.tag) == "css" {
+			sb.WriteString("<span style='font-weight:bold;color:#7f0096'>" + h.tag + "</span>")
+		} else {
+			sb.WriteString("<span style='font-weight:bold;color:#009688'>" + h.tag + "</span>")
+		}
+		for i, v := range h.tagData {
+			sb.WriteString(" <span style='color: #FF5722;font-weight: bold;'>" + i + "</span>=" + "\"<span style='color:#888888'>" + v + "</span>\"")
+		}
+		if h.tagType == 0 {
+			sb.WriteString("/&gt;<br/>")
+		} else {
+			sb.WriteString("&gt;<br/>")
+		}
+
+	}
+	list := h.list
+	sb.WriteString("<div style='padding:4px 20px'>")
+	if strings.ToLower(h.tag) == "style" || strings.ToLower(h.tag) == "css" {
+		sb.WriteString("<pre>")
+		for _, v := range list {
+			sb.Write(v.ToTextStringBytes())
+		}
+		sb.WriteString("</pre>")
+	} else {
+		for _, v := range list {
+			sb.Write(v.ToTextStringBytes())
+		}
+	}
+	sb.WriteString("</div>")
+	if h.parent != nil && h.tagType == 1 {
+		if strings.ToLower(h.tag) == "style" || strings.ToLower(h.tag) == "css" {
+			sb.WriteString("&lt;/<span style='font-weight:bold;color:#7f0096'>" + h.tag + "</span>&gt;<br/>")
+		} else {
+			sb.WriteString("&lt;/<span style='font-weight:bold;color:#009688'>" + h.tag + "</span>&gt;<br/>")
+		}
+	}
+	return sb.Bytes()
+}
+
+/**
+ * 将HTML转换为字符串
+ */
+func (h *HTML) ToTextString() string {
+	if h.tag == "!" {
+		return "&lt;!" + h.value + "&gt;<br/>"
+	}
+	if h.tagType == -1 {
+		return h.value
+	}
+	sb := bytes.NewBufferString("")
+	if h.parent != nil {
+		sb.WriteString("&lt;")
+		if strings.ToLower(h.tag) == "style" || strings.ToLower(h.tag) == "css" {
+			sb.WriteString("<span style='font-weight:bold;color:#7f0096'>" + h.tag + "</span>")
+		} else {
+			sb.WriteString("<span style='font-weight:bold;color:#009688'>" + h.tag + "</span>")
+		}
+
+		for i, v := range h.tagData {
+			sb.WriteString(" <span style='color: #FF5722;font-weight: bold;'>" + i + "</span>=" + "\"<span style='color:#888888'>" + v + "</span>\"")
+		}
+		if h.tagType == 0 {
+			sb.WriteString("/&gt;<br/>")
+		} else {
+			sb.WriteString("&gt;<br/>")
+		}
+
+	}
+	list := h.list
+	sb.WriteString("<div style='padding:4px 20px'>")
+	if strings.ToLower(h.tag) == "style" || strings.ToLower(h.tag) == "css" {
+		sb.WriteString("<pre>")
+		for _, v := range list {
+			sb.Write(v.ToTextStringBytes())
+		}
+		sb.WriteString("</pre>")
+	} else {
+		for _, v := range list {
+			sb.Write(v.ToTextStringBytes())
+		}
+	}
+	sb.WriteString("</div>")
+	if h.parent != nil && h.tagType == 1 {
+		if strings.ToLower(h.tag) == "style" || strings.ToLower(h.tag) == "css" {
+			sb.WriteString("&lt;/<span style='font-weight:bold;color:#7f0096'>" + h.tag + "</span>&gt;<br/>")
+		} else {
+			sb.WriteString("&lt;/<span style='font-weight:bold;color:#009688'>" + h.tag + "</span>&gt;<br/>")
+		}
+	}
+	return sb.String()
+}
 func (h *HTML) ToStringBytes() []byte {
 	if h.tag == "!" {
 		return []byte("<!" + h.value + ">")
@@ -832,8 +940,13 @@ func (h *HTML) ToStringBytes() []byte {
 	if h.parent != nil {
 		sb.WriteString("<")
 		sb.WriteString(h.tag)
-		for i, v := range h.tagData {
-			sb.WriteString(" " + i + "=" + "\"" + v + "\"")
+		var keys []string
+		for k := range h.tagData {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		for _, v := range keys {
+			sb.WriteString(" " + v + "=" + "\"" + h.tagData[v] + "\"")
 		}
 		if h.tagType == 0 {
 			sb.WriteString("/>")

@@ -1,3 +1,9 @@
+<!--
+	标签控件
+	@author			sunxy
+	@type			JUS 控件
+	@description	
+-->
 <label>
 	<@content/>
 	<script>

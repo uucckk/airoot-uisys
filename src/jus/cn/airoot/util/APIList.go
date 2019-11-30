@@ -189,6 +189,7 @@ func (a *APIlist) CreateFrom(jus *UIServer, className string) error {
 
 		for _, v := range html.GetElementsByTagName("script") {
 			script += v.ToString()
+			v.Remove()
 		}
 		a.html = html
 	}
@@ -255,8 +256,20 @@ func (a *APIlist) init(name string) {
 	sb += "</div>"
 	//
 	sb += "<div style='padding-left:10px;padding-right:10px'>"
-
 	js := a.script
+
+	attr := js.GetFromOther()
+	if len(attr) > 0 {
+		sb += "<b style='padding-bottom:5px;display:block;'>HTML属性</b>"
+	}
+	sb += "<table>"
+	for _, v := range attr {
+		sb += ("<tr><td>")
+		sb += "<a href='javascript:void(0);'>" + Replace(Replace(v.Name, "\"", ""), "'", "") + "</a><br/>"
+		sb += v.Value
+		sb += "</td></tr>"
+	}
+	sb += "</table><br/>"
 	svc := js.GetVar(true, true)
 	if len(svc) > 0 {
 		sb += "<b style='padding-bottom:5px;display:block;'>静态属性</b>"
@@ -272,7 +285,12 @@ func (a *APIlist) init(name string) {
 
 	svc = js.GetVar(true, false)
 	fc := js.GetFunctionAndStatic(true, false)
-	if len(svc) > 0 || len(fc) > 0 {
+	for _, f := range fc { //遍历所有setter getter 函数
+		if f.IsSet || f.IsGet {
+			a.appendAttr(f)
+		}
+	}
+	if len(svc) > 0 || len(a.attr) > 0 {
 		sb += "<b style='padding-bottom:5px;display:block;'>公共属性</b>"
 	}
 	sb += ("<table>")
@@ -283,11 +301,6 @@ func (a *APIlist) init(name string) {
 		sb += "</td></tr>"
 	}
 
-	for _, f := range fc { //遍历所有setter getter 函数
-		if f.IsSet || f.IsGet {
-			a.appendAttr(f)
-		}
-	}
 	for _, f := range a.attr {
 		note := &Note{}
 		note.ReadFromString(f.Description)
@@ -306,9 +319,12 @@ func (a *APIlist) init(name string) {
 		}
 
 		sb += "</span>\r\n"
-		sb += "<div style='padding:10px 0px;padding-bottom:0px;font-size:13px;'>"
-		sb += IfStr(ut == "", "", ut+" ") + Replace(note.GetNote(), "\n", "<br/>")
-		sb += "</div>"
+		sub := IfStr(ut == "", "", ut+" ") + Replace(note.GetNote(), "\n", "<br/>")
+		if len(sub) > 0 {
+			sb += "<div style='padding:10px 0px;padding-bottom:0px;font-size:13px;'>"
+			sb += sub
+			sb += "</div>"
+		}
 		sb += "</td></tr>"
 	}
 
@@ -409,7 +425,11 @@ func (a *APIlist) init(name string) {
 		sb += "</ul>"
 		sb += "</td></tr>"
 	}
+	sb += "</table><br/>"
+	sb += "<b style='padding-bottom:5px;display:block;'>HTML DOM</b>"
+	sb += "<table><tr><td>" + a.html.ToTextString() + "</td></tr>"
 	sb += "</table></div>"
+
 	a.sb = sb
 }
 
@@ -440,7 +460,12 @@ func (a *APIlist) initClass(path string, cls []*Class) {
 		sb += "</table><br/>"
 		fv = a.script.GetVarByClassName(v.Name, true, false)
 		fc := a.script.GetFunctionByClassName(v.Name, true)
-		if len(fv) > 0 || len(fc) > 0 {
+		for _, f := range fc { //遍历所有setter getter 函数
+			if f.IsSet || f.IsGet {
+				a.appendAttr(f)
+			}
+		}
+		if len(fv) > 0 || len(a.attr) > 0 {
 			sb += "<b style='padding-bottom:5px;display:block;'>公共属性</b>"
 		}
 		sb += ("<table>")
@@ -452,11 +477,6 @@ func (a *APIlist) initClass(path string, cls []*Class) {
 			sb += "</td></tr>"
 		}
 
-		for _, f := range fc { //遍历所有setter getter 函数
-			if f.IsSet || f.IsGet {
-				a.appendAttr(f)
-			}
-		}
 		for _, f := range a.attr {
 			note := &Note{}
 			note.ReadFromString(f.Description)
@@ -475,9 +495,13 @@ func (a *APIlist) initClass(path string, cls []*Class) {
 			}
 
 			sb += "</span>\r\n"
-			sb += "<div style='padding:10px 0px;padding-bottom:0px;font-size:13px;'>"
-			sb += IfStr(ut == "", "", ut+" ") + Replace(note.GetNote(), "\n", "<br/>")
-			sb += "</div>"
+			sub := IfStr(ut == "", "", ut+" ") + Replace(note.GetNote(), "\n", "<br/>")
+			if len(sub) > 0 {
+				sb += "<div style='padding:10px 0px;padding-bottom:0px;font-size:13px;'>"
+				sb += sub
+				sb += "</div>"
+			}
+
 			sb += "</td></tr>"
 		}
 		sb += "</table><br/>"

@@ -1,97 +1,24 @@
-<!-- 绝对位置路径 -->
+<!--
+	@author			sunxy
+	@type			JUS 布局框架
+	@description	普通布局，具体方式按照子模块来定义。
+-->
 <div>
-	<style>
-		body{
-			position:relative;
-		}
-		
-		body>div{
-			position:absolute;
-		}
-	</style>
-	<@content/>
-	<script>
-		var _self = $(dom);
-		function init(){
-			
-		}
-
-		/**
-		 * 对文档进行整理
-		 */
-		private static function layout(content){
-			var obj = content.children("div").not(":hidden");
-			var width = content.width();
-			var height = content.height();
-			var dWidth:int = 0;
-			var dHeight:int = 0;
-			var padding:int = 0;
-			var left:int,right:int,top:int,bottom:int;
-			obj.each(function(){
-				var $this = $(this);
-				
-				left = $this.attr("left");
-				if(left == undefined){
-					left = $this.attr("x");
-					if(!left){
-						left = 0;
-					}
-				}
-				$this.css("left",left + "px");
-				right = $this.attr("right");
-				padding = $this.outerWidth(true) - $this.width();
-				if(right){
-					$this.width(content.width() - right - left - padding);
-				}else{
-					dWidth = $this.attr("width");
-					if(dWidth){
-						
-						if(dWidth.lastIndexOf("%") != -1){
-							$this.width(width * parseInt(dWidth)/100 - padding);
-						}else{
-							dWidth = parseInt(dWidth);
-							$this.width(dWidth - padding);
-						}
-					}
-
-					
-
-				}
-
-
-
-				top = $this.attr("top");
-				if(!top){
-					top = $this.attr("y");
-					if(!top){
-						top = 0;
-					}
-				}
-				$this.css("top",top + "px");
-				bottom = $this.attr("bottom");
-				padding = $this.outerHeight(true) - $this.height();
-				if(bottom){
-					$this.height(content.height() - bottom - right - padding);
-				}else{
-					dHeight = $this.attr("height");
-					if(dHeight){
-						
-						if(dHeight.lastIndexOf("%") != -1){
-							$this.height(height * parseInt(dHeight)/100 - padding);
-						}else{
-							dHeight = parseInt(dHeight);
-							$this.height(dHeight - padding);
-						}
-					}
-				}
-
-			});
-			
-		}
-	
-		
-		public function trigger(e){
-			layout(_self);
-		}
-	</script>
+	<@content />
 </div>
+<script>
+	var _self = $(dom);
+	public function trigger(event){
+		_self.children("div").each(function(){
+			var $this = $(this);
+			//$this.width($this.width());
+			$this.height($this.attr("height"));
+			
+			var $id = window[$this.attr("id")];
+			if($id && $id.trigger){
+				$id.trigger(event);
+			}
+		});
+		
+	}
+</script>

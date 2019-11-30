@@ -1,3 +1,9 @@
+<!--
+	表格控件
+	@author			sunxy
+	@type			JUS 控件
+	@description	支持大数据量展示
+-->
 <jus.vbox>
 	<style>
 		body{

@@ -1,4 +1,9 @@
-<!-- 堆栈面板 -->
+<!--
+	堆栈面板
+	@author			sunxy
+	@type			JUS 布局框架
+	@description	
+-->
 <@import value="jus.*" />
 <contain width="100%" height="100%">
 	<position id="content" width="100%" height="100%">

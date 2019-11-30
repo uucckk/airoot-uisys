@@ -1,72 +1,77 @@
+<!--
+	@author			sunxy
+	@type			JUS 布局框架
+	@description	垂直可变化布局
+-->
 <@import value="jus.*" />
+<style>
+	body{
+		-moz-user-select:none;/*火狐*/
+		-webkit-user-select:none;/*webkit浏览器*/
+		-ms-user-select:none;/*IE10*/
+		-khtml-user-select:none;/*早期浏览器*/
+		user-select:none;
+	}
+</style>
 <vbox>
-	<style>
-		body{
-			-moz-user-select:none;/*火狐*/
-			-webkit-user-select:none;/*webkit浏览器*/
-			-ms-user-select:none;/*IE10*/
-			-khtml-user-select:none;/*早期浏览器*/
-			user-select:none;
-		}
-	</style>
 	<@content />
-	<script>
-		private var downFlag:Boolean = false;
-		var frontElem = null;
-		var endElem = null;
-		var ba = null;
-		var bb = null;
-		var al = 0;
-		var br = 0;
-		var can = false;
-		var _self = $(dom);
-		function init(){
-			_self.bind("mousedown",mouseDown);
-			_self.bind("mousemove",mouseMove);
-			$(window).bind("mouseup",mouseUp);
-			frontElem = _self.find(">div").eq(0);
-			endElem = _self.find(">div").eq(_self.find(">div").length - 1);
+</vbox>
+<script>
+	private var downFlag:Boolean = false;
+	var frontElem = null;
+	var endElem = null;
+	var ba = null;
+	var bb = null;
+	var al = 0;
+	var br = 0;
+	var can = false;
+	var _self = $(dom);
+	function init(){
+		_self.bind("mousedown",mouseDown);
+		_self.bind("mousemove",mouseMove);
+		$(window).bind("mouseup",mouseUp);
+		frontElem = _self.find(">div").eq(0);
+		endElem = _self.find(">div").eq(_self.find(">div").length - 1);
+	}
+
+
+	function mouseDown(){
+		al = ba.offset().top;
+		br = bb.offset().top + ba.outerHeight(true);
+		if(can){
+			downFlag = true;
 		}
+	}
 
-
-		function mouseDown(){
-			al = ba.offset().top;
-			br = bb.offset().top + ba.outerHeight(true);
-			if(can){
-				downFlag = true;
+	function mouseUp(){
+		ba = null;
+		bb = null;
+		downFlag = false;
+	}
+	
+	private function mouseMove(e:Event):void{
+		if(downFlag){
+			ba.attr("height",e.pageY - al);
+			bb.attr("height",br - e.pageY);
+			endElem.attr("height","100%");
+			super.trigger();
+			return;
+		}
+		var arr = _self.find(">div");
+		var pCenter = 0;
+		for(var i = 1;i<arr.length;i++){
+			ba = arr.eq(i - 1);
+			bb = arr.eq(i);
+			pCenter = ba.offset().top + ba.outerHeight(true) + ( bb.offset().top - ba.offset().top - ba.outerHeight(true))/2;
+			if(Math.abs(pCenter - e.pageY)<10){
+				_self.css("cursor","n-resize");
+				can = true;
+				break;
+			}else{
+				can = false;
+				_self.css("cursor","default");
 			}
-		}
-
-		function mouseUp(){
-			ba = null;
-			bb = null;
-			downFlag = false;
 		}
 		
-		private function mouseMove(e:Event):void{
-			if(downFlag){
-				ba.attr("height",e.pageY - al);
-				bb.attr("height",br - e.pageY);
-				endElem.attr("height","100%");
-				super.trigger();
-				return;
-			}
-			var arr = _self.find(">div");
-			var pCenter = 0;
-			for(var i = 1;i<arr.length;i++){
-				ba = arr.eq(i - 1);
-				bb = arr.eq(i);
-				pCenter = ba.offset().top + ba.outerHeight(true) + ( bb.offset().top - ba.offset().top - ba.outerHeight(true))/2;
-				if(Math.abs(pCenter - e.pageY)<10){
-					_self.css("cursor","n-resize");
-					can = true;
-					break;
-				}else{
-					can = false;
-					_self.css("cursor","default");
-				}
-			}
-			
-		}
-	</script>
-</vbox>
+	}
+</script>

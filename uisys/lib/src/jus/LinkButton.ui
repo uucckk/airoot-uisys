@@ -1,8 +1,9 @@
 <!-- LinkButton -->
 <!-- 
 	@author sunxy
-	@descript 动态切换按钮，输入组按钮系列
+	@description 动态切换按钮，输入组按钮系列
 	@date 2018-03-02
+	@type JUS 控件
 -->
 <@import value="jus.*" />
 <displayObject width="100%" height="36" gap="5">

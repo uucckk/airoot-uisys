@@ -1,7 +1,8 @@
 <!-- 
-	Tabs 模块是JUIS平台的展现界面的分页类模块。
+	Tabs 模块是JUS平台的展现界面的分页类模块。
 	@author sunxy
 	@version 0.1
+	@type JUS 控件
  -->
 <@import value='jus.*' />
 <vbox>

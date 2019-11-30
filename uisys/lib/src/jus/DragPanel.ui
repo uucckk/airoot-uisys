@@ -2,6 +2,7 @@
 	可拖拽的Label标签
 	@author sunxy
 	@version 0.0
+	@type JUS 控件
  -->
 <jus.DisplayObject>
 	<style>

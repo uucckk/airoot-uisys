@@ -1,3 +1,9 @@
+<!--
+	对话框控件
+	@author			sunxy
+	@type			JUS 控件
+	@description	
+-->
 <@import value="jus.*" />
 <displayObject>
 	<style>

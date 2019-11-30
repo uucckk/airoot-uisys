@@ -1,4 +1,9 @@
-<!-- 滚动条样式 -->
+<!--
+	滚动条控件
+	@author			sunxy
+	@type			JUS 控件
+	@description	
+-->
 <@import value="jus.*" />
 <position width="100%" height="100%">
 	<style>

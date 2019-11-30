@@ -520,13 +520,22 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _this_ string, _pri_ string) st
 				for p < len(tl) {
 					t = tl[p]
 					p++
-					if t.TagType < 0 || t.TagType == 5 {
+					if t.TagType < 0 {
 						continue
-					}
-					if (t.TagType == 2 && "=" == t.Value) || t.TagType == 4 || t.TagType == 5 {
+					} else if (t.TagType == 2 && "=" == t.Value) || t.TagType == 4 || t.TagType == 5 {
 						tlt = append(tlt, t)
 						break
+					} else if t.IsKeyWord && t.Value == "from" {
+						for p < len(tl) {
+							t = tl[p]
+							p++
+							if t.TagType == 1 {
+								tlt = append(tlt, &Tag{Value: "=dom.getAttribute(" + t.Value + ")", TagType: 0})
+								break
+							}
+						}
 					}
+
 				}
 			}
 			continue
@@ -740,7 +749,7 @@ func (s *HTMLScript) ReadFromString(script string) string {
 	if err != nil {
 		return ""
 	}
-	templ = strings.Replace(templ, "{@CLASS_NAME}", "//"+s.jus.className+"\r\n", -1)
+	templ = strings.Replace(templ, "{@CLASS_NAME}", "//@ sourceURL=[UI]"+s.jus.className+"\r\n"+IfStr(s.jus.Debug, s.GetSourceHTML()+"\r\n", ""), -1)
 	templ = strings.Replace(templ, "{@domain}", s.jus.domain, -1)
 	templ = strings.Replace(templ, "{@Base}", "\b", -1)
 
@@ -769,6 +778,21 @@ func (s *HTMLScript) ReadFromString(script string) string {
 	}
 
 	return out.String()
+}
+
+func (s *HTMLScript) GetSourceHTML() string {
+	html := &HTML{}
+	v, e := GetCode(s.jus.htmlPath)
+	if e != nil {
+		return "//READ ERROR."
+	}
+	html.ReadFromString(v)
+	ss := html.GetElementsByTagName("script")
+	for _, v := range ss {
+		v.Remove()
+	}
+	return "//@HTML\r\n//" + Replace(html.ToString(), "\n", "\n//")
+
 }
 
 func (s *HTMLScript) FormatString(script string) string {
