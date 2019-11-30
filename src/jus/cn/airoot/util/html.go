@@ -843,9 +843,15 @@ func (h *HTML) ToTextStringBytes() []byte {
 		} else {
 			sb.WriteString("<span style='font-weight:bold;color:#009688'>" + h.tag + "</span>")
 		}
-		for i, v := range h.tagData {
-			sb.WriteString(" <span style='color: #FF5722;font-weight: bold;'>" + i + "</span>=" + "\"<span style='color:#888888'>" + v + "</span>\"")
+		var keys []string
+		for k := range h.tagData {
+			keys = append(keys, k)
 		}
+		sort.Strings(keys)
+		for _, v := range keys {
+			sb.WriteString(" <span style='color: #FF5722;font-weight: bold;'>" + v + "</span>=" + "\"<span style='color:#888888'>" + h.tagData[v] + "</span>\"")
+		}
+
 		if h.tagType == 0 {
 			sb.WriteString("/&gt;<br/>")
 		} else {
