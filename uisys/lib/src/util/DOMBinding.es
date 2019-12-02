@@ -1,18 +1,19 @@
 /**
- * 模板控制
+ * DOM绑定控制
  * @author sunxy
  * @type 功能包
  */
-class Template{
-	var node = null;
-	var a = /\{.+?\}/g;
-	var map = {};
-	var attrLst = [];
-	var _data = {};
-	var _pdata = null;
-	var _onChange = null;
-	var watchLst = {};//查看关注数据项目
-	public var filter = {};
+class DOMBind{
+	private var node = null;
+	private var a = /\{.+?\}/g;
+	private var map = {};
+	private var attrLst = [];
+	private var _data = {};
+	private var _pdata = null;
+	private var _onChange = null;
+	private var watchLst = {};//查看关注数据项目
+	//过滤器
+	public var filters:Object = {};
 	
 	
 	function init(node:HTML){
@@ -22,7 +23,6 @@ class Template{
 		defer(node,@this);
 		read(this.node = node);
 		initListener();
-		window[node.getAttribute("id")] = this;
 	}
 	
 	
@@ -68,6 +68,7 @@ class Template{
 	 * 数据提供
 	 */
 	public function set dataContext(value:Object){
+		alert(value.\$ID);
 		if(typeof value == "object"){
 			if(_pdata != value){
 				_pdata = value;
@@ -296,7 +297,7 @@ class Template{
 			sb += p;
 		}
 		stat = sb.trim();
-		//console.log({stat:stat,arr:stat.split("."),value:val,filter:filter});
+		console.log({stat:stat,arr:stat.split("."),value:val,filter:filter});
 		return {stat:stat,arr:stat.split("."),value:val,filter:filter};
 	}
 	
@@ -392,7 +393,7 @@ class Template{
 				f = p.filter;
 				v = value;
 				for(var j = 0;j<f.length;j++){
-					k = filter[f[j]];
+					k = filters[f[j]];
 					if(k){
 						if(p){
 							v = k(v);

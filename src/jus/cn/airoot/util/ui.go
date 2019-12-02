@@ -35,7 +35,7 @@ type UI struct {
 	cssPath             string    //css模块路径
 	SYSTEM_PATH         string    //系统路径
 	CLASS_PATH          string
-	root                string
+	root                string //工程路径
 	parent              *UI
 	domain              string
 	className           string
@@ -87,7 +87,7 @@ func (j *UI) CreateFromString(root string, domain string, node *HTML, code strin
 	j.moduleMap = make(map[string]*Attr, 10)
 	j.pkgMap = make(map[string]string, 10)
 	j.idMap = make(map[string]*HTMLObject, 10)
-	j.root = root
+	j.root = filepath.Clean(root)
 	j.className = className
 	j.contentToList = make([]*HTML, 0)
 	if node != nil {
@@ -122,6 +122,7 @@ func (j *UI) CreateFromString(root string, domain string, node *HTML, code strin
  * @throws IOException
  */
 func (j *UI) CreateFrom(root string, domain string, node *HTML, className string) bool {
+	root = filepath.Clean(root)
 	className = Replace(className, "/", ".")
 	className = Replace(className, "\\", ".")
 	className = TrimClassName(className)
@@ -202,21 +203,28 @@ func (j *UI) PushImportScript(value *Attr) {
 	if j.GetRoot().scriptElement[value.Value] == nil {
 		pos := Index(value.Value, "\002")
 		if pos != -1 {
-			if Index(value.Value, "/") != -1 || Index(value.Value, "\\") != -1 {
+			if Index(value.Value, "/") != -1 || Index(value.Value, "\\") != -1 { //for example import vue from "lib/js/vue.min.js";
 				j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, &ScriptElement{"I", value.Name, "U", value.Value}) //代表UMD规范的包导入
 				return
-			} else {
+			} else { //for example: import dialog from "jus.Dialog";
 				value.Value = Substring(value.Value, pos+1, -1)
 			}
 		}
-		if Index(value.Value, "/") != -1 || Index(value.Value, "\\") != -1 {
-			j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, &ScriptElement{"I", value.Name, "P", value.Value})
+		if Index(value.Value, "/") != -1 || Index(value.Value, "\\") != -1 { //for example: import /lib/js/jquery.min.js;
+			tp := j.root + "/" + value.Value
+			if Exist(tp) {
+				tp = filepath.Clean(tp)
+				value.Value = Substring(tp, StringLen(j.root), -1)
+				j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, &ScriptElement{"I", value.Name, "P", value.Value})
+			} else {
+				j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, &ScriptElement{"O", value.Value, "", value.Value + " isn't Exist."})
+			}
 			return
 		}
 
 		j.GetRoot().scriptElement[value.Value] = value
 		ft := &UI{SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH}
-		if ft.CreateFromParent(j.root, "", nil, strings.TrimSpace(value.Value), j) {
+		if ft.CreateFromParent(j.root, "", nil, strings.TrimSpace(value.Value), j) { //for example: import jus.Dialog;
 			ft.IsImport = value.Value
 			if ft.IsScript() {
 				scriptObj := &Script{}
