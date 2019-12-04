@@ -376,3 +376,44 @@ func FmtCmdAdv(s string) *Cmd {
 	return cmd
 
 }
+
+///代码注释工具
+///用于代码测试
+///@param code	输入代码
+///@param flag	是否显示被注释的吗
+func CodeFx(code string, flag bool) string {
+	arr := strings.Split(code, "\n")
+	s := bytes.NewBufferString("")
+	f := true
+	if flag {
+		for _, v := range arr {
+			if len(v) != 0 && (v[0] == '#' || v[0] == '*') {
+				v = v[1:]
+			}
+			if f {
+				s.WriteString(v)
+				s.WriteByte('\n')
+			}
+
+		}
+	} else {
+		for _, v := range arr {
+			if len(v) != 0 {
+				if v[0] == '*' {
+					f = !f
+				}
+				if v[0] == '#' {
+					continue
+				}
+			}
+
+			if f {
+				s.WriteString(v)
+				s.WriteByte('\n')
+			}
+
+		}
+	}
+
+	return s.String()
+}

@@ -5,6 +5,7 @@ var __VERS__ = navigator.appVersion;
 var __$__ = {};//标志变量
 //初始实例化
 var __POS_VALUE__ = null;
+var __OBJECT__ = {};
 var __WINDOW__ = {};//全局静态函数总和
 
 var __MODULE_LIST__ = {};
@@ -642,7 +643,7 @@ function AddC2C(uuid,data,__APPDOMAIN__){
 	var param = data.value.split("\x02");
 	var cls = param[0];
 	var module = param[1];
-	var tgt = window[param[2].replace(/[\b]/g,uuid)];
+	var tgt = __OBJECT__[param[2].replace(/[\b]/g,uuid)];
 	var value = param.length>3 ? param[3] : null;
 	__PUSH_COMMAND__(uuid,data.name.replace(/[\b]/g,uuid),cls,getModule(module,__APPDOMAIN__)(tgt,value));
 	
@@ -663,22 +664,26 @@ function __InitModule__(__APPDOMAIN__,moduleName,uuid,value,target,append){
 			__InitBody__(__APPDOMAIN__,uuid,m.html,m.style,target,append);
 			var lst = m.runLst;
 			var p = null;
+			var pn = null;
 			for(var i = 0;i<lst.length;i++){
 				p = lst[i];
+				pn = p.name.replace(/[\b]/g,uuid);
+				if(__OBJECT__[pn] instanceof HTMLElement){__OBJECT__[pn] = {dom:__OBJECT__[pn]};}
+				else if(!__OBJECT__[pn]){__OBJECT__[pn] = {dom:document.getElementById(pn)};};
 				switch(p.type){
 					case "P":
-						param.push(p.name.replace(/[\b]/g,uuid),p.value.replace(/[\b]/g,uuid));
+						param.push(pn,p.value.replace(/[\b]/g,uuid));
 					break;
 					case "S"://执行基本函数
 						if(method[p.value]){
-							method[p.value](p.name.replace(/[\b]/g,uuid),uuid,__APPDOMAIN__);
+							method[p.value](pn,uuid,__APPDOMAIN__);
 						}else{
 							trace(p.name,p.value);
 						}
 						
 					break;
 					case "E"://执行扩展函数
-						extend[p.value].method(p.name.replace(/[\b]/g,uuid),uuid,__APPDOMAIN__);
+						extend[p.value].method(pn,uuid,__APPDOMAIN__);
 					break;
 					case "C"://执行命令函数
 						AddC2C(uuid,p,__APPDOMAIN__)//AddCommandToCompoent
@@ -687,7 +692,7 @@ function __InitModule__(__APPDOMAIN__,moduleName,uuid,value,target,append){
 						if(!_MODULE_INNER_[uuid]){
 							_MODULE_INNER_[uuid] = [];
 						}
-						_MODULE_INNER_[uuid].push(window[p.name.replace(/[\b]/g,uuid)]);
+						_MODULE_INNER_[uuid].push(__OBJECT__[pn]);
 					break;
 					case "L"://执行外连接函数
 						if(!_MODULE_INNER_[uuid]){
@@ -706,7 +711,7 @@ function __InitModule__(__APPDOMAIN__,moduleName,uuid,value,target,append){
 			}
 			//初始化列表
 			__initLst__(uuid);
-			return window[uuid];
+			return __OBJECT__[uuid];
 		}
 	}
 	return null;
@@ -994,7 +999,7 @@ var getModule = UI.getModule = function(module,__APPDOMAIN__){
 	__APPDOMAIN__ = __APPDOMAIN__ || "local";
 	if(__HAV_MODULE__(module,__APPDOMAIN__)){
 		return function(){
-			return __InitModule__(__APPDOMAIN__,module,__UUID__(),arguments,window,true);
+			return __InitModule__(__APPDOMAIN__,module,__UUID__(),arguments,__OBJECT__,true);
 		}
 	}else{
 		var mod = _MODULE_CONTENT_LIST_[__APPDOMAIN__][module];
@@ -1066,7 +1071,7 @@ var __PUSH_COMMAND__ = function(domain,name,cmd,obj){
 	if(!__MODULE_COMMAND_LIST__[domain]){
 		__MODULE_COMMAND_LIST__[domain] = [];
 	}
-	window[name][cmd] = obj;
+	__OBJECT__[name][cmd] = obj;
 	__MODULE_COMMAND_LIST__[domain].push(obj);
 }
 var $JGID = function(id){ return document.getElementById(id);};
@@ -1123,20 +1128,21 @@ var cp = null;
 function gcEvt(){
 	for(var name in __MODULE_LIST__){
 		if(!document.getElementById(name)){
-			var obj = window[name];
+			var obj = __OBJECT__[name];
 			if(obj._DELAY_TIME_ && (new Date().getTime() - obj._DELAY_TIME_ >3000)){
 				try{
 					if(obj.finalize){
 						obj.finalize();
 					}
+					delete window[name];
 				}catch(e){
 					alert("run [" + name + "] finalize isn't success!");
 					console.log("finalize[" + name + "]",e); 
 				}
 				try{
-					delete window[name];
+					delete __OBJECT__[name];
 				}catch(e){
-					window[name] = null;
+					__OBJECT__[name] = null;
 				}
 				delete __MODULE_LIST__[name];
 				cl = __MODULE_COMMAND_LIST__[name];

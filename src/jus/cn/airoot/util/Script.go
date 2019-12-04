@@ -53,7 +53,7 @@ func (s *Script) CreateFrom(jus *UI, root string, domain string, value *Attr, ex
 }
 
 func (s *Script) initScript(js *MScript) string {
-	return s.initScriptFrom(js, "__this__", "__pri__")
+	return s.initScriptFrom(js, "__OBJECT__", "__this_", "__pri")
 
 }
 
@@ -63,7 +63,7 @@ func (s *Script) initScript(js *MScript) string {
  * @return
  * @throws Exception
  */
-func (s *Script) initScriptFrom(js *MScript, _this_ string, _pri_ string) string {
+func (s *Script) initScriptFrom(js *MScript, _global string, _this string, _pri string) string {
 	out := ""
 	tmp := ""
 	var hObj *HTMLObject = nil
@@ -278,7 +278,7 @@ func (s *Script) initScriptFrom(js *MScript, _this_ string, _pri_ string) string
 					if t.IsStatic && !t.IsGet && !t.IsSet {
 						newString = "__WINDOW__[__APPDOMAIN__]['" + s.className + "']."
 					} else {
-						newString = _this_ + "."
+						newString = _this + "."
 					}
 					newString += t.Value
 
@@ -286,7 +286,7 @@ func (s *Script) initScriptFrom(js *MScript, _this_ string, _pri_ string) string
 					if t.IsStatic && !t.IsGet && !t.IsSet {
 						newString = "__WINDOW__[__APPDOMAIN__]['" + s.className + "']."
 					} else {
-						newString = _pri_ + "."
+						newString = _pri + "."
 					}
 					newString += t.Value
 				}
@@ -393,13 +393,15 @@ func (s *Script) initScriptFrom(js *MScript, _this_ string, _pri_ string) string
 			continue
 		}
 		if t.IsKeyWord && "@this" == t.Value {
-			t.Value = _this_
+			t.Value = _this
+		} else if t.IsKeyWord && "@global" == t.Value {
+			t.Value = _global
 		} else if t.IsKeyWord && "@lib" == t.Value {
 			t.Value = "\"" + "./" + s.jus.relativePath + ".lib/\""
 		} else if t.IsKeyWord && "this" == t.Value {
 			tlt = append(tlt, t)
 			if s.getLevel(t) == 1 {
-				//t.Value = _pri_
+				//t.Value = _pri
 				param = t
 				for p < len(tl) {
 					t = tl[p]
@@ -418,9 +420,9 @@ func (s *Script) initScriptFrom(js *MScript, _this_ string, _pri_ string) string
 								a := set.Get(t.Value)
 								if a != nil {
 									if a.IsPublic {
-										param.Value = _this_
+										param.Value = _this
 									} else {
-										param.Value = _pri_
+										param.Value = _pri
 									}
 								}
 								if s.mjs != js && a == nil {
@@ -428,9 +430,9 @@ func (s *Script) initScriptFrom(js *MScript, _this_ string, _pri_ string) string
 									if c != nil {
 										a = c.Get(t.Value)
 										if a.IsPublic {
-											param.Value = "__this__"
+											param.Value = "__this_"
 										} else {
-											param.Value = "__pri__"
+											param.Value = "__pri"
 										}
 									}
 								}
@@ -478,7 +480,7 @@ func (s *Script) initScriptFrom(js *MScript, _this_ string, _pri_ string) string
 					if t.IsAnonymous {
 						tlt = append(tlt, &Tag{Value: "function", TagType: 0})
 					} else {
-						tlt = append(tlt, &Tag{Value: IfStr(s.isScript, IfStr(t.IsPublic, _this_+".", _pri_+".")+t.Value+" = function", "__MODULE_METHOD__['"+s.domain+"']."+t.Value+" = "+IfStr(t.IsPublic, _this_+".", _pri_+".")+t.Value+" = function"), TagType: 0})
+						tlt = append(tlt, &Tag{Value: IfStr(s.isScript, IfStr(t.IsPublic, _this+".", _pri+".")+t.Value+" = function", "__MODULE_METHOD__['"+s.domain+"']."+t.Value+" = "+IfStr(t.IsPublic, _this+".", _pri+".")+t.Value+" = function"), TagType: 0})
 					}
 				}
 
@@ -522,7 +524,7 @@ func (s *Script) initScriptFrom(js *MScript, _this_ string, _pri_ string) string
 					continue
 				}
 
-				tlt = append(tlt, &Tag{Value: IfStr(t.IsPublic, _this_+".", _pri_+".") + t.Value + " ", TagType: 0})
+				tlt = append(tlt, &Tag{Value: IfStr(t.IsPublic, _this+".", _pri+".") + t.Value + " ", TagType: 0})
 				//去除属性
 				for p < len(tl) {
 					t = tl[p]
@@ -592,7 +594,7 @@ func (s *Script) initScriptFrom(js *MScript, _this_ string, _pri_ string) string
 					}
 				}
 				//if t.IsPublic {
-				//tlt = append(tlt, &Tag{Value: IfStr(t.IsSet, "var", _this_+".") + t.Value + " = __WINDOW__[__APPDOMAIN__]['" + s.className + "']." + t.Value + ";", TagType: 0})
+				//tlt = append(tlt, &Tag{Value: IfStr(t.IsSet, "var", _this+".") + t.Value + " = __WINDOW__[__APPDOMAIN__]['" + s.className + "']." + t.Value + ";", TagType: 0})
 				//}
 			} else if t.IsVar {
 				level = 0
@@ -630,7 +632,7 @@ func (s *Script) initScriptFrom(js *MScript, _this_ string, _pri_ string) string
 	tsb := ""
 	for name, value := range s.gsMap {
 		pgs = value
-		tsb += "Object.defineProperty(" + _this_ + ",'" + name + "',{"
+		tsb += "Object.defineProperty(" + _this + ",'" + name + "',{"
 		if pgs.Setter != nil {
 			tsb += "set:"
 			if pgs.Setter.IsStatic {
@@ -786,7 +788,7 @@ func (s *Script) initClass(name string, data string) string {
 		code +
 		"var __inthis__ = this,__inpri__ = {};" +
 		IfStr(len(code) == 0, "", "__EXTEND__(__inthis__,__UP__);") +
-		s.initScriptFrom(ms, "__inthis__", "__inpri__") + "\r\n" +
+		s.initScriptFrom(ms, "__OBJECT__", "__inthis__", "__inpri__") + "\r\n" +
 		"var __init__ = this.init || __inpri__.init;" +
 		"if(__init__){" +
 		"__init__.apply(this,__FLAG__ == __\\$__ ? __VALUE__ : arguments);" +

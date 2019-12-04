@@ -129,7 +129,7 @@
 			if(top == false && bottom === false){
 				$this.css("top","0px");
 			}
-			var $id = window[$this.attr("id")];
+			var $id = @global[$this.attr("id")];
 			if($id && $id.trigger){
 				if(parseInt($this.css("left"))>_self.width() || parseInt($this.css("top"))>_self.height()){
 					return;

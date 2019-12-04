@@ -26,6 +26,8 @@ type HTMLObject struct {
 
 //----------------------------------JUS-----------------------------------------
 type UI struct {
+	IsPublic            bool      //JS方法是否公开，默认不公开，但是如果html使用了@this关键字，则默认公开且不可改变。
+	IsTest              bool      //是否为测试模块，如果是则打开测试开关*，#，如果不是测不显示测试代码
 	Debug               bool      //判断是否被测试
 	SERVER              *UIServer //服务器引用
 	dirPath             string    //所在目录地址
@@ -103,7 +105,7 @@ func (j *UI) CreateFromString(root string, domain string, node *HTML, code strin
 
 	j.html = &HTML{}
 
-	j.html.ReadFromString(code) //j.html.ReadFromString(j.scanMedia(t))
+	j.html.ReadFromString(CodeFx(code, j.IsTest)) //j.html.ReadFromString(j.scanMedia(t))
 
 	if domain == "" {
 		j.domain = "\b"
@@ -178,7 +180,7 @@ func (j *UI) CreateFrom(root string, domain string, node *HTML, className string
 		if err != nil {
 			return false
 		}
-		j.html.ReadFromString(t) //j.html.ReadFromString(j.scanMedia(t))
+		j.html.ReadFromString(CodeFx(t, j.IsTest))
 	} else if j.jsPath != "" {
 		j.scriptFile = true
 		j.PushImportScript(&Attr{className, className}) //change by sunxy 2018-3-2
@@ -223,7 +225,7 @@ func (j *UI) PushImportScript(value *Attr) {
 		}
 
 		j.GetRoot().scriptElement[value.Value] = value
-		ft := &UI{SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH}
+		ft := &UI{SERVER: j.SERVER, IsPublic: j.SERVER.IsPublic, SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH}
 		if ft.CreateFromParent(j.root, "", nil, strings.TrimSpace(value.Value), j) { //for example: import jus.Dialog;
 			ft.IsImport = value.Value
 			if ft.IsScript() {
@@ -259,13 +261,13 @@ func (j *UI) GetInitString() (string, bool) {
 		if err != nil {
 			return "", false
 		}
-		return t, true
+		return CodeFx(t, j.IsTest), true
 	} else if j.jsPath != "" {
 		t, err := GetCode(j.jsPath)
 		if err != nil {
 			return "", false
 		}
-		return t, true
+		return CodeFx(t, j.IsTest), true
 	} else {
 		return "", false
 
@@ -566,7 +568,7 @@ func (j *UI) scanHTML(child []*HTML) {
 			if len(arr) > 1 {
 				tagName = arr[1]
 			}
-			var tFunc *UI = &UI{SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH, IsImport: j.IsImport, Debug: j.Debug}
+			var tFunc *UI = &UI{SERVER: j.SERVER, IsPublic: j.SERVER.IsPublic, SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH, IsImport: j.IsImport, Debug: j.Debug}
 			if tFunc.CreateFromParent(j.root, p.GetAttr("id"), p, tagName, j) {
 				if tFunc.IsScript() {
 					tFunc.SetConstructor(&Attr{tagName, p.GetConstructerParameter()}).setExtend(p.GetAttr("id") == j.domain)
@@ -1001,7 +1003,7 @@ func (j *UI) IsScript() bool {
 }
 
 /**
- * 初始化Attr里的@this
+ * 初始化Attr里的@use
  * @param html
  */
 func (j *UI) useHTML(html *HTML) {
@@ -1057,7 +1059,10 @@ func (j *UI) initObj(html *HTML) {
 			if "id" == strings.ToLower(attr.Name) {
 				continue
 			}
-			p.SetAttr(attr.Name, ScriptInitD(strings.Replace(p.GetAttr(attr.Name), "@this", j.domain, -1), j.domain))
+			if Index(p.GetAttr(attr.Name), "@this") != -1 {
+				p.SetAttr(attr.Name, ScriptInitD(strings.Replace(p.GetAttr(attr.Name), "@this", j.domain, -1), j.domain))
+				j.IsPublic = true
+			}
 			p.SetAttr(attr.Name, ScriptInitD(strings.Replace(p.GetAttr(attr.Name), "@lib", "./"+j.relativePath+".lib", -1), j.domain))
 		}
 		j.initObj(p)
@@ -1137,7 +1142,7 @@ func (j *UI) ReadHTML() *HTML {
 							v2.SetAttr("id", v2.GetAttr("domain")+v2.GetAttr("id"))
 						}
 					}
-					var tFunc *UI = &UI{SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH}
+					var tFunc *UI = &UI{SERVER: j.SERVER, IsPublic: j.SERVER.IsPublic, SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH}
 					j.idMap[v2.GetAttr("src_id")] = &HTMLObject{Name: v2.GetAttr("id"), HTMLObjectType: 1}
 					if tFunc.CreateFromParent(j.root, v2.GetAttr("id"), v2, v2.TagName(), j) {
 						if tFunc.IsScript() {
@@ -1205,7 +1210,7 @@ func (j *UI) ReadHTML() *HTML {
 	if j.cssPath != "" {
 		css := &HTML{}
 		tpr, _ := GetCode(j.cssPath)
-		css.ReadFromString("<style>" + tpr + "</style>")
+		css.ReadFromString("<style>" + CodeFx(tpr, j.IsTest) + "</style>")
 		j.html.Append(css)
 	}
 
@@ -1271,7 +1276,7 @@ func (j *UI) ReadHTML() *HTML {
 		script = &HTMLScript{}
 		script.CreateFrom(j, j.root, j.domain, j.paramValue, j.innerValue, j.extendsScriptBuffer)
 		tpr, _ := GetCode(j.jsPath)
-		scriptString := script.ReadFromString(tpr) //scriptString = script.ReadFromString(j.scanMedia(tpr))
+		scriptString := script.ReadFromString(CodeFx(tpr, j.IsTest)) //scriptString = script.ReadFromString(j.scanMedia(tpr))
 
 		if len(scriptString) != 0 {
 			scriptHTML := &HTML{}

@@ -59,6 +59,7 @@ type WsUser struct {
 type UIServer struct {
 	IsUIPro       bool   //判断是否为UISYS的工程
 	IsStatic      bool   //判断是否为静态发布
+	IsPublic      bool   //表示是发布的网页的每个模块的方法是否可以被全局访问。
 	protocol      string //连接协议http or https
 	Addr          string //连接地址
 	Status        bool   //运行状态
@@ -144,6 +145,14 @@ func (u *UIServer) Start(addr string, cfg string, printf func(string, int, strin
 		u.IsStatic = true
 	} else {
 		u.IsStatic = false
+	}
+
+	if Index(cfg, "d") != -1 { //表示每个插件都可以调试
+		u.IsPublic = true
+	} else if Index(cfg, "n") != -1 {
+		u.IsPublic = false
+	} else {
+		u.IsPublic = true
 	}
 
 	if u.IsStatic {
@@ -482,7 +491,11 @@ func (u *UIServer) havUser(cmds []string) (bool, string, string) {
 
 ///param ext 文件扩展名
 func (u *UIServer) jusEvt(w http.ResponseWriter, req *http.Request, ext string) {
-	jus := &UI{SERVER: u, SYSTEM_PATH: u.SysPath, CLASS_PATH: u.SysPath + "/src/", Debug: true}
+	query := false
+	if req.URL.RawQuery == "test" {
+		query = true
+	}
+	jus := &UI{IsPublic: u.IsPublic, SERVER: u, SYSTEM_PATH: u.SysPath, CLASS_PATH: u.SysPath + "/src/", Debug: true, IsTest: query}
 	className := Substring(req.URL.Path, 0, LastIndex(req.URL.Path, ext))
 	className = Replace(className, "/", ".")
 	if jus.CreateFrom(u.RootPath+"/", "", nil, className) {
@@ -1263,16 +1276,17 @@ func (u *UIServer) rel(v string, s string) {
 	if v != "" {
 		os.MkdirAll(v, 0777)
 	}
-	havF := true
 	if Index(s, "m") == -1 { //如果不为-1，代表只发布模块
-		havF = true
 		fmt.Println("copy static file to [" + v + "].")
 		Copy(u.RootPath, v, ".ui;.es")
 		fmt.Println("complete.")
-
 	} else {
-		havF = false
 		fmt.Println("== ONLY MOUDLE ==")
+	}
+	isPub := false
+	if Index(s, "d") == -1 { //如果不为-1，代表发布模块API可以全局调试
+		isPub = true
+		fmt.Println("== USE DEBUG==")
 	}
 	//生成module.js
 	f, e := os.Create(v + "/uisys.js")
@@ -1295,10 +1309,10 @@ func (u *UIServer) rel(v string, s string) {
 		f.Write([]byte(tpl))
 	}
 	//发布Code,先遍历
-	u.WalkFiles(FormatSimplePath(u.RootPath+"/"), v, havF)
+	u.WalkFiles(FormatSimplePath(u.RootPath+"/"), v, isPub)
 }
 
-func (u *UIServer) WalkFiles(src string, dest string, havF bool) {
+func (u *UIServer) WalkFiles(src string, dest string, isPub bool) {
 	fileType := ""
 	t := time.Now()
 	filepath.Walk(src,
@@ -1317,22 +1331,17 @@ func (u *UIServer) WalkFiles(src string, dest string, havF bool) {
 						return nil
 					}
 					d, _ := os.Create(aPath[0:(len(aPath)-len(fileType))] + ".ui.html")
-					d.Write(relEvt(u, u.SysPath, u.RootPath, dPath))
+					d.Write(relEvt(isPub, u, u.SysPath, u.RootPath, dPath))
 					defer d.Close()
 				}
-				/*else {
-					if havF {
-						CopyFile(aPath, f)
-					}
-
-				}*/
 			}
 			return nil
 		})
 	fmt.Println("use time:", time.Since(t))
 }
 
-func relEvt(server *UIServer, sysPath string, rootPath string, path string) []byte {
+//isPub 是否模块API可以调试
+func relEvt(isPub bool, server *UIServer, sysPath string, rootPath string, path string) []byte {
 	jus := &UI{SERVER: server, SYSTEM_PATH: sysPath, CLASS_PATH: sysPath + "/src/"}
 	lp := LastIndex(path, ".")
 	className := Substring(path, 0, lp)

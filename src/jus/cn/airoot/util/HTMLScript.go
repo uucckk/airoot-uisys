@@ -15,7 +15,7 @@ import (
 
 //--------------------------------Script----------------------------------------
 type HTMLScript struct {
-	jus              *UI
+	ui               *UI
 	root             string
 	hMap             []*Attr //导入的类文件
 	gsMap            map[string]*GSetter
@@ -27,8 +27,8 @@ type HTMLScript struct {
 	isScript         bool
 }
 
-func (s *HTMLScript) CreateFrom(jus *UI, root string, domain string, constructorValue *Attr, innerValue string, extendScript string) *HTMLScript {
-	s.jus = jus
+func (s *HTMLScript) CreateFrom(ui *UI, root string, domain string, constructorValue *Attr, innerValue string, extendScript string) *HTMLScript {
+	s.ui = ui
 	s.root = root
 	s.domain = domain
 	s.constructorValue = constructorValue
@@ -40,7 +40,7 @@ func (s *HTMLScript) CreateFrom(jus *UI, root string, domain string, constructor
 }
 
 func (s *HTMLScript) initScript(js *MScript) string {
-	return s.initScriptFrom(js, "____", "____")
+	return s.initScriptFrom(js, "__OBJECT__", "____", "____")
 
 }
 
@@ -50,7 +50,7 @@ func (s *HTMLScript) initScript(js *MScript) string {
  * @return
  * @throws Exception
  */
-func (s *HTMLScript) initScriptFrom(js *MScript, _this_ string, _pri_ string) string {
+func (s *HTMLScript) initScriptFrom(js *MScript, _global string, _this string, _pri string) string {
 	out := bytes.NewBufferString("")
 	tmp := bytes.NewBufferString("")
 	newString := bytes.NewBufferString("")
@@ -176,7 +176,7 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _this_ string, _pri_ string) st
 						}
 					}
 				}
-				s.jus.AddStaticCode(s.jus.className, "__STATIC__", " = function()"+tmp.String()+";")
+				s.ui.AddStaticCode(s.ui.className, "__STATIC__", " = function()"+tmp.String()+";")
 				continue
 			}
 
@@ -195,10 +195,10 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _this_ string, _pri_ string) st
 				if t.IsPublic {
 					if t.IsStatic && !t.IsGet && !t.IsSet {
 						newString.WriteString("__WINDOW__[__APPDOMAIN__]['")
-						newString.WriteString(s.jus.className)
+						newString.WriteString(s.ui.className)
 						newString.WriteString("'].")
 					} else {
-						newString.WriteString(_this_)
+						newString.WriteString(_this)
 						newString.WriteString(".")
 					}
 					newString.WriteString(t.Value)
@@ -206,18 +206,18 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _this_ string, _pri_ string) st
 				} else {
 					if t.IsStatic && !t.IsGet && !t.IsSet {
 						newString.WriteString("__WINDOW__[__APPDOMAIN__]['")
-						newString.WriteString(s.jus.className)
+						newString.WriteString(s.ui.className)
 						newString.WriteString("'].")
 					} else {
-						newString.WriteString(_pri_)
+						newString.WriteString(_pri)
 						newString.WriteString(".")
 					}
 					newString.WriteString(t.Value)
 				}
 				tl = append(tl, &Tag{Value: newString.String(), TagType: 0})
 			} else if t.Domain == "" {
-				if s.jus != nil {
-					hObj = s.jus.GetDefine(t.Value)
+				if s.ui != nil {
+					hObj = s.ui.GetDefine(t.Value)
 				}
 
 				if hObj != nil {
@@ -253,8 +253,8 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _this_ string, _pri_ string) st
 					break
 				}
 			}
-			if s.jus != nil {
-				hObj = s.jus.GetDefine(param.Value)
+			if s.ui != nil {
+				hObj = s.ui.GetDefine(param.Value)
 			}
 
 			if hObj != nil {
@@ -272,14 +272,14 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _this_ string, _pri_ string) st
 			md5Ctx.Write([]byte(t.Value))
 			cipherStr := md5Ctx.Sum(nil)
 			bs := hex.EncodeToString(cipherStr)
-			ft := &UI{SYSTEM_PATH: s.jus.SYSTEM_PATH, CLASS_PATH: s.jus.CLASS_PATH}
-			for _, v := range s.jus.pkgMap {
+			ft := &UI{SYSTEM_PATH: s.ui.SYSTEM_PATH, CLASS_PATH: s.ui.CLASS_PATH}
+			for _, v := range s.ui.pkgMap {
 				t.Value = "<@import value='" + v + "'/>" + t.Value
 			}
 			ft.CreateFromString(s.root, "", nil, t.Value, bs, nil)
 			tl = append(tl, &Tag{Value: "getModule(\"" + bs + "\",__APPDOMAIN__)", TagType: 0})
-			//s.jus.ToFormatLine("I", bs, "H"+ft.ToFormatString(), sb)
-			s.jus.GetRoot().scriptElementBuffer = append(s.jus.GetRoot().scriptElementBuffer, &ScriptElement{"I", bs, "H", ft.ToFormatString()})
+			//s.ui.ToFormatLine("I", bs, "H"+ft.ToFormatString(), sb)
+			s.ui.GetRoot().scriptElementBuffer = append(s.ui.GetRoot().scriptElementBuffer, &ScriptElement{"I", bs, "H", ft.ToFormatString()})
 			continue
 		}
 
@@ -317,7 +317,7 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _this_ string, _pri_ string) st
 			}
 			value := tmp.String()
 			if Index(value, ".") == 0 { //说明是获取自己本地路径
-				value = Substring(s.jus.dirPath, StringLen(s.jus.root), -1) + "/" + value
+				value = Substring(s.ui.dirPath, StringLen(s.ui.root), -1) + "/" + value
 				value = filepath.Clean(value)
 				value = Replace(value, "\\", ".")
 				value = Replace(value, "/", ".")
@@ -327,9 +327,9 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _this_ string, _pri_ string) st
 			}
 			if strings.TrimSpace(lst[point].Value) != "" {
 				Single(&s.hMap, &Attr{lst[point].Value, value})
-				s.jus.PushImportScript(&Attr{lst[point].Value, value})
+				s.ui.PushImportScript(&Attr{lst[point].Value, value})
 				if isFrom {
-					tl = append(tl, &Tag{Value: ImportFrom(s.jus.className, value), TagType: 1})
+					tl = append(tl, &Tag{Value: ImportFrom(s.ui.className, value), TagType: 1})
 				}
 			}
 
@@ -384,16 +384,18 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _this_ string, _pri_ string) st
 			tlt = append(tlt, f)
 			continue
 		}
-		if t.IsKeyWord && "@this" == t.Value {
-			t.Value = _this_
+		if t.IsKeyWord && "@global" == t.Value {
+			t.Value = _global
+		} else if t.IsKeyWord && "@this" == t.Value {
+			t.Value = _this
 		} else if t.IsKeyWord && "@lib" == t.Value {
-			t.Value = "\"" + "./" + s.jus.relativePath + ".lib/\""
+			t.Value = "\"" + "./" + s.ui.relativePath + ".lib/\""
 		} else if t.Value[0] == '@' {
-			t.Value = s.jus.SERVER.GetServerVar(t.Value)
+			t.Value = s.ui.SERVER.GetServerVar(t.Value)
 		} else if t.IsKeyWord && "this" == t.Value {
 			tlt = append(tlt, t)
 			if s.getLevel(t) == 1 {
-				//t.Value = _pri_
+				//t.Value = _pri
 				param = t
 				for p < len(tl) {
 					t = tl[p]
@@ -412,18 +414,18 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _this_ string, _pri_ string) st
 								a := set.Get(t.Value)
 								if a != nil {
 									if a.IsPublic {
-										param.Value = _this_
+										param.Value = _this
 									} else {
-										param.Value = _pri_
+										param.Value = _pri
 									}
 								}
 								if s.mjs != js && a == nil {
 									a = s.mjs.GetDefine("class").Get(t.Value)
 									if a != nil {
 										if a.IsPublic {
-											param.Value = _this_
+											param.Value = _this
 										} else {
-											param.Value = _pri_
+											param.Value = _pri
 										}
 									}
 								}
@@ -471,7 +473,7 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _this_ string, _pri_ string) st
 					if t.IsAnonymous {
 						tlt = append(tlt, &Tag{Value: "function", TagType: 0})
 					} else {
-						tlt = append(tlt, &Tag{Value: IfStr(s.isScript, IfStr(t.IsPublic, _this_+".", _pri_+".")+t.Value+" = function", IfStr(t.IsPublic, _this_+".", _pri_+".")+t.Value+" = function"), TagType: 0})
+						tlt = append(tlt, &Tag{Value: IfStr(s.isScript, IfStr(t.IsPublic, _this+".", _pri+".")+t.Value+" = function", IfStr(t.IsPublic, _this+".", _pri+".")+t.Value+" = function"), TagType: 0})
 					}
 				}
 
@@ -503,7 +505,7 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _this_ string, _pri_ string) st
 					}
 
 					if paramVar != nil && paramValue != nil {
-						buffer = append(buffer, &Tag{Value: paramVar.Value + "=" + paramVar.Value + " || " + IfStr(isStatic, "__WINDOW__[__APPDOMAIN__]['"+s.jus.className+"']."+paramValue.Value, paramValue.Value) + ";\r\n", TagType: 0})
+						buffer = append(buffer, &Tag{Value: paramVar.Value + "=" + paramVar.Value + " || " + IfStr(isStatic, "__WINDOW__[__APPDOMAIN__]['"+s.ui.className+"']."+paramValue.Value, paramValue.Value) + ";\r\n", TagType: 0})
 						paramVar = nil
 						paramValue = nil
 					}
@@ -515,7 +517,7 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _this_ string, _pri_ string) st
 					continue
 				}
 
-				tlt = append(tlt, &Tag{Value: IfStr(t.IsPublic, _this_+".", _pri_+".") + t.Value + " ", TagType: 0})
+				tlt = append(tlt, &Tag{Value: IfStr(t.IsPublic, _this+".", _pri+".") + t.Value + " ", TagType: 0})
 				//去除属性
 				for p < len(tl) {
 					t = tl[p]
@@ -594,7 +596,7 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _this_ string, _pri_ string) st
 					}
 				}
 				//if t.IsPublic {
-				//tlt = append(tlt, &Tag{Value: IfStr(t.IsSet, "var", _this_+".") + t.Value + " = __WINDOW__[__APPDOMAIN__]['" + s.jus.className + "']." + t.Value + ";", TagType: 0})
+				//tlt = append(tlt, &Tag{Value: IfStr(t.IsSet, "var", _this+".") + t.Value + " = __WINDOW__[__APPDOMAIN__]['" + s.jus.className + "']." + t.Value + ";", TagType: 0})
 				//}
 			} else if t.IsVar {
 				level = 0
@@ -615,8 +617,8 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _this_ string, _pri_ string) st
 					tmp.WriteString(f.Value)
 				}
 			}
-			if s.jus != nil {
-				s.jus.AddStaticScript(s.jus.className, t.Value, tmp.String())
+			if s.ui != nil {
+				s.ui.AddStaticScript(s.ui.className, t.Value, tmp.String())
 			}
 			continue
 		}
@@ -632,11 +634,11 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _this_ string, _pri_ string) st
 	tsb := bytes.NewBufferString("")
 	for name, value := range s.gsMap {
 		pgs = value
-		tsb.WriteString("Object.defineProperty(" + _this_ + ",'" + name + "',{")
+		tsb.WriteString("Object.defineProperty(" + _this + ",'" + name + "',{")
 		if pgs.Setter != nil {
 			tsb.WriteString("set:")
 			if pgs.Setter.IsStatic {
-				tsb.WriteString("__WINDOW__[__APPDOMAIN__]['" + s.jus.className + "']." + pgs.Setter.Value)
+				tsb.WriteString("__WINDOW__[__APPDOMAIN__]['" + s.ui.className + "']." + pgs.Setter.Value)
 			} else {
 				tsb.WriteString(pgs.Setter.Value)
 			}
@@ -647,7 +649,7 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _this_ string, _pri_ string) st
 			}
 			tsb.WriteString("get:")
 			if pgs.Getter.IsStatic {
-				tsb.WriteString("__WINDOW__[__APPDOMAIN__]['" + s.jus.className + "']." + pgs.Getter.Value)
+				tsb.WriteString("__WINDOW__[__APPDOMAIN__]['" + s.ui.className + "']." + pgs.Getter.Value)
 			} else {
 				tsb.WriteString(pgs.Getter.Value)
 			}
@@ -710,7 +712,7 @@ func (s *HTMLScript) initClass(name string, data string) string {
 	ms.ReadFromString(data)
 	if s.isScript {
 
-		return "function " + name + "(__VALUE__){var __inthis__ = this,__inpri__ = {};" + s.initScriptFrom(ms, "__inthis__", "__inpri__") + "\r\n" +
+		return "function " + name + "(__VALUE__){var __inthis__ = this,__inpri__ = {};" + s.initScriptFrom(ms, "__OBJECT__", "__inthis__", "__inpri__") + "\r\n" +
 			"var __init__ = this.init || __inpri__.init;" +
 			"if(__init__){" +
 			"__init__.apply(this,__VALUE__);" +
@@ -718,7 +720,7 @@ func (s *HTMLScript) initClass(name string, data string) string {
 			"}"
 	}
 
-	return "function " + name + "(){var __inthis__ = this,__inpri__ = {};" + s.initScriptFrom(ms, "__inthis__", "__inpri__") + "\r\n" +
+	return "function " + name + "(){var __inthis__ = this,__inpri__ = {};" + s.initScriptFrom(ms, "__OBJECT__", "__inthis__", "__inpri__") + "\r\n" +
 		"var __init__ = this.init || __inpri__.init;" +
 		"if(__init__){" +
 		"__init__.apply(this,arguments);" +
@@ -744,13 +746,14 @@ func (s *HTMLScript) ReadFromString(script string) string {
 	} else {
 		msPath = "/batch/m.ms"
 	}
-	templ, err := GetCode(s.jus.SYSTEM_PATH + msPath)
+	templ, err := GetCode(s.ui.SYSTEM_PATH + msPath)
 	tmp := templ
 	if err != nil {
 		return ""
 	}
-	templ = strings.Replace(templ, "{@CLASS_NAME}", "//@ sourceURL=[UI]"+s.jus.className+"\r\n"+IfStr(s.jus.Debug, s.GetSourceHTML()+"\r\n", ""), -1)
-	templ = strings.Replace(templ, "{@domain}", s.jus.domain, -1)
+	templ = strings.Replace(templ, "{@CLASS_NAME}", "//@ sourceURL=[UI]"+s.ui.className+"\r\n"+IfStr(s.ui.Debug, s.GetSourceHTML()+"\r\n", ""), -1)
+	templ = strings.Replace(templ, "{@GLOBAL}", IfStr(s.ui.IsPublic, "window[__NAME__] = ____;", ""), -1)
+	templ = strings.Replace(templ, "{@domain}", s.ui.domain, -1)
 	templ = strings.Replace(templ, "{@Base}", "\b", -1)
 
 	if s.constructorValue != nil {
@@ -763,18 +766,18 @@ func (s *HTMLScript) ReadFromString(script string) string {
 	s.mjs.ReadFromString(script)
 	templ = strings.Replace(templ, "{@jscode}", "var context = {value:\""+Escape(s.innerValue)+"\"}\r\n"+s.initScript(s.mjs), -1)
 
-	s.jus.ToFormatLine("M", s.jus.className, templ, out)
+	s.ui.ToFormatLine("M", s.ui.className, templ, out)
 	//加入执行列表
-	s.jus.AddRun(&RunElem{Type: "S", Name: s.jus.domain, Value: s.jus.className})
+	s.ui.AddRun(&RunElem{Type: "S", Name: s.ui.domain, Value: s.ui.className})
 
 	if s.extendScript != "" {
 		s.mjs = &MScript{}
 		s.mjs.ReadFromString(s.extendScript)
-		templ = strings.Replace(tmp, "{@CLASS_NAME}", "//"+s.jus.className, -1)
+		templ = strings.Replace(tmp, "{@CLASS_NAME}", "//"+s.ui.className, -1)
 		templ = strings.Replace(templ, "{@jscode}", s.initScript(s.mjs), -1)
-		E := s.jus.ToFormatLine("E", s.jus.className, templ, out) //E代表扩展代码
+		E := s.ui.ToFormatLine("E", s.ui.className, templ, out) //E代表扩展代码
 		//加入执行列表
-		s.jus.AddRun(&RunElem{Type: "E", Name: s.jus.domain, Value: E})
+		s.ui.AddRun(&RunElem{Type: "E", Name: s.ui.domain, Value: E})
 	}
 
 	return out.String()
@@ -782,7 +785,7 @@ func (s *HTMLScript) ReadFromString(script string) string {
 
 func (s *HTMLScript) GetSourceHTML() string {
 	html := &HTML{}
-	v, e := GetCode(s.jus.htmlPath)
+	v, e := GetCode(s.ui.htmlPath)
 	if e != nil {
 		return "//READ ERROR."
 	}
@@ -818,7 +821,7 @@ func (s *HTMLScript) loadClass(path string) string {
 			tmpName = he.Value
 		}
 	} else {
-		s.jus.PushImportScript(&Attr{className, ""})
+		s.ui.PushImportScript(&Attr{className, ""})
 		tmpName = className
 	}
 	return IfStr(tmpName != "", "getModule('"+tmpName+"',__APPDOMAIN__)", "")
