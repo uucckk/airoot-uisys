@@ -327,12 +327,16 @@ m:
 			}
 
 			if tagName[0] == '/' {
-				parent = parent.parent
-				sb = sb[0:0] //清除
-				block--
-				if block == 0 && index != -1 {
-					return h, position
+				if parent.parent != nil {
+					parent = parent.parent
+					sb = sb[0:0] //清除
+					block--
+					if block == 0 && index != -1 {
+						return h, position
+					}
+
 				}
+
 			} else {
 				if isCloseTag(tagName) { //判断是否为自关闭标签
 					tagType = 0

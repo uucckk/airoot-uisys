@@ -401,6 +401,7 @@ func CodeFx(code string, flag bool) string {
 			if len(v) != 0 {
 				if v[0] == '*' {
 					f = !f
+					continue
 				}
 				if v[0] == '#' {
 					continue
@@ -414,6 +415,5 @@ func CodeFx(code string, flag bool) string {
 
 		}
 	}
-
 	return s.String()
 }

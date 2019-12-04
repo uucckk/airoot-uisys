@@ -789,7 +789,7 @@ func (s *HTMLScript) GetSourceHTML() string {
 	if e != nil {
 		return "//READ ERROR."
 	}
-	html.ReadFromString(v)
+	html.ReadFromString(CodeFx(v, s.ui.IsTest))
 	ss := html.GetElementsByTagName("script")
 	for _, v := range ss {
 		v.Remove()
