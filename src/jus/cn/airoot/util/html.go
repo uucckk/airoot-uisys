@@ -536,10 +536,18 @@ func (h *HTML) Remove() {
 			list[i].Remove()
 		}
 	} else {
-
 		for i, v := range h.parent.list {
-
 			if v == h {
+				if i > 0 {
+					if t := h.parent.list[i-1]; t.IsText() {
+						t.value = strings.TrimSpace(t.value)
+					}
+				}
+				if i < len(h.parent.list)-1 {
+					if t := h.parent.list[i+1]; t.IsText() {
+						t.value = strings.TrimSpace(t.value)
+					}
+				}
 				h.parent.list = deleteHTML(h.parent.list, i)
 				break
 			}
@@ -580,7 +588,7 @@ func (h *HTML) ReplaceWith(html *HTML) *HTML {
  * @param value
  * @return
  */
-func (h *HTML) ReplaceWithFormList(list []*HTML) []*HTML {
+func (h *HTML) ReplaceWithFromList(list []*HTML) []*HTML {
 	if h.parent != nil {
 		for i, v := range h.parent.list {
 			if v == h {
@@ -589,6 +597,8 @@ func (h *HTML) ReplaceWithFormList(list []*HTML) []*HTML {
 				break
 			}
 		}
+	} else {
+		fmt.Println("=nil")
 	}
 	return list
 }
@@ -598,7 +608,7 @@ func (h *HTML) ReplaceWithFormList(list []*HTML) []*HTML {
  * @param value
  * @return
  */
-func (h *HTML) ReplaceWithFormString(value string) *HTML {
+func (h *HTML) ReplaceWithFromString(value string) *HTML {
 	html := &HTML{}
 	html.ReadFromString(value)
 	return h.ReplaceWith(html)
@@ -626,7 +636,6 @@ func (h *HTML) ReplaceInnerWidthHTML(html *HTML) *HTML {
 func (h *HTML) SetInnerHTML(value string) *HTML {
 	if len(value) == 0 {
 		h.list = make([]*HTML, 0)
-		fmt.Println("clear")
 		return h
 	}
 	html := &HTML{}

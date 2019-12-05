@@ -665,6 +665,7 @@ function __InitModule__(__APPDOMAIN__,moduleName,uuid,value,target,append){
 			var lst = m.runLst;
 			var p = null;
 			var pn = null;
+      var ct = null;//context
 			for(var i = 0;i<lst.length;i++){
 				p = lst[i];
 				pn = p.name.replace(/[\b]/g,uuid);
@@ -674,16 +675,19 @@ function __InitModule__(__APPDOMAIN__,moduleName,uuid,value,target,append){
 					case "P":
 						param.push(pn,p.value.replace(/[\b]/g,uuid));
 					break;
+          case "X"://Context value
+            ct = {value:p.value};
+            break;
 					case "S"://执行基本函数
 						if(method[p.value]){
-							method[p.value](pn,uuid,__APPDOMAIN__);
+							method[p.value](pn,uuid,__APPDOMAIN__,ct);
 						}else{
 							trace(p.name,p.value);
 						}
 						
 					break;
 					case "E"://执行扩展函数
-						extend[p.value].method(pn,uuid,__APPDOMAIN__);
+						extend[p.value].method(pn,uuid,__APPDOMAIN__,ct);
 					break;
 					case "C"://执行命令函数
 						AddC2C(uuid,p,__APPDOMAIN__)//AddCommandToCompoent

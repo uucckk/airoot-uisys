@@ -411,16 +411,8 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _global string, _this string, _
 							tlt = append(tlt, t)
 							if t.IsAttr {
 								set := js.GetDefine("class")
-								a := set.Get(t.Value)
-								if a != nil {
-									if a.IsPublic {
-										param.Value = _this
-									} else {
-										param.Value = _pri
-									}
-								}
-								if s.mjs != js && a == nil {
-									a = s.mjs.GetDefine("class").Get(t.Value)
+								if set != nil {
+									a := set.Get(t.Value)
 									if a != nil {
 										if a.IsPublic {
 											param.Value = _this
@@ -428,7 +420,18 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _global string, _this string, _
 											param.Value = _pri
 										}
 									}
+									if s.mjs != js && a == nil {
+										a = s.mjs.GetDefine("class").Get(t.Value)
+										if a != nil {
+											if a.IsPublic {
+												param.Value = _this
+											} else {
+												param.Value = _pri
+											}
+										}
+									}
 								}
+
 								break
 							}
 						}
@@ -764,10 +767,11 @@ func (s *HTMLScript) ReadFromString(script string) string {
 
 	s.mjs = &MScript{}
 	s.mjs.ReadFromString(script)
-	templ = strings.Replace(templ, "{@jscode}", "var context = {value:\""+Escape(s.innerValue)+"\"}\r\n"+s.initScript(s.mjs), -1)
+	templ = strings.Replace(templ, "{@jscode}", s.initScript(s.mjs), -1)
 
 	s.ui.ToFormatLine("M", s.ui.className, templ, out)
 	//加入执行列表
+	s.ui.AddRun(&RunElem{Type: "X", Name: s.ui.domain, Value: s.innerValue})
 	s.ui.AddRun(&RunElem{Type: "S", Name: s.ui.domain, Value: s.ui.className})
 
 	if s.extendScript != "" {

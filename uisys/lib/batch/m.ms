@@ -1,5 +1,5 @@
 {@CLASS_NAME}
-(function(__NAME__,__DOMAIN__,__APPDOMAIN__){
+(function(__NAME__,__DOMAIN__,__APPDOMAIN__,context){
 	var __UP__= __OBJECT__[__NAME__];var ____ = {};__EXTEND__(____,__UP__);
 	var dom = ____.dom;
 	{@jscode}

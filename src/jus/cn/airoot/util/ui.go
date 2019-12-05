@@ -450,8 +450,8 @@ func (j *UI) overHTML(node []*HTML) {
 
 	child.RemoveChildByTagName("@override")
 	//@uncare 表示让编译器不关系此内部代码，也就是说编译器不编译此内部代码
-	overList = child.Filter("@uncare")
-	child.RemoveChildByTagName("@uncare")
+	//overList = child.Filter("@uncare")
+	//child.RemoveChildByTagName("@uncare")
 
 	//----开始替换----
 	pList := j.html.GetElementsByTagName("@content")
@@ -472,7 +472,7 @@ func (j *UI) overHTML(node []*HTML) {
 					j.contentToList = append(j.contentToList, v)
 				}
 			}
-			h.ReplaceWithFormList(t)
+			h.ReplaceWithFromList(t)
 		}
 	}
 
@@ -480,12 +480,13 @@ func (j *UI) overHTML(node []*HTML) {
 	if len(pList) > 0 {
 		if j.innerValue == "" {
 			if child.IsEmpty() { //文字
-				j.innerValue = ListToHTMLString(j.clearMark(pList[0].Child()))
+				j.clearMark(pList[0].Child())
+				j.innerValue = ListToHTMLString(pList[0].Child())
+
 			} else {
-
-				j.innerValue = ListToHTMLString(j.clearMark(child.Child()))
+				j.clearMark(child.Child())
+				j.innerValue = ListToHTMLString(child.Child())
 			}
-
 		}
 
 		for _, h := range pList {
@@ -501,6 +502,10 @@ func (j *UI) clearMark(child []*HTML) []*HTML {
 		p = child[i]
 		p.RemoveAttr("domain")
 		p.RemoveAttr("____format____")
+		if p.TagName() == "@uncare" {
+			p.ReplaceWithFromList(p.Child())
+			continue
+		}
 		j.clearMark(p.Child())
 	}
 	return child
@@ -515,7 +520,7 @@ func (j *UI) scanHTML(child []*HTML) {
 	for _, p := range child {
 		tagName = p.TagName()
 		if "@uncare" == p.TagName() {
-			p.ReplaceWithFormList(p.Child())
+			//p.ReplaceWithFormList(p.Child())
 			continue
 		}
 		if "module" == p.TagName() {

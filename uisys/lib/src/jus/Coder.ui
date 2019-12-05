@@ -16,6 +16,7 @@
 	  padding-left:5px;
       height:500px;
 	  overflow:auto;
+	  white-space: nowrap;
 	  
     }
 	#content ::selection { background:none; }
@@ -24,35 +25,27 @@
 
 
     #num{
-      float:left;
+      user-select:none;
       width:30px;
       border-right:solid 1px #e0e0e0;
       background-color:#eeeeee;
-	  font-size:10px;
-	  line-height:26px;
 	  color:#9999a9;
     }
+	#num>div:nth-of-type(odd){ background:#ffffff;}
+	#num>div:nth-of-type(even){ background:#fbfbfb;}
+	
+	#num>div.overd{
+		background-color:#f0fff0;
+	}
+	
+	#num>div.selected{
+		background-color:#b6efb6;
+	}
 
-    #ipt{
-      margin:0px;
-      padding:0px;
-      position:absolute;
-      left:0px;
-      top:100px;
-      width:1px;
-      height:16px;
-      border:none;
-      resize: none;
-	  background:none;
-      white-space:nowrap;
-      overflow:hidden;
-	  font-size:14px;
-    }
     .area{
 		margin:0px;
 		padding:0px;
 		display:block;
-		line-height:26px;
     }
 	
 	.word{
@@ -62,26 +55,22 @@
 	.keyword{
 	
 	}
+	
+	.line{
+		overflow:hidden;
+	}
+	
     .number{
-      text-align:right;
-      line-height:26px;
-      height:26px;
-      width:24px;
-      padding:2px;
-      padding-top:0px;
-      padding-bottom:0px;
+		float:left;
+		text-align:right;
+		width:24px;
+		padding:2px;
+		padding-top:0px;
+		padding-bottom:0px;
     }
 	
 	#bg{
 		position:absolute;
-	}
-	
-	#line{
-		position:absolute;
-		height:26px;
-		width:100%;
-		line-height:26px;
-		background-color:#eeeeff;
 		pointer-events:none;
 	}
 	
@@ -89,44 +78,45 @@
 	.selectBackgroundColor{
 		position:absolute;
 		width:100%;
-		background-color:#dddddd;
+		background-color:rgba(0,0,0,0.1);
 	}
 	
   </style>
-  <box width="100%" height="100%">
-      <div id="num" width="30">
+  <position width="100%" height="100%">
+      <div id="num" width="100%">
       </div>
 	  <div id="bg" left="30" right="0" >
-		<div id="line">
-			
-		</div>
 		<cursor/>
 	  </div>
       <div id="content" left="30" right="0" height="100%">
 
       </div>
-  </box>
+  </position>
   
 
-  <textarea id="ipt" ></textarea>
+  <textarea id="ipt" >
+	<@value/>
+  </textarea>
 
 
   <script>
 	import jus.coder.RecmList;
 	var _self = $(dom);
-	var _enterEvt:Function = null;
 	
-	var lineHeight:int = 26;
+	var lineHeight:int = 24;
+	var fontSize:int = 14;
 	
     var keyWords = [
 			{name:"public",color:"#aa0000"},
 			{name:"private",color:"#aa0000"},
 			{name:"function",color:"#0000aa"},
+			{name:"func",color:"#0000aa"},
 			{name:"var",color:"#0000aa"},
 			{name:"class",color:"#aa0000"},
 			{name:"extends",color:"#00aaaa"},
-			{name:"import",color:"#00aaaa"},
+			{name:"import",color:"#0000aa"},
 			{name:"set",color:"#00aaaa"},
+			{name:"get",color:"#00aaaa"},
 			{name:"null",color:"#0000aa"}
 		];
 	var normalWord = $("<span></span>");
@@ -158,8 +148,8 @@
 			ipt.value = "";
 			$content.addEventListener("mousedown",mouseDownEvt);
 			$content.addEventListener("mousemove",mouseMoveEvt);
-			$content.addEventListener("mouseup",clickEvt);
-			ipt.addEventListener("input",inputEvt);
+			#num.addEventListener("mousewheel",mouseWheelEvt);
+			#content.addEventListener("mouseup",clickEvt);
 			ipt.addEventListener("keydown",keyDownEvt);
 			range = document.createRange();
 			var newLine = createNewArea("");
@@ -167,365 +157,27 @@
 			$content.appendChild(area = newLine.content);
 			$num.appendChild(createNewNum(count++));
 			
-			#content.scroll(scrollEvt);
+			$(#content).scroll(scrollEvt);
 			
 		}catch(e){
 			console.log(e);
 		}
-		
-
-    }
-
-    /**
-			 * textInput 事件
-			 */
-    function inputEvt(e){
-
-		if(textNode && range){
-			textNode.deleteData(startOffset,insertTextlength);
-			textNode.insertData(startOffset,ipt.value);
-			insertTextlength = ipt.value.length;
-			position =  startOffset + insertTextlength;
-			formatWord(textNode);
-			initB(position);
-			if(recmFlag){
-				listRecm(textNode.data);
-			}
-
+		if(context.value){
+			text = context.value;
 		}
+		dom.style.lineHeight = lineHeight + "px";
+		dom.style.fontSize = fontSize + "px";
+		num.style.fontSize = (fontSize - 4) + "px";
     }
 	
 	
-	/**
-	 * 输入结束符号
-	 */
-	public function set onEnter(evt:Function){
-		_enterEvt = evt;
-	}
 	
 	/**
 	 * 键盘按下事件
 	 */
     function keyDownEvt(e){
 		
-		if(e.key == "Tab" || e.key == " " || e.key == "." 
-			|| e.key == ";" || e.key == "," || e.key == ":" || e.key == "{" || e.key == "}"
-			|| e.key == "(" || e.key == ")" || e.key == "[" || e.key == "]" || e.key == "="){//.
-			if(!isStringStart()){
-				e.preventDefault();
-				startOffset += insertTextlength;
-				insertTextlength = 0;
-				insertWord(trans(e.key),startOffset);
-				initB(startOffset);
-				if(e.key == "."){
-					recmFlag = true;
-					showRecm();//列出提示
-				}else{
-					hideRecm();
-				}
-				if(e.key == ":" && isType(startWord)){
-					recmFlag = true;
-					showRecm();//列出提示
-				}else{
-					hideRecm();
-				}
-			}
-			
-			return;
-		}
-		
-		
-		
-		
-		if(e.keyCode == 13){//回车
-			e.preventDefault();
-			var tmpIptStr = ""
-			if(recmFlag){
-				resetInput();//重置输入
-				textNode.insertData(startOffset,recmPos.getSelectedLabel());
-				startOffset += recmPos.getSelectedLabel().length;
-				initB(startOffset);
-				hideRecm();
-			}else{
-				startOffset += insertTextlength;
-				insertTextlength = 0;
-				tmpIptStr = ipt.value;
-				insertWord(document.createElement("br"),startOffset);
-				initB(startOffset);
-				$num.appendChild(createNewNum(count++));
-				hideRecm();
-			
-			}
-			_enterEvt(tmpIptStr);
-			return;
-		}
-		if(ipt.value.length == 0){
-			if(e.keyCode == 8){//删除
-				if(startContainer != endContainer){
-					console.log("1");
-					startContainer.deleteData(startOffset,startContainer.data.length - startOffset);
-					startWord = startContainer.parentNode;
-					endWord = endContainer.parentNode;
-					while(startWord.nextElementSibling && startWord.nextElementSibling != endWord){
-						startWord.nextElementSibling.remove();
-					}
-					
-					if(endContainer.parentNode.getAttribute("islock")){
-						endContainer.parentNode.remove();
-						
-					}else{
-						endContainer.deleteData(0,endOffset);
-					}
-					
-					if(startContainer.parentNode.nextElementSibling && startContainer.parentNode.nextElementSibling.className == "word"){
-						startContainer.appendData(startContainer.parentNode.nextElementSibling.firstChild.data);
-						startContainer.parentNode.nextElementSibling.remove();
-					}
-					
-					textNode = startWord.firstChild;
-					rangeTo(textNode,endOffset = startOffset);
-					
-					
-					initB(startOffset);
-					startContainer = endContainer = null;
-					clearRectSelected();
-					
-				}
-				else if(startOffset != endOffset){
-					console.log("2");
-					startContainer.deleteData(startOffset,endOffset - startOffset);
-					initB(startOffset);
-					startContainer = endContainer = null;
-					clearRectSelected();
-					
-				}
-				else if(textNode != null){
-					console.log("3");
-					-- startOffset;
-					-- endOffset;
-					if(startOffset == -1){
-						var tmp = startWord;
-						if(startWord.previousElementSibling){
-							startWord = startWord.previousElementSibling;
-							while(startWord.tagName == "BR" || startWord.getAttribute("islock") == "true"){
-								if(startWord.tagName == "BR"){
-									startWord = startWord.previousElementSibling;
-									startWord.nextElementSibling.remove();
-								}
-								else if(startWord.getAttribute("islock") == "true"){
-									if(!startWord.previousElementSibling){
-										area.insertBefore(emptyWord(),startWord.parentNode);
-									}
-									startWord = startWord.previousElementSibling;
-									startWord.nextElementSibling.remove();
-									
-								}
-							}
-							
-							
-							if(startWord){
-								textNode = startWord.firstChild;
-								endOffset = startOffset = textNode.data.length;
-								rangeTo(textNode,startOffset);
-								tmp.remove();
-							}
-							
-						}
-					
-					}
-					
-					
-					if(startOffset>=0){
-						textNode.deleteData(startOffset,1);
-					}
-					
-
-					formatWord(textNode);
-
-					initB(startOffset);
-					insertTextlength = ipt.value.length;
-
-
-				}
-				
-				if(recmFlag){
-					recmPos.hide();
-				
-				}
-		  
-
-			}
-
-		}
-		if(e.keyCode == 37){//left
-			try{
-				endInput();
-				-- startOffset;
-				if(startOffset<0){
-					if(startWord.previousElementSibling){
-						startWord = startWord.previousElementSibling;
-						if(startWord.tagName == "BR"){
-							startWord = startWord.previousElementSibling;
-						}
-						
-						if(startWord){
-							textNode = startWord.firstChild;
-							startOffset = textNode.data.length;
-							rangeTo(textNode,startOffset);
-						}
-					}
-				}
-				
-				if(recmFlag){
-					hideRecm();
-				}
-			}catch(e){
-				console.log(e);
-			
-			}
-			
-
-			initB(startOffset);
-		}
-		else if(e.keyCode == 38){//top
-			try{
-				if(recmFlag){
-					recmPos.prevLabel();
-				}else{
-					endInput();
-					var brCount = 0;
-					var column = getPosition(startWord);
-					while(startWord.previousElementSibling){
-						startWord = startWord.previousElementSibling;
-						if(startWord.tagName == "BR"){
-							brCount ++;
-						}
-						if(brCount == 2){
-							break;
-						}
-					}
-					
-					if(brCount == 2 || brCount == 1){
-						gotoPosition(column);
-					}
-					initB(startOffset);
-				}
-				
-			
-			}catch(e){
-				console.log(e);
-			}
-		
-			
-			
-
-		}
-		else if(e.keyCode == 39){//right
-			endInput();
-			++ startOffset;
-			if(startOffset>textNode.data.length){
-				if(startWord.nextElementSibling){
-					startWord = startWord.nextElementSibling;
-					if(startWord.tagName == "BR"){
-						startWord = startWord.nextElementSibling;
-					}
-					if(startWord){
-						textNode = startWord.firstChild;
-						startOffset = 0;
-						range.setStart(textNode,startOffset);
-					}
-				}
-			}
-			if(recmFlag){
-				hideRecm();
-			}
-			initB(startOffset);
-		}
-		else if(e.keyCode == 40){//down
-			if(recmFlag){
-				recmPos.nextLabel();
-			
-			}else{
-				endInput();
-				
-				var brCount = 0;
-				var column = getPosition(startWord);
-				while(startWord.nextElementSibling){
-					startWord = startWord.nextElementSibling;
-					if(startWord.tagName == "BR"){
-						gotoPosition(column);
-						break;
-					}
-				}
-				
-				initB(startOffset);
-			}
-				
-			
-			
-			
-		}
-
     }
-	
-	
-	/**
-	 * 是否为类型
-	 * 判断是var声明的变量类型
-	 */
-	private function isType(currentWord:SPAN){
-		console.log("I");
-		currentWord = currentWord.previousElementSibling;
-		var isWord:Boolean = false;
-		var lvl:int = 0;
-		while(currentWord.previousElementSibling){
-			currentWord = currentWord.previousElementSibling;
-			console.log(">>",currentWord);
-			if(currentWord.getAttribute("islock")){
-				if(currentWord.previousElementSibling){
-					continue;
-				}else{
-					return false;
-				}
-			}
-			
-			if(currentWord.getAttribute("type") == "SYMBOL"){
-				if(currentWord.firstChild.data == "{"){
-					lvl --;
-				}
-				else if(currentWord.firstChild.data == "}"){
-					lvl ++;
-				}
-				
-				
-				if(lvl <0){
-					return false;
-				}
-			}
-			
-			
-			if(currentWord.getAttribute("type") == "KEYWORD" && currentWord.firstChild.data == "var"){
-				return true;
-			}
-			
-			
-			
-			
-			
-			
-		}
-		console.log("empty");
-		return false;
-	}
-	
-	
-	/**
-	 * 获取导入import内容
-	 */
-	private function getImportMessage():void{
-		
-	
-	}
 	
 	
 	private var mouseDownFlag:Boolean = false;
@@ -542,134 +194,78 @@
 	 * 鼠标移动事件
 	 */
 	private function mouseMoveEvt(e:Event):void{
+		followLine(e);
 		if(mouseDownFlag){
 			createRectSelected(startX,startY,e.layerX,e.layerY);
 		}
 	}
-
+	
+	private function mouseWheelEvt(e:Event):void{
+		if(e.wheelDelta>0){
+			if(lineHeight<36){
+				lineHeight++;
+				fontSize++;
+			}
+		}else{
+			if(lineHeight>24){
+				lineHeight--;
+				fontSize--;
+			}
+		}
+		
+		dom.style.lineHeight = lineHeight + "px";
+		dom.style.fontSize = fontSize + "px";
+		num.style.fontSize = (fontSize - 4) + "px";
+	}
+	
+	private function selectedLine(e){
+		var p = e.layerY;
+		var ls = $(#num).find(">div");
+		ls.removeClass("selected");
+		ls.each(function(){
+			var $this = $(this);
+			if($this.position().top <= p && $this.position().top >= (p-24)){
+				$this.addClass("selected");
+			}
+		});
+	}
+	
+	
+	private function followLine(e){
+		var p = e.layerY;
+		var ls = $(#num).find(">div");
+		ls.removeClass("overd");
+		ls.each(function(){
+			var $this = $(this);
+			if($this.not(".selected") && $this.position().top <= p && $this.position().top >= (p-24)){
+				$this.addClass("overd");
+			}
+		});
+	}
 	
 	/**
 	 * 2016-10-25 10:42 设置行选中
 	 * 
 	 */
     private function clickEvt(e:Event){
+		selectedLine(e);
 		mouseDownFlag = false;
 		if(recmFlag){
 			hideRecm();
 		}
 		
-		
-		
-		ipt.value = "";
-		insertTextlength = 0;
-		var selection = document.getSelection();
-		if(selection.rangeCount >0){
-			range = selection.getRangeAt(0);
-			startContainer = range.startContainer;
-			endContainer = range.endContainer;
-			startOffset = range.startOffset;
-			endOffset = range.endOffset;
-			
-			
-			if(startOffset != endOffset){//选择了多个
-				
-				createRectSelected(startX,startContainer.parentNode.offsetTop,e.layerX,endContainer.parentNode.offsetTop);
-				textNode = endContainer;
-				startWord = textNode.parentNode;
-				
-				initB(endOffset);
-				return;
-			}
-			
-			
-		}
-		clearRectSelected();
-		if(e.target.tagName == "SPAN" && e.target.className == "word"){
-			startWord = e.target;
-			
-				if(selection.rangeCount>0){
-					textNode = selection.focusNode;
-
-					if(textNode.parentNode.className == "word"){
-						range = selection.getRangeAt(0);
-					}else{
-						textNode = e.target.firstChild
-						rangeTo(textNode,0);
-					}
-
-					initB(startOffset);
-					
-					
-				}
-		}else{
-			var p = parseInt(e.layerY/26);
-			if(p == 0){//fisrtLine
-				console.log("firstLine");
-				if(area.childNodes.length == 0){
-					area.appendChild(emptyWord());
-					initB(startOffset = 0);
-					
-				}else if(area.childNodes.length > 0){
-					gotoLast(area.childNodes[0]);
-					initB(startOffset);
-					
-				}	
-			}else{//other line.
-				console.log("otherLine");
-				var tags:HTML = area.getElementsByTagName("br");
-				console.log(tags.length,p)
-				if(tags.length - 1 >= p){
-					gotoLast(tags[p - 1]);
-				}else{
-					gotoLast(tags[tags.length - 1]);
-				}
-				
-				initB(startOffset);
-				
-			
-			}
-		}
       
     }
 	
-	
-	private function emptyWord():void{
-		startWord = createElement("span");
-		startWord.className = "span";
-		textNode = createTextNode("");
-		startWord.appendChild(textNode);
-		return startWord;
-	}
 
-	
-	/**
-	 * 初始化输入标志
-	 */
-    function initB(pos){
-		try{
-			$(area).append(#ipt);
-			if(pos < 0){
-				startOffset = pos = 0;
-			}
-			else if(pos > textNode.data.length){
-				startOffset = pos = textNode.data.length;
-			}
-			range.setStart(textNode,pos);
-			client = range.getBoundingClientRect();
-			console.log(client);
-			#ipt.css("left",absX(client.left) + "px");
-			#ipt.css("top",(#content.scrollTop() + absY(client.top)) + "px");
-			bgLine();
-			ipt.focus();
-		}catch(e){
-			console.log(e);
-		}
-    }
 
     function createNewNum(value){
       var r = document.createElement("div");
-      $(r).addClass("number");
-      r.innerHTML = value;
+	  r.setAttribute("class","line");
+	  var n = document.createElement("div");
+      n.setAttribute("class","number");
+      n.innerHTML = value;
+	  r.appendChild(n);
       return r;
     }
 
@@ -716,268 +312,13 @@
 	}
 	
 	
-    /**
-	 * 在指定元素之后加入信息
-	 */
-    function insertAfter(newEl, targetEl)
-    {
-      var parentEl = targetEl.parentNode;
-      if(parentEl.lastChild == targetEl)
-      {
-        parentEl.appendChild(newEl);
-      }else
-      {
-        parentEl.insertBefore(newEl,targetEl.nextSibling);
-      }
-    } 
-
-	/**
-	 * 判断textNode是否为关键字
-	 */
-    private function formatWord(node){
-      var value = node.wholeText;
-	  //01.判断是不是关键字
-      for(var i = 0;i<keyWords.length;i++){
-        if(keyWords[i].name == value){
-			startWord.style = "color:" + keyWords[i].color;
-			startWord.setAttribute("type","KEYWORD");
-			//删除后面的word
-          return true;
-        }else{
-			startWord.style = "";
-		}
-      }
-	  
-	  //02.判断是不是字符串
-	  if(value.length>=2){
-		var sch = value.charAt(0);
-		if(sch == '"' || sch == "'"){
-			var bch = value.charAt(value.length - 2);
-			var lch = value.charAt(value.length - 1);
-			if(sch == lch && bch != '\\'){
-				startWord.style = "color:#ffaa00";
-				var nWord = createElement("span");
-				nWord.className = "word";
-				textNode = createTextNode("");
-				nWord.appendChild(textNode);
-				insertAfter(nWord,startWord);
-				startWord = nWord;
-				endInput();
-				startOffset = 0;
-				rangeTo(textNode,startOffset);
-			}
-		}
-		
-	  }
-      
-      return false;
-    }
-
-	
-	
-	/**
-	 * 结束输入
-	 */
-	private function endInput():void{
-		ipt.value = "";
-		startOffset += insertTextlength;
-		insertTextlength = 0;
-	}
-	
-	
-	/**
-	 * 重置输入
-	 */
-	private function resetInput():void{
-		ipt.value = "";
-		textNode.deleteData(startOffset,insertTextlength);
-		insertTextlength = 0;
-		position = startOffset;
-	}
-
-    /**
-	 * 插入字符串
-	 */
-    private function insertWord(node,pos){
-		ipt.value = "";
-		insertTextlength = 0;
-		//01.复制后面的文字域
-		var tmp = textNode.substringData(pos,textNode.data.length - pos);
-		//02.删除本域下面的后续文字
-		textNode.deleteData(pos,textNode.data.length - pos);
-		//03.将新加入的node追加到startWord后面
-		insertAfter(node,startWord);
-		//04新建一个word
-		startWord = createElement("span");
-		startWord.className = "word";
-		
-		//05.新建textNode
-		textNode = createTextNode(tmp);
-		//添加到startWord内部
-		startWord.appendChild(textNode);
-		//06.将新建startWord追加在node后面
-		insertAfter(startWord,node);
-		position = startOffset = endOffset = 0;
-    }
-	
-	/**
-	 * 在指定行找到指定位置
-	 */
-	private function gotoPosition(position:int):void{
-		try{
-			
-			var tpos = startWord;
-			var sum = 0;
-			while(tpos.nextElementSibling){
-				tpos = tpos.nextElementSibling;
-				if(tpos.tagName == "BR"){
-					tpos = tpos.previousElementSibling;
-					
-					break;
-				}
-				
-				sum += tpos.firstChild.data.length;
-				
-				
-				if(sum>position){
-					startWord = tpos;
-					textNode = startWord.firstChild;
-					rangeTo(textNode,position - (sum - tpos.firstChild.data.length));
-					return;
-				}
-				
-			}
-			startWord = tpos;
-			textNode = startWord.firstChild;
-			rangeTo(textNode,textNode.data.length);
-		}catch(e){
-			console.log(e);
-		}
-		
-		
-	}
-	
-	/**
-	 * @param 指定行后
-	 */
-	private function gotoLast(tag:HTML):void{
-		try{
-			var tpos = tag;
-			while(tpos.nextElementSibling){
-				tpos = tpos.nextElementSibling;
-				if(tpos.tagName == "BR"){
-					tpos = tpos.previousElementSibling;
-					break;
-				}
-			}
-			
-			if(tpos.tagName == "BR"){
-				insertAfter(emptyWord(),tpos);
-				tpos = tpos.nextElementSibling;
-			}
-			
-			startWord = tpos;
-			textNode = startWord.firstChild;
-			rangeTo(textNode,startOffset = textNode.data.length);
-		}catch(e){
-			console.log(e);
-		}
-	}
-	
-	
-	/**
-	 * 获取当前元素的光标在第几列
-	 */
-	private function getPosition(object:SPAN):int{
-		try{
-			var tpos = object;
-			
-			//先找到行头
-			while(tpos.previousElementSibling){
-				tpos = tpos.previousElementSibling;
-				if(tpos.tagName == "BR"){
-					tpos = tpos.nextElementSibling;
-					break;
-				}
-			}
-			
-			var sum:int = 0;
-			while(tpos != startWord && tpos.nextElementSibling && (tpos.nextElementSibling != startWord)){
-				sum += tpos.firstChild.data.length;
-				tpos = tpos.nextElementSibling;
-			}
-			console.log("column",(sum + startOffset));
-			return sum + startOffset;
-		
-		
-		}catch(e){
-		
-			console.log(e);
-		}
-		
-	}
-	
-	
-	/**
-	 * 重新设置TextNode的光标位置
-	 */
-	private function rangeTo(textNode:TextNode,position:int){
-		range = document.createRange();
-		range.setStart(textNode,position);
-	}
-
-	
-	private function isStringStart():Boolean{
-		try{
-			if(textNode.data.length>0){
-				if(textNode.data.charAt(0) == "'" || textNode.data.charAt(0) == '"'){
-					return true;
-				}
-			}
-			
-			return false;
-		}catch(e){
-			console.log(e);
-		}
-		
-	
-	}
-	
-	
-	/**
-	 * 将特殊字符转换
-	 */
-	private function trans(value:String){
-		
-		var html = null;
-		if(value == " "){
-			value = "_";
-			html = singleWord.clone();
-			html.attr("type","SPACE");
-			html.css("color","rgba(0,0,0,0)");
-		}
-		else if(value == "Tab"){
-			value = "____";
-			html = singleWord.clone();
-			html.attr("type","TAB");
-			html.css("color","rgba(0,0,0,0)");
-		}
-		else{
-			html = normalWord.clone();
-			html.attr("type","SYMBOL");
-			html.css({"color":"#234567","font-weight":"bold"});
-		}
-		
-		html.append(value);
-		return html[0];
-	
-	}
 	
 	/**
 	 * 设置显示的文本内容
 	 */
 	public function set text(value:String):void{
-		var worker = new Worker("/js/format.js");
+		value = fx(value);
+		var worker = new Worker("lib/js/format.js");
 		worker.addEventListener("message",function(e){
 			area.innerHTML = e.data.data;
 			for(var i:int = 0;i<e.data.count;i++){
@@ -992,22 +333,140 @@
 	}
 	
 	
+	private function fx(value){
+		var arr = [value];
+		var s = "";
+		var ft = null;
+		var space = ""
+		if(arr.length>0){
+			ft = arr[0];
+			var ch = null;
+			var c = 0;
+			for(var i = 0;i<ft.length;i++){
+				ch = ft.charAt(i);
+				if(ch == '\r' || ch == '\n'){
+					c ++;
+					continue;
+				}
+				if(ch == "\t" || ch == " "){
+					space += ch
+					console.log(ft.charCodeAt(i));
+				}else{
+					break;
+				}
+			}
+			arr = value.substring(c).split('\n');
+			for(var i = 0;i<arr.length;i++){
+				ft = arr[i];
+				if(ft.indexOf(space) == 0){
+					s += ft.substring(space.length) ;
+				}else{
+					s += ft;
+				}
+				s += "\n";
+			}
+			return s;
+		}
+		return str;
+	}
+	
+	
+	
+	
+	
+	
+	
+	private function hideRecm():void{
+		recmFlag = false;
+		if(recmPos){
+			recmPos.hide();
+		}
+	}
+	
+	
+	
+	
+	private function scrollEvt(e:Event){
+		$(#bg).css("top","-" + e.target.scrollTop + "px");
+		$(#num).css("top","-" + e.target.scrollTop + "px");
+	}
+	
 	
 	/**
-	 * 添加文本内容
+	 * 创建区域选择背景
 	 */
-	public function appendText(value:String):void{
-		var worker = new Worker("js/format.js");
-		worker.addEventListener("message",function(e){
-			area.innerHTML += e.data.data;
-			for(var i:int = 0;i<e.data.count;i++){
-				num.appendChild(createNewNum(count++));
+	private function createRectSelected(startX:int,startY:int,endX:int,endY:int):void{
+		clearRectSelected();
+		var t:int = 0;
+		startY = startY - (startY % lineHeight);
+		endY = endY - (endY % lineHeight);
+		if(startY>endY){
+			
+		
+		
+			//01.先确定开始行;
+			var sLine = parseInt(endY/lineHeight);
+			var eLine = parseInt(startY/lineHeight);
+			var div = $("<div class='selectBackgroundColor'></div>");
+			
+			div.css({height:lineHeight + "px",top:(sLine * lineHeight) + "px",left:endX + "px"});
+			if(sLine == eLine){
+				div.css("width",(endX - startX) + "px");
 			}
-		});
+			$(#bg).append(div);
+			
+			//02.中间被选中的地方
+			if(sLine != eLine){
+				var div = $("<div class='selectBackgroundColor'></div>");
+				div.css({height:(parseInt(Math.ceil((startY - endY)/lineHeight))*lineHeight - lineHeight) + "px",top:((sLine + 1) * lineHeight) + "px",left:"0px"});
+				$(#bg).append(div);
+			}
+			
+			//03.尾行被选中的地方
+			if(sLine != eLine){
+				div = $("<div class='selectBackgroundColor'></div>");
+				div.css({height:lineHeight + "px",top:(eLine * lineHeight) + "px",width:startX + "px"});
+				$(#bg).append(div);
+			
+			}
+			
+		}else{
+
+			//01.先确定开始行;
+			var sLine = parseInt(startY/lineHeight);
+			var eLine = parseInt(endY/lineHeight);
+			var div = $("<div class='selectBackgroundColor'></div>");
+			
+			div.css({height:lineHeight + "px",top:(sLine * lineHeight) + "px",left:startX + "px"});
+			if(sLine == eLine){
+				div.css("width",(endX - startX) + "px");
+			}
+			$(#bg).append(div);
+			
+			//02.中间被选中的地方
+			if(sLine != eLine){
+				var div = $("<div class='selectBackgroundColor'></div>");
+				div.css({height:(parseInt(Math.ceil((endY - startY)/lineHeight))*lineHeight - lineHeight) + "px",top:((sLine + 1) * lineHeight) + "px",left:"0px"});
+				$(#bg).append(div);
+			}
+			
+			//03.尾行被选中的地方
+			if(sLine != eLine){
+				div = $("<div class='selectBackgroundColor'></div>");
+				div.css({height:lineHeight + "px",top:(eLine * lineHeight) + "px",width:endX + "px"});
+				$(#bg).append(div);
+			
+			}
 		
-		
-		worker.postMessage(keyWords);
-		worker.postMessage(value);
+		}
+
+	}
+	
+	/**
+	 * 清除被选择区域
+	 */
+	private function clearRectSelected():void{
+		$(#bg).find(".selectBackgroundColor").remove();
 	}
 	
 	/**
@@ -1037,191 +496,7 @@
 		}
 		return buffer;
 	}
-	
-	
-	
-	private var currentListCache:Array = null;
-	/**
-	 * 列出提示内容
-	 */
-	private function listRecm(value:String):void{
-		if(value.length == 0){
-			recmPos.hide();
-			return;
-		}
-		var arr:String = [];
-		var p:Object = null;
-		for(var i:int = 0;i<currentListCache.length;i++){
-			p = currentListCache[i];
-			if(p.value.indexOf(value) == 0){
-				arr.push({value:p.value,type:p.type});
-			}
-			
-		}
-		recmPos.dataProvider = arr;
-		recmPos.text = value;
-	}
-	
-	
-	private function showRecm():void{
-		if(recmPos == null){
-			recmPos = new RecmList();
-			_self.addChild(recmPos);
-		}else{
-			recmPos.show();
-		}
-		
-		recmPos.x = absX(client.left);
-		recmPos.y = absY(client.top);
-		currentListCache = getWords();
-		
-	
-	}
-	
-	/**
-	 * 获取单词数据
-	 */
-	private function getWords():Array{
-		var cache:Object = {};
-		var buffer:Array = [];
-		var node:SPAN = area.firstChild;
-		while(node){
-			if(!node.getAttribute("islock") && node.innerText.trim() != ""){
-				if(!cache[node.innerText.trim()]){
-					cache[node.innerText.trim()] = true;
-					buffer.push({value:node.innerText,type:"String"});
-				}
-				
-			}
-			
-			node = node.nextElementSibling;
-		}
-		return buffer;
-	}
-	
-	private function hideRecm():void{
-		recmFlag = false;
-		if(recmPos){
-			recmPos.hide();
-		}
-	}
-	
-	
-	/**
-	 * 显示选中行
-	 */
-	private function bgLine(){
-		var lineNum = parseInt(startWord.offsetTop/26);
-		#line.css("top",lineNum * 26 + "px");
-		
-	}
-	
-	
-	private function scrollEvt(e:Event){
-		#bg.css("top","-" + e.target.scrollTop + "px");
-		#num.css("top","-" + e.target.scrollTop + "px");
-	}
-	
-	
-	/**
-	 * 创建区域选择背景
-	 */
-	private function createRectSelected(startX:int,startY:int,endX:int,endY:int):void{
-		clearRectSelected();
-		var t:int = 0;
-		startY = startY - (startY % lineHeight);
-		endY = endY - (endY % lineHeight);
-		if(startY>endY){
-			
-		
-		
-			//01.先确定开始行;
-			var sLine = parseInt(endY/lineHeight);
-			var eLine = parseInt(startY/lineHeight);
-			var div = $("<div class='selectBackgroundColor'></div>");
-			
-			div.css({height:lineHeight + "px",top:(sLine * lineHeight) + "px",left:endX + "px"});
-			if(sLine == eLine){
-				div.css("width",(endX - startX) + "px");
-			}
-			#bg.append(div);
-			
-			//02.中间被选中的地方
-			if(sLine != eLine){
-				var div = $("<div class='selectBackgroundColor'></div>");
-				div.css({height:(parseInt(Math.ceil((startY - endY)/lineHeight))*lineHeight - lineHeight) + "px",top:((sLine + 1) * lineHeight) + "px",left:"0px"});
-				#bg.append(div);
-			}
-			
-			//03.尾行被选中的地方
-			if(sLine != eLine){
-				div = $("<div class='selectBackgroundColor'></div>");
-				div.css({height:lineHeight + "px",top:(eLine * lineHeight) + "px",width:startX + "px"});
-				#bg.append(div);
-			
-			}
-			
-		}else{
-			
-			
-			
-			//01.先确定开始行;
-			var sLine = parseInt(startY/lineHeight);
-			var eLine = parseInt(endY/lineHeight);
-			var div = $("<div class='selectBackgroundColor'></div>");
-			
-			div.css({height:lineHeight + "px",top:(sLine * lineHeight) + "px",left:startX + "px"});
-			if(sLine == eLine){
-				div.css("width",(endX - startX) + "px");
-			}
-			#bg.append(div);
-			
-			//02.中间被选中的地方
-			if(sLine != eLine){
-				var div = $("<div class='selectBackgroundColor'></div>");
-				div.css({height:(parseInt(Math.ceil((endY - startY)/lineHeight))*lineHeight - lineHeight) + "px",top:((sLine + 1) * lineHeight) + "px",left:"0px"});
-				#bg.append(div);
-			}
-			
-			//03.尾行被选中的地方
-			if(sLine != eLine){
-				div = $("<div class='selectBackgroundColor'></div>");
-				div.css({height:lineHeight + "px",top:(eLine * lineHeight) + "px",width:endX + "px"});
-				#bg.append(div);
-			
-			}
-		
-		}
-		
-		
-		
-		
-		
-	}
-	
-	/**
-	 * 清除被选择区域
-	 */
-	private function clearRectSelected():void{
-		#bg.find(".selectBackgroundColor").remove();
-	}
-	
-	/**
-	 * 绝对X坐标
-	 */
-	private function absX(value:int):int{
-		return value - #content.offset().left + #num.outerWidth(true)
-		
-	}
 
-	
-	/**
-	 * 绝对Y坐标
-	 */
-	private function absY(value:int):int{
-		return value - #content.offset().top;
-		
-	}
    
   </script>
 </vbox>
