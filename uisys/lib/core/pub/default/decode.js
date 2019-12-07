@@ -65,20 +65,35 @@ var __READ_DATA__ = function(value){
 }
 
 function main(){
-	__FORMAT__(code);
-	var html = "<!DOCTYPE html><html><head><meta charset='utf-8' >" + (mod[UI.GetClassName()].head?mod[UI.GetClassName()].head:"") + "</head><body>";
-	html += "<div style='display:none;'>" + mod[UI.GetClassName()].html.replace(/[\b]/g,uuid) + "</div>";
-	var data = "<script id='_data' type='text/plain'>";
-	data += code;
-	data += "</script>";
-	var run = "<script type='text/javascript'>";
-	run += UI.GetCode(UI.SYSTEM_PATH + "/core/parser/module_base.tpl");
-	run += "var fExt=" + (UI.Debug ? " '.ui'" : "'.ui.html'") + ";\r\n";
-	run += "!function(){";
-	run += UI.GetCode(UI.SYSTEM_PATH + "/core/parser/module_manager.tpl");
-	//此处兼容ie11 不能用innerText 只能用innerHTML
-	run += "\r\nUI.decode(document.body,'" + UI.GetClassName() + "',_data.innerHTML);";
-	run += "}();";
-	run += "</script>";
-	return html + data + run + "</body></html>";
+	try{
+		__FORMAT__(code);
+		var p = mod[UI.GetClassName()];
+		var html = "<!DOCTYPE html><html><head><meta charset='utf-8' >" + (p.head ? p.head : "") + "</head><body>";
+		html += "<div style='display:none;'>" + p.html.replace(/[\b]/g,uuid) + "</div>";
+		var tmp = code.split("</script");
+		var data = "";
+		for(var i = 0;i<tmp.length;i++){
+			data += "<script name='_data' type='text/plain'>";
+			data += tmp[i];
+			if(i + 1 < tmp.length){
+				data += "</script";
+			}
+			data += "</script>";
+		}
+		
+		var run = "<script type='text/javascript'>";
+		run += UI.GetCode(UI.SYSTEM_PATH + "/core/parser/module_base.tpl");
+		run += "var fExt=" + (UI.Debug ? " '.ui'" : "'.ui.html'") + ";\r\n";
+		run += "!function(){";
+		run += UI.GetCode(UI.SYSTEM_PATH + "/core/parser/module_manager.tpl");
+		//此处兼容ie11 不能用innerText 只能用innerHTML
+		run += "\r\nvar code = '';var lst = document.getElementsByName('_data');for(var i=0;i<lst.length;i++){code += lst[i].innerHTML;}"
+		run += "\r\nUI.decode(document.body,'" + UI.GetClassName() + "',code);";
+		run += "}();";
+		run += "</script>";
+		return html + data + run + "</body></html>";
+	}catch(e){
+		return "<span>decode:" + e + "</sapn>"
+	}
+	
 }

@@ -270,7 +270,7 @@
 
 			if(expend){
 				console.log("expend",expend.attr("id"));
-				var obj:Object = window[expend.attr("id")];
+				var obj:Object = @global[expend.attr("id")];
 				obj.onComplete = function(){
 					tmp.css("height","");
 					elem.find(">div>.dirc").addClass("expend");

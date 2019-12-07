@@ -150,7 +150,7 @@ func (m *MScript) ReadFromString(js string) {
 	m.domainList = make(map[string]*TagSet, 10)
 
 	//00装入关键字
-	keyWord := [...]string{"public", "private", "super", "var", "let", "function", "func", "if", "else", "switch", "case", "while", "for", "in", "do", "static", "import", "new", "include", "return", "class", "extends", "implements", "interface", "this", "@global", "@this", "@res", "set", "get", "try", "catch", "finally", "from"}
+	keyWord := [...]string{"public", "private", "super", "var", "let", "function", "func", "if", "else", "switch", "case", "while", "for", "in", "do", "static", "import", "new", "include", "return", "class", "extends", "implements", "interface", "this", "@global", "@this", "@lib", "@root", "set", "get", "try", "catch", "finally", "from"}
 	m.kMap = make(map[string]bool, 10)
 	for _, v := range keyWord {
 		m.kMap[v] = true

@@ -97,6 +97,9 @@ func (u *UIServer) CreateServer(SysPath string, rootPath string, srcPath string,
 	u.wsUser = &WsUser{list: make(map[string]*connectElement)} //初始化
 	u.connectedList = make([]*connectElement, 0)
 	u.testConnect = make(chan byte)
+	u.fServerList = make(map[string]http.Handler)
+	u.AddProxy("/index.src/", filepath.Clean(u.SysPath)+"/src/", false)
+	u.AddProxy("/index.res/", filepath.Clean(u.SysPath)+"/root/", false)
 }
 
 /**
@@ -202,13 +205,11 @@ func (u *UIServer) SetProject(path string) int {
 	if Exist(path) {
 		rpath, _ := filepath.Abs(path)
 		u.RootPath = rpath
-		u.fServerList = make(map[string]http.Handler)
+
 		if Exist(u.RootPath + "/" + configName) {
 			u.fServerList[rpath] = http.FileServer(http.Dir(path))
-			u.pattern = make(map[string]*urlMap)
-
 			for _, v := range u.GetAttrLike("pattern") {
-				u.AddProxy(v[0], v[1])
+				u.AddProxy(v[0], v[1], true)
 			}
 			for _, v := range u.GetAttrLike("cross") { //添加可以跨域路由
 				u.AddCross(v[0])
@@ -228,7 +229,6 @@ func (u *UIServer) SetProject(path string) int {
 			u.IsUIPro = false
 			u.fServerList[rpath] = http.FileServer(http.Dir(path))
 		}
-
 		return 1
 	} else {
 		u.RootPath = ""
@@ -558,10 +558,8 @@ func (u *UIServer) root(w http.ResponseWriter, req *http.Request) {
 			} else {
 				w.Write([]byte(u.docEvt(req.URL.RawQuery)))
 			}
-
 			return
 		}
-
 		if req.URL.Path == "/uisys.js" { //如果获取模块包的
 			b, e := GetCode(u.SysPath + "/core/parser/module.tpl")
 			b0, e0 := GetCode(u.SysPath + "/core/parser/module_base.tpl")
@@ -1127,6 +1125,7 @@ func (u *UIServer) hasUrl(urlPath *url.URL, w http.ResponseWriter, req *http.Req
 	var p *urlMap = nil
 	for _, v := range u.pattern {
 		if Index(urlPath.Path, v.pattern) == 0 {
+
 			p = v
 			break
 		}
@@ -1397,8 +1396,10 @@ func (u *UIServer) GetData() [][]string {
 /**
  * 增加虚拟目录和反向代理
  */
-func (u *UIServer) AddProxy(pattern string, path string) {
-	fmt.Println("pattern", pattern, "-->", path)
+func (u *UIServer) AddProxy(pattern string, path string, log bool) {
+	if log {
+		fmt.Println("pattern", pattern, "-->", path)
+	}
 	cls := 0
 	if Index(strings.ToLower(path), "http://") == 0 || Index(strings.ToLower(path), "https://") == 0 {
 		cls = 1
@@ -1475,7 +1476,7 @@ func (u *UIServer) SetData(cmds []string) {
 	}
 
 	if Index(cmds[0], "pattern") == 0 {
-		u.AddProxy(cmds[1], cmds[2])
+		u.AddProxy(cmds[1], cmds[2], true)
 	}
 
 	//对源文件备份

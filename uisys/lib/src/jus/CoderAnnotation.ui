@@ -1,0 +1,11 @@
+<!--
+	代码注释扩展
+	应用在Coder的注释扩展上
+	需要与Coder配合
+	@author sunxy
+	@state	debug
+-->
+<@import value="jus.*"/>
+<VBox>
+	
+</VBox>

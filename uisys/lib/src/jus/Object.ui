@@ -20,7 +20,7 @@
 			_self.children("div").each(function(){
 				var $this = $(this);
 				$this.height(_self.height());
-				var $id = window[$this.attr("id")];
+				var $id = @global[$this.attr("id")];
 				if($id && $id.trigger){
 					$id.trigger(event);
 				}

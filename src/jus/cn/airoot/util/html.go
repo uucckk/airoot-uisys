@@ -701,6 +701,15 @@ func (h *HTML) Append(list *HTML) {
 	}
 }
 
+//在指定节点名的文本
+func (h *HTML) AppendNode(tagName string, value string) {
+	tag := &HTML{tag: tagName, tagType: 1}
+	tag.Create()
+	tag.list = append(tag.list, &HTML{value: value, tagType: -1, parent: tag})
+	tag.parent = h
+	h.list = append(h.list, tag)
+}
+
 //按标签获取元素列表
 func (h *HTML) GetElementsByTagName(tagName string) []*HTML {
 	tmp := make([]*HTML, 0, 100)

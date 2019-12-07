@@ -79,7 +79,7 @@
 			height = $this.outerHeight(true);
 			width = $this.outerWidth(true);
 			
-			var $id = window[$this.attr("id")];
+			var $id = @global[$this.attr("id")];
 			if($id && $id.trigger){
 				$id.trigger(event);
 			}

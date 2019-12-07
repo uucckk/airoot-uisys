@@ -88,4 +88,9 @@
 		}
 		
 	}
+	
+	function finalize(){
+		$(window).unbind("mouseup",mouseUp);
+		_self.unbind();
+	}
 </script>

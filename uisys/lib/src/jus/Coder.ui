@@ -5,10 +5,8 @@
 		overflow:hidden;
 		margin:0px;
 		padding:0px;
-		font-family:microsoft YaHei;
 		font-size:14px;
 		text-align:left;
-	
     }
     #content{
       float:left;
@@ -89,18 +87,14 @@
 		<cursor/>
 	  </div>
       <div id="content" left="30" right="0" height="100%">
-
+			<@value/>
       </div>
   </position>
   
 
-  <textarea id="ipt" >
-	<@value/>
-  </textarea>
-
 
   <script>
-	import jus.coder.RecmList;
+	import @root/js/jquery.min.js;
 	var _self = $(dom);
 	
 	var lineHeight:int = 24;
@@ -134,23 +128,16 @@
     var textNode = null;
     var insertTextlength = 0;
     var area = null;//文本域
-	var startWord:SPAN = null;//当前选中的第一单词
-	var endWord:SPAN = null;//当前选中最后一单词
     var count = 1;//函数
-	
-	var recmFlag:Boolean = false;
-	
-	var recmPos:RecmList = null;
-	
+
+		
 	
 	function init(){
 		try{
-			ipt.value = "";
 			$content.addEventListener("mousedown",mouseDownEvt);
 			$content.addEventListener("mousemove",mouseMoveEvt);
 			#num.addEventListener("mousewheel",mouseWheelEvt);
 			#content.addEventListener("mouseup",clickEvt);
-			ipt.addEventListener("keydown",keyDownEvt);
 			range = document.createRange();
 			var newLine = createNewArea("");
 			textNode = newLine.text;
@@ -188,6 +175,7 @@
 		startX = e.layerX;
 		startY = e.layerY;
 		mouseDownFlag = true;
+		clearRectSelected();
 	}
 	
 	/**
@@ -250,9 +238,7 @@
     private function clickEvt(e:Event){
 		selectedLine(e);
 		mouseDownFlag = false;
-		if(recmFlag){
-			hideRecm();
-		}
+		
 		
       
     }
@@ -317,8 +303,9 @@
 	 * 设置显示的文本内容
 	 */
 	public function set text(value:String):void{
+		console.log(">>>>",@lib , "format/html.js");
 		value = fx(value);
-		var worker = new Worker("lib/js/format.js");
+		var worker = new Worker(@lib + "format/html.js");
 		worker.addEventListener("message",function(e){
 			area.innerHTML = e.data.data;
 			for(var i:int = 0;i<e.data.count;i++){
@@ -350,7 +337,6 @@
 				}
 				if(ch == "\t" || ch == " "){
 					space += ch
-					console.log(ft.charCodeAt(i));
 				}else{
 					break;
 				}
@@ -374,14 +360,7 @@
 	
 	
 	
-	
-	
-	private function hideRecm():void{
-		recmFlag = false;
-		if(recmPos){
-			recmPos.hide();
-		}
-	}
+
 	
 	
 	

@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
+	"jus"
 	. "jus"
 	. "jus/str"
 	. "jus/tool"
@@ -28,6 +29,7 @@ type HTMLObject struct {
 type UI struct {
 	IsPublic            bool      //JS方法是否公开，默认不公开，但是如果html使用了@this关键字，则默认公开且不可改变。
 	IsTest              bool      //是否为测试模块，如果是则打开测试开关*，#，如果不是测不显示测试代码
+	IsSysLib            bool      //是否为库中组件
 	Debug               bool      //判断是否被测试
 	SERVER              *UIServer //服务器引用
 	dirPath             string    //所在目录地址
@@ -157,6 +159,7 @@ func (j *UI) CreateFrom(root string, domain string, node *HTML, className string
 			j.htmlPath = JUSExist(j.path + ".ui")
 			j.jsPath = JUSExist(j.path + ".es")
 			j.cssPath = JUSExist(j.path + ".css")
+			j.IsSysLib = true
 		} else {
 			j.path = root + "/" + file
 			j.htmlPath = JUSExist(j.path + ".ui")
@@ -167,6 +170,7 @@ func (j *UI) CreateFrom(root string, domain string, node *HTML, className string
 				j.htmlPath = JUSExist(j.path + ".ui")
 				j.jsPath = JUSExist(j.path + ".es")
 				j.cssPath = JUSExist(j.path + ".css")
+				j.IsSysLib = true
 			}
 			//fmt.Println(j.htmlPath, j.jsPath)
 		}
@@ -213,13 +217,20 @@ func (j *UI) PushImportScript(value *Attr) {
 			}
 		}
 		if Index(value.Value, "/") != -1 || Index(value.Value, "\\") != -1 { //for example: import /lib/js/jquery.min.js;
-			tp := j.root + "/" + value.Value
+			tp := ""
+			if Index(value.Value, "/index.res") == 0 {
+				tp = j.SYSTEM_PATH + "/root" + value.Value[10:]
+			} else {
+				tp = j.root + "/" + value.Value
+				value.Value = Substring(tp, StringLen(j.root), -1)
+			}
 			if Exist(tp) {
 				tp = filepath.Clean(tp)
-				value.Value = Substring(tp, StringLen(j.root), -1)
-				j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, &ScriptElement{"I", value.Name, "P", value.Value})
+				m5, _ := jus.F2md5(tp)
+
+				j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, &ScriptElement{"I", value.Name, "P", m5 + value.Value})
 			} else {
-				j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, &ScriptElement{"O", value.Value, "", value.Value + " isn't Exist."})
+				j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, &ScriptElement{"O", value.Value, "O", j.className + ": " + value.Value + " isn't Exist."})
 			}
 			return
 		}
@@ -449,9 +460,6 @@ func (j *UI) overHTML(node []*HTML) {
 	}
 
 	child.RemoveChildByTagName("@override")
-	//@uncare 表示让编译器不关系此内部代码，也就是说编译器不编译此内部代码
-	//overList = child.Filter("@uncare")
-	//child.RemoveChildByTagName("@uncare")
 
 	//----开始替换----
 	pList := j.html.GetElementsByTagName("@content")
@@ -520,7 +528,6 @@ func (j *UI) scanHTML(child []*HTML) {
 	for _, p := range child {
 		tagName = p.TagName()
 		if "@uncare" == p.TagName() {
-			//p.ReplaceWithFormList(p.Child())
 			continue
 		}
 		if "module" == p.TagName() {
@@ -815,13 +822,6 @@ func (j *UI) rootHTML() {
 		j.cssBuffer.Write(ListToHTMLStringBytes(v.Child()))
 		v.Remove()
 	}
-	child = j.html.Filter("script")
-	for _, v := range child {
-		if v.GetAttr("type") == "" {
-			j.scriptBuffer.Write(ListToHTMLStringBytes(v.Child()))
-			v.Remove()
-		}
-	}
 
 }
 
@@ -968,7 +968,8 @@ func (j *UI) scanMedia(value string) string {
 				if err != nil {
 					//fmt.Println(path, err)
 				}
-				f := Substring(path, 0, LastIndex(path, ".")) + ".lib/" + Substring(string(tmp), 1, len(tmp)-1)
+				f := IfStr(j.IsSysLib, "index.src/", "") + Substring(path, 0, LastIndex(path, ".")) + ".lib/" + Substring(string(tmp), 1, len(tmp)-1)
+				//f := Substring(path, 0, LastIndex(path, ".")) + ".lib/" + Substring(string(tmp), 1, len(tmp)-1)
 				//fmt.Println(filepath.Abs(f))
 				if Exist(f) {
 					data, _ := GetBytes(f)
@@ -1060,6 +1061,16 @@ func useFunc(html *HTML, arr *[]*HTML) {
  */
 func (j *UI) initObj(html *HTML) {
 	for _, p := range html.Child() {
+		if p.TagName() == "@uncare" {
+			continue
+		}
+		if p.TagName() == "script" {
+			if p.GetAttr("type") == "" {
+				j.scriptBuffer.Write(ListToHTMLStringBytes(p.Child()))
+				p.Remove()
+			}
+			continue
+		}
 		for _, attr := range p.Attrs() {
 			if "id" == strings.ToLower(attr.Name) {
 				continue
@@ -1251,30 +1262,30 @@ func (j *UI) ReadHTML() *HTML {
 		style.ReadFromString("<style>" + j.styleFormat() + "</style>")
 		j.html.Insert(style, 0)
 	}
-	scriptCode := bytes.NewBufferString("<script>")
+	//scriptCode := bytes.NewBufferString("<script>")
 
 	//开始组装参数
 	script := &HTMLScript{}
 	script.CreateFrom(j, j.root, j.domain, j.paramValue, j.innerValue, j.extendsScriptBuffer)
 	scriptCodeString := script.ReadFromString(j.scriptBuffer.String())
-	scriptCode.WriteString("</script>")
-	j.html.InsertFromString(scriptCode.String(), 0)
+	//scriptCode.WriteString("</script>")
+	//j.html.InsertFromString(scriptCode.String(), 0)
 
 	if len(scriptCodeString) != 0 {
-		scriptHTML := &HTML{}
-		scriptHTML.ReadFromString("<script>" + scriptCodeString + "</script>")
-		j.html.Append(scriptHTML)
+		node := &HTML{}
+		node.AppendNode("script", scriptCodeString)
+		j.html.Append(node)
 	}
 
 	if len(j.componentCode) > 0 {
-		ccode := "function init(){"
+		code := "function init(){"
 		for _, v := range j.componentCode {
-			ccode += j.componentInitCode(v)
+			code += j.componentInitCode(v)
 		}
-		ccode += "}"
-		scriptHTML := &HTML{}
-		scriptHTML.ReadFromString("<script>" + script.ReadFromString(ccode) + "</script>")
-		j.html.Append(scriptHTML)
+		code += "}"
+		node := &HTML{}
+		node.AppendNode("script", script.ReadFromString(code))
+		j.html.Append(node)
 	}
 
 	if j.jsPath != "" {
@@ -1284,9 +1295,9 @@ func (j *UI) ReadHTML() *HTML {
 		scriptString := script.ReadFromString(CodeFx(tpr, j.IsTest)) //scriptString = script.ReadFromString(j.scanMedia(tpr))
 
 		if len(scriptString) != 0 {
-			scriptHTML := &HTML{}
-			scriptHTML.ReadFromString("<script>" + scriptString + "</script>")
-			j.html.Append(scriptHTML)
+			node := &HTML{}
+			node.AppendNode("script", script.ReadFromString(scriptString))
+			j.html.Append(node)
 		}
 	}
 
@@ -1308,10 +1319,7 @@ func (j *UI) ReadHTML() *HTML {
 	}
 	if j.headBuffer.Len() > 0 {
 		sb.Reset()
-		head := &HTML{}
 		j.ToFormatLine("T", j.className, j.headBuffer.String(), sb) //便是Head
-		head.ReadFromString("<head>" + sb.String() + "</head>")
-		j.html.Insert(head, 0)
 	}
 
 	if len(j.CommandCode) > 0 {
@@ -1322,9 +1330,9 @@ func (j *UI) ReadHTML() *HTML {
 	//最终加入静态函数变量
 	if j.parent == nil {
 		st := bytes.NewBufferString("")
-		sb := bytes.NewBufferString("<script>")
+		sb := bytes.NewBufferString("")
 		for _, v := range j.scriptElementBuffer {
-			if v.Header == "P" || v.Header == "S" || v.Header == "U" {
+			if v.Header == "P" || v.Header == "S" || v.Header == "U" || v.Header == "O" {
 				j.ToFormatLine(v.Cls, v.ModuleName, v.Header+v.Value, sb)
 				continue
 			}
@@ -1352,14 +1360,12 @@ func (j *UI) ReadHTML() *HTML {
 		}
 
 		if sb.Len() > 0 {
-			scriptHTML := &HTML{}
-			sb.WriteString("</script>")
-			scriptHTML.ReadFromString(sb.String())
-			j.html.Insert(scriptHTML, 0)
+			node := &HTML{}
+			node.AppendNode("script", sb.String())
+			j.html.Insert(node, 0)
 		}
 
 		sb.Reset()
-		sb.WriteString("<script>")
 		//本类是否有参数
 		if len(j.componentParams) > 0 {
 			for _, v := range j.componentParams {
@@ -1369,10 +1375,9 @@ func (j *UI) ReadHTML() *HTML {
 		}
 
 		if sb.Len() > 0 {
-			scriptHTML := &HTML{}
-			sb.WriteString("</script>")
-			scriptHTML.ReadFromString(sb.String())
-			j.html.Append(scriptHTML)
+			node := &HTML{}
+			node.AppendNode("script", sb.String())
+			j.html.Append(node)
 		}
 
 		sb.Reset()

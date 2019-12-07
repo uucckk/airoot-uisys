@@ -41,7 +41,7 @@
 				}//横屏
 				
 				_self.find(">div").each(function(){
-					var $id = window[$(this).attr("id")];
+					var $id = @global[$(this).attr("id")];
 					if($id && $id.trigger){
 						$id.trigger(_self.attr("auto") == "true" ? (stageWidth>=stageHeight ? 0 : 1) : 0);
 					}

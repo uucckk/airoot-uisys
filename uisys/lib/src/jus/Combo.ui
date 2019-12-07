@@ -61,7 +61,7 @@
 		if(content.children().length>0){
 			
 			disId = content.find(">").attr("id");
-			disId = window[disId];
+			disId = @global[disId];
 			
 			if(disId){
 				disId.onClick = setData;

@@ -13,7 +13,7 @@
 	<@content />
 </jus.vbox>
 <script>
-	import /lib/js/jquery.min.js;
+	import @root/js/jquery.min.js;
 	var _self = $(dom);
 	var stageWidth = 0.0;
 	var stageHeight = 0.0;

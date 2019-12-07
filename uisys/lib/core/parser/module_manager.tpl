@@ -37,7 +37,7 @@ var ____ERROR_COUNT____ = 0;
 var ____ERROR____ = function(value){
 	console.log("UI ERROR: " + value);
 	var label = document.createElement("div");
-	label.setAttribute('style','position:absolute;color:#fefefe;background-color:#f05500;margin:5px 5px 0px 5px;border-radius:5px;padding:2px 10px 2px 10px;font-size:14px;font-weight:bold;');
+	label.setAttribute('style','position:fixed;color:#fefefe;background-color:#f05500;margin:0px;width:100%;height:48px;line-height:48px;padding:2px 10px 2px 10px;font-size:14px;font-weight:bold;');
 	label.innerText = ____ERROR_COUNT____ ++ + ". " + value;
 	document.body.appendChild(label);
 	label.style.top = ____ERROR_POS____;
@@ -464,15 +464,18 @@ var __FORMAT__ = function(__DATA__,__APPDOMAIN__,module){
 				case 'I' ://import
 					if(v.value.charAt(0) == "P"){//Package 引入外部包
 						var isImport = false;
-						var importStr = v.value.substr(1).trim();
+            var md5 = v.value.substr(1,32)
+						var importStr = v.value.substr(33).trim();
+            console.log('i',importStr)
 						for(var n = 0;n<__PACKAGE_LIST__.length;n++){
-							if(__PACKAGE_LIST__[n].url == importStr){
+							if(__PACKAGE_LIST__[n].md5 == md5){
 								isImport = true;
 								break;
 							}
 						}
 						if(!isImport){
-							__PACKAGE_LIST__.push({url:importStr,type:"P"});
+              console.log(importStr)
+							__PACKAGE_LIST__.push({url:importStr,type:"P",md5:md5});
 						}
 					}else if(v.value.charAt(0) == "S"){
 						_MODULE_CONTENT_LIST_[__APPDOMAIN__][v.module] = eval("(" + v.value.substr(1) + ")");
@@ -518,7 +521,8 @@ var __FORMAT__ = function(__DATA__,__APPDOMAIN__,module){
 					})();
 				break;
 				case "O" ://Error
-					____ERROR____(v.value);
+					____ERROR____(v.value.substring(1));
+          throw new Error(v.value.substring(1));
 				break;
 					
 			}
@@ -682,7 +686,7 @@ function __InitModule__(__APPDOMAIN__,moduleName,uuid,value,target,append){
 						if(method[p.value]){
 							method[p.value](pn,uuid,__APPDOMAIN__,ct);
 						}else{
-							trace(p.name,p.value);
+							trace("S",p.name,p.value);
 						}
 						
 					break;

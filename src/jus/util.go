@@ -2,9 +2,13 @@ package jus
 
 import (
 	"bytes"
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
+	"io"
 	. "jus/str"
 	. "jus/tool"
+	"os"
 )
 
 func trace(value ...interface{}) {
@@ -101,4 +105,19 @@ func ImportFrom(name string, value string) string {
 	}
 
 	return buf.String()
+}
+
+///获取指定路径下文件的MD5校验码
+func F2md5(path string) (string, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		fmt.Println("Open", err)
+		return "", err
+	}
+	defer f.Close()
+	md5hash := md5.New()
+	if _, err := io.Copy(md5hash, f); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(md5hash.Sum(nil)), nil
 }

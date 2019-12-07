@@ -1,8 +1,6 @@
 package util
 
 import (
-	"crypto/md5"
-	"encoding/hex"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -142,22 +140,4 @@ func JUSExist(name string) string {
 func Exist(fileName string) bool {
 	_, err := os.Stat(fileName)
 	return err == nil || os.IsExist(err)
-}
-
-//文件做md5校验
-func file2Md5(path string) string {
-	f, err := os.Open(path)
-	if err != nil {
-		fmt.Println("Storage Open", err)
-		return ""
-	}
-
-	defer f.Close()
-
-	md5hash := md5.New()
-	if _, err := io.Copy(md5hash, f); err != nil {
-		fmt.Println("Storage Copy", err)
-		return ""
-	}
-	return hex.EncodeToString(md5hash.Sum(nil))
 }
