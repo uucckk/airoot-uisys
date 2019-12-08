@@ -566,14 +566,23 @@ func BatCode(value string, w bool) (bool, string) {
 }
 
 func commandEvt(value string) (bool, string) {
-	return command(FmtCmd(value))
+	return command(FmtCmdAdv(value))
 }
 
 /**
  * 命令代码
  */
-func command(cmds []string) (bool, string) {
+func command(cmd *Cmd) (result bool, resultValue string) {
+	defer func() { // 必须要先声明defer，否则不能捕获到panic异常
+		if err := recover(); err != nil {
+			result = true
+			resultValue = fmt.Sprintln(err)
+			DevPrintln(4, "\r\n"+resultValue)
+			panic(err)
+		}
+	}()
 	str := ""
+	cmds := cmd.Cmds
 	if len(cmds) > 0 {
 		switch cmds[0] {
 		case "-c": //退出命令行
@@ -631,7 +640,6 @@ func command(cmds []string) (bool, string) {
 
 			return true, str
 		case "add": //创建服务
-			fmt.Println(cmds, len(cmds))
 			if len(cmds) > 1 && (zhCN[cmds[1]] == "" || len(cmds[1]) != len([]rune(cmds[1]))) {
 				if serverList[cmds[1]] == nil {
 					serverList[cmds[1]] = &UIServer{}
@@ -651,7 +659,11 @@ func command(cmds []string) (bool, string) {
 
 				}
 				if len(cmds) > 3 {
-					_, str = commandEvt("run " + cmds[1] + " " + cmds[3])
+					param := ""
+					for k, _ := range cmd.Attr {
+						param += " -" + k
+					}
+					_, str = commandEvt("run " + cmds[1] + " " + cmds[3] + param)
 				}
 
 			} else {
@@ -682,10 +694,12 @@ func command(cmds []string) (bool, string) {
 					return true, str
 				}
 				if len(cmds) > 2 {
-					param := ""
-					for i := 2; i < len(cmds); i++ {
-						param += " " + cmds[i]
+					param := cmds[2]
+
+					for k, _ := range cmd.Attr {
+						param += " -" + k
 					}
+
 					_, str = commandEvt("run " + pNode + " " + param)
 				} else {
 					_, str = commandEvt("run " + pNode)
@@ -834,12 +848,9 @@ func command(cmds []string) (bool, string) {
 				port := ":80"
 				cfg := ""
 				if len(cmds) > 2 {
-					for i := 2; i < len(cmds); i++ {
-						if Index(cmds[i], "-") == 0 {
-							cfg += Substring(cmds[i], 1, -1)
-						} else {
-							port = cmds[i]
-						}
+					port = cmds[2]
+					for k, _ := range cmd.Attr {
+						cfg += k
 					}
 				}
 				if serverList[cmds[1]] == nil {
@@ -906,23 +917,9 @@ func command(cmds []string) (bool, string) {
 				if serverList[cmds[1]] == nil {
 					str = DevPrintln(335, lang["不存在服务"], cmds[1])
 				} else {
-					if len(cmds) > 2 {
-						//release a0 -l 代表只发布到当前目录下
-						settings := ""
-						path := ""
-						for i := 2; i < len(cmds); i++ {
-							if Index(cmds[i], "-") == 0 {
-								settings += Substring(cmds[i], 1, -1)
-							} else {
-								path = cmds[i]
-							}
-						}
-						serverList[cmds[1]].Release(path, settings)
-						str = DevPrintln(8, lang["发布完成"])
-					} else {
-						serverList[cmds[1]].Release("", "")
-						str = DevPrintln(8, lang["发布完成"])
-					}
+					//release a0 -l 代表只发布到当前目录下
+					serverList[cmds[1]].Release(cmd)
+					str = DevPrintln(8, lang["发布完成"])
 				}
 			} else {
 				str = DevPrintln(8, lang["release"])
@@ -1118,7 +1115,7 @@ func command(cmds []string) (bool, string) {
 					t := cmds[1]
 					cmds[1] = cmds[0]
 					cmds[0] = t
-					return command(cmds)
+					return command(cmd)
 				} else {
 
 				}

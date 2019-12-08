@@ -94,6 +94,7 @@
 
 
   <script>
+	import vue from @root/js/vue.min.js;
 	import @root/js/jquery.min.js;
 	var _self = $(dom);
 	
@@ -207,7 +208,7 @@
 	}
 	
 	private function selectedLine(e){
-		var p = e.layerY;
+		var p = e.offsetY;
 		var ls = $(#num).find(">div");
 		ls.removeClass("selected");
 		ls.each(function(){
@@ -220,7 +221,7 @@
 	
 	
 	private function followLine(e){
-		var p = e.layerY;
+		var p = e.offsetY;
 		var ls = $(#num).find(">div");
 		ls.removeClass("overd");
 		ls.each(function(){

@@ -464,9 +464,9 @@ var __FORMAT__ = function(__DATA__,__APPDOMAIN__,module){
 				case 'I' ://import
 					if(v.value.charAt(0) == "P"){//Package 引入外部包
 						var isImport = false;
-            var md5 = v.value.substr(1,32)
+						var md5 = v.value.substr(1,32)
 						var importStr = v.value.substr(33).trim();
-            console.log('i',importStr)
+						console.log('i',importStr)
 						for(var n = 0;n<__PACKAGE_LIST__.length;n++){
 							if(__PACKAGE_LIST__[n].md5 == md5){
 								isImport = true;
@@ -474,17 +474,18 @@ var __FORMAT__ = function(__DATA__,__APPDOMAIN__,module){
 							}
 						}
 						if(!isImport){
-              console.log(importStr)
+							console.log(importStr)
 							__PACKAGE_LIST__.push({url:importStr,type:"P",md5:md5});
 						}
 					}else if(v.value.charAt(0) == "S"){
 						_MODULE_CONTENT_LIST_[__APPDOMAIN__][v.module] = eval("(" + v.value.substr(1) + ")");
 					}else if(v.value.charAt(0) == "U"){//主要支持CommandJS
 						var isImport = false;
+						var md5 = v.value.substr(1,32)
 						var tmp = v.value.substr(1).split("\x02");
 						var importStr = tmp[1].trim();
 						for(var n = 0;n<__PACKAGE_LIST__.length;n++){
-							if(__PACKAGE_LIST__[n].url == importStr){
+							if(__PACKAGE_LIST__[n].md5 == md5){
 								isImport = true;
 								break;
 							}
@@ -669,7 +670,7 @@ function __InitModule__(__APPDOMAIN__,moduleName,uuid,value,target,append){
 			var lst = m.runLst;
 			var p = null;
 			var pn = null;
-      var ct = null;//context
+			var ct = null;//context
 			for(var i = 0;i<lst.length;i++){
 				p = lst[i];
 				pn = p.name.replace(/[\b]/g,uuid);
@@ -679,9 +680,9 @@ function __InitModule__(__APPDOMAIN__,moduleName,uuid,value,target,append){
 					case "P":
 						param.push(pn,p.value.replace(/[\b]/g,uuid));
 					break;
-          case "X"://Context value
-            ct = {value:p.value};
-            break;
+					case "X"://Context value
+						ct = {value:p.value};
+					break;
 					case "S"://执行基本函数
 						if(method[p.value]){
 							method[p.value](pn,uuid,__APPDOMAIN__,ct);
@@ -720,7 +721,11 @@ function __InitModule__(__APPDOMAIN__,moduleName,uuid,value,target,append){
 			//初始化列表
 			__initLst__(uuid);
 			return __OBJECT__[uuid];
+		}else{
+			____ERROR____("module: " + moduleName + " isn't exist.");
 		}
+	}else{
+		____ERROR____("app domain: " + __APPDOMAIN__ + " isn't exist.");
 	}
 	return null;
 }

@@ -64,13 +64,14 @@ func WalkFiles(src string, dest string, unCopy string) {
 			if fi.IsDir() {
 				if CharAt(fi.Name(), 0) != "." { //只复制开头不为点的数据
 					os.MkdirAll(dPath, 0777) //建立文件目录
-					//WalkFiles(f, dPath, unCopy) //不用递归遍历，filepath.Wal支持逐级遍历
 				} else {
 					return filepath.SkipDir
 				}
 			} else {
 				//fmt.Println("copy", f, dPath)
-				CopyFile(dPath, f)
+				if _, e := CopyFile(dPath, f); e != nil {
+					fmt.Println(e)
+				}
 			}
 
 			return nil
@@ -82,14 +83,15 @@ func WalkFiles(src string, dest string, unCopy string) {
  * 复制文件
  */
 func CopyFile(dstName, srcName string) (written int64, err error) {
+	//fmt.Println("CopyFile", dstName, srcName)
 	src, err := os.Open(srcName)
 	if err != nil {
-		return
+		return 0, err
 	}
 	defer src.Close()
 	dst, err := os.OpenFile(dstName, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
 	if err != nil {
-		return
+		return 0, err
 	}
 	defer dst.Close()
 	return io.Copy(dst, src)

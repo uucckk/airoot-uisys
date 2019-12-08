@@ -3,6 +3,7 @@ package str
 
 import (
 	"bytes"
+	"jus/tool"
 	"strings"
 )
 
@@ -97,27 +98,6 @@ func LastPath(s string) string {
 		}
 	}
 	return s
-}
-
-func FormatSimplePath(s string) string {
-	r := []rune(s)
-	sb := make([]rune, 0)
-	f := false
-	var ch rune
-	for i := 0; i < len(r); i++ {
-		ch = r[i]
-		if ch == '\\' || ch == '/' {
-			if f == false {
-				f = true
-			} else {
-				continue
-			}
-		} else {
-			f = false
-		}
-		sb = append(sb, ch)
-	}
-	return string(sb)
 }
 
 /**
@@ -339,8 +319,8 @@ func ToJUSString(value string) string {
 }
 
 type Cmd struct {
-	Cmds []string          //命令list
-	Attr map[string]string //命令挂载属性
+	Cmds []string              //命令list
+	Attr map[string]*tool.Attr //命令挂载属性
 }
 
 /**
@@ -350,14 +330,14 @@ func FmtCmdAdv(s string) *Cmd {
 	cmd := &Cmd{}
 	l := FmtCmd(s)
 	c := make([]string, 0, 3)
-	m := make(map[string]string)
+	m := make(map[string]*tool.Attr)
 	f := false
 	var k, v string
 	for _, t := range l {
 		if t[0] == '-' {
 			if f {
 				v = ""
-				m[k] = v
+				m[k] = &tool.Attr{k, v}
 			}
 			f = true
 			k = t[1:]
@@ -365,11 +345,14 @@ func FmtCmdAdv(s string) *Cmd {
 			if f {
 				v = t
 				f = false
-				m[k] = v
+				m[k] = &tool.Attr{k, v}
 			} else {
 				c = append(c, t)
 			}
 		}
+	}
+	if f {
+		m[k] = &tool.Attr{k, ""}
 	}
 	cmd.Cmds = c
 	cmd.Attr = m

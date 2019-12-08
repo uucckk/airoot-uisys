@@ -1250,17 +1250,20 @@ func (u *UIServer) GetAttrLike(attr string) [][]string {
  * path 发布路径
  * settings	设置参数
  */
-func (u *UIServer) Release(path string, settings string) {
+func (u *UIServer) Release(cmd *Cmd) {
+	path := ""
+	if len(cmd.Cmds) > 2 {
+		path = cmd.Cmds[2]
+	}
 	if path == "" {
 		path = "./"
-		settings = "m"
-		fmt.Println("local project distribute") //本地发布
 	}
+
 	if CharAt(path, 0) == "." { //说明是相对路径
 		path = filepath.Clean(u.RootPath + "/" + path)
 	}
-	if filepath.Clean(u.RootPath) != filepath.Clean(path) || Index(settings, "m") != -1 {
-		u.rel(path, settings)
+	if filepath.Clean(u.RootPath) != filepath.Clean(path) || cmd.Attr["m"] != nil {
+		u.rel(path, cmd)
 	} else {
 		fmt.Println("destination", path, "is exist uisys project.")
 	}
@@ -1269,50 +1272,67 @@ func (u *UIServer) Release(path string, settings string) {
 /**
  * 发布实际执行函数
  * v 发布路径
- * s	设置参数
+ * s 设置参数
  */
-func (u *UIServer) rel(v string, s string) {
+func (u *UIServer) rel(v string, s *Cmd) {
 	if v != "" {
 		os.MkdirAll(v, 0777)
 	}
-	if Index(s, "m") == -1 { //如果不为-1，代表只发布模块
+	if s.Attr["m"] == nil { //如果不为-1，代表只发布模块
 		fmt.Println("copy static file to [" + v + "].")
 		Copy(u.RootPath, v, ".ui;.es")
-		fmt.Println("complete.")
+		fmt.Println("copy completed.")
 	} else {
 		fmt.Println("== ONLY MOUDLE ==")
 	}
 	isPub := false
-	if Index(s, "d") == -1 { //如果不为-1，代表发布模块API可以全局调试
+	if s.Attr["d"] != nil { //如果不为-1，代表发布模块API可以全局调试
 		isPub = true
-		fmt.Println("== USE DEBUG==")
+		fmt.Println("== USE DEBUG ==")
 	}
-	//生成module.js
-	f, e := os.Create(v + "/uisys.js")
-	defer f.Close()
-	if e == nil {
-		tpl, fe := GetCode("lib/core/parser/module.tpl")
-		if fe != nil {
-			fmt.Errorf("load module.tpl error.")
+
+	if s.Attr["l"] == nil { //导出工程
+		//生成module.js
+		f, e := os.Create(v + "/uisys.js")
+		defer f.Close()
+		if e == nil {
+			tpl, fe := GetCode("lib/core/parser/module.tpl")
+			if fe != nil {
+				fmt.Errorf("load module.tpl error.")
+			}
+			inner, ierr := GetCode("lib/core/parser/module_base.tpl")
+			if ierr != nil {
+				fmt.Errorf("load module_base.tpl error.")
+			}
+			tpl = Replace(tpl, "{@base}", inner)
+			inner, ierr = GetCode("lib/core/parser/module_manager.tpl")
+			if ierr != nil {
+				fmt.Errorf("load module_manager.tpl error.")
+			}
+			tpl = Replace(tpl, "{@manager}", inner)
+			f.Write([]byte(tpl))
 		}
-		inner, ierr := GetCode("lib/core/parser/module_base.tpl")
-		if ierr != nil {
-			fmt.Errorf("load module_base.tpl error.")
-		}
-		tpl = Replace(tpl, "{@base}", inner)
-		inner, ierr = GetCode("lib/core/parser/module_manager.tpl")
-		if ierr != nil {
-			fmt.Errorf("load module_manager.tpl error.")
-		}
-		tpl = Replace(tpl, "{@manager}", inner)
-		f.Write([]byte(tpl))
+		//发布Code,先遍历
+		u.WalkFiles(filepath.Clean(u.RootPath+"/"), v, isPub)
+	} else { //只导出中心库的指定模块
+		fmt.Println("== ONLY Library ==")
+
 	}
-	//发布Code,先遍历
-	u.WalkFiles(FormatSimplePath(u.RootPath+"/"), v, isPub)
+	if s.Attr["export"] != nil { //只导出中心库的指定模块
+		arr := strings.Split(s.Attr["export"].Value, " ")
+		for _, c := range arr {
+			if c != "" {
+				c = Replace(c, ".", "/") + ".ui"
+				f := v + "/" + c
+				os.MkdirAll(filepath.Dir(f), 0777)
+				relMethod(u, v, c, isPub)
+			}
+		}
+	}
+
 }
 
 func (u *UIServer) WalkFiles(src string, dest string, isPub bool) {
-	fileType := ""
 	t := time.Now()
 	filepath.Walk(src,
 		func(f string, fi os.FileInfo, err error) error { //遍历目录
@@ -1320,38 +1340,73 @@ func (u *UIServer) WalkFiles(src string, dest string, isPub bool) {
 			if dPath == "" {
 				return nil
 			}
-			aPath := dest + "/" + dPath
+			path := dest + "/" + dPath
 			if fi.IsDir() {
-				os.MkdirAll(aPath, 0777) //建立文件目录
+				os.MkdirAll(path, 0777) //建立文件目录
 			} else {
-				fileType = Substring(aPath, LastIndex(aPath, "."), -1)
-				if fileType == ".ui" || fileType == ".es" {
-					if fileType == ".es" && Exist(Substring(aPath, 0, LastIndex(aPath, "."))+".ui") {
-						return nil
-					}
-					d, _ := os.Create(aPath[0:(len(aPath)-len(fileType))] + ".ui.html")
-					d.Write(relEvt(isPub, u, u.SysPath, u.RootPath, dPath))
-					defer d.Close()
-				}
+				relMethod(u, dest, dPath, isPub)
 			}
 			return nil
 		})
 	fmt.Println("use time:", time.Since(t))
 }
 
-//isPub 是否模块API可以调试
-func relEvt(isPub bool, server *UIServer, sysPath string, rootPath string, path string) []byte {
-	jus := &UI{SERVER: server, SYSTEM_PATH: sysPath, CLASS_PATH: sysPath + "/src/"}
-	lp := LastIndex(path, ".")
-	className := Substring(path, 0, lp)
-	fmt.Print("export:", className)
-	t1 := time.Now()
-	if jus.CreateFrom(rootPath+"/", "", nil, className) {
-		b := jus.Bytes()
-		fmt.Println(" | " + time.Since(t1).String())
-		return b
+///u 		UI服务
+///dest		发布目录
+///path		绝对地址
+///dPath	相对路径
+///fileType	文件类型
+///isPub	是否包含公开
+func relMethod(u *UIServer, dest string, path string, isPub bool) {
+	fileType := filepath.Ext(path)
+	path = Substring(path, 0, LastIndex(path, "."))
+	if fileType == ".ui" || fileType == ".es" {
+		if fileType == ".es" && Exist(path+".ui") {
+			return
+		}
+	} else {
+		return
 	}
-	return []byte("nothing.")
+	fmt.Println(">>", dest+path+".ui.html")
+	d, _ := os.Create(dest + "/" + path + ".ui.html")
+	t1 := time.Now()
+	ui := relEvt(isPub, u, path)
+	d.Write(ui.Bytes())
+	fmt.Println(" | " + time.Since(t1).String())
+	defer d.Close()
+	a := ui.GetImportScript()
+	for k, _ := range a {
+		if Index(k, "/") != 01 {
+			if p := Index(k, "\002"); p != -1 {
+				k = string(k[p+1:])
+			}
+			if Index(k, "/index.res") == 0 {
+				cd := dest + "/index.res" + k[10:]
+				cdir := filepath.Dir(cd)
+				if !Exist(cdir) {
+					os.MkdirAll(cdir, 0777)
+				}
+				CopyFile(cd, u.SysPath+"/root"+k[10:])
+			}
+		}
+	}
+	b := ui.GetRoot().SysLibDirs
+	for _, v := range b {
+		fmt.Println("<<<<<<<<<<<<", v, u.SysPath+"/src/"+v, dest+"/index.src/"+v)
+		Copy(u.SysPath+"/src/"+v, dest+"/index.src/"+v, ".ui;.es")
+	}
+}
+
+//isPub 是否模块API可以调试
+func relEvt(isPub bool, u *UIServer, className string) *UI {
+	ui := &UI{SERVER: u, SYSTEM_PATH: u.SysPath, CLASS_PATH: u.SysPath + "/src/", IsPublic: isPub}
+	lp := LastIndex(className, ".")
+	className = Substring(className, 0, lp)
+	fmt.Print("export:", className)
+	if ui.CreateFrom(u.RootPath+"/", "", nil, className) {
+		return ui
+	}
+	return nil
 }
 
 /**
@@ -1359,7 +1414,7 @@ func relEvt(isPub bool, server *UIServer, sysPath string, rootPath string, path 
  */
 func (u *UIServer) Clean() {
 	//发布Code,先遍历
-	u.WalkDelFiles(FormatSimplePath(u.RootPath + "/"))
+	u.WalkDelFiles(filepath.Clean(u.RootPath + "/"))
 }
 func (u *UIServer) WalkDelFiles(src string) {
 	t := time.Now()

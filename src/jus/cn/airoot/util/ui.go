@@ -27,17 +27,18 @@ type HTMLObject struct {
 
 //----------------------------------JUS-----------------------------------------
 type UI struct {
-	IsPublic            bool      //JS方法是否公开，默认不公开，但是如果html使用了@this关键字，则默认公开且不可改变。
-	IsTest              bool      //是否为测试模块，如果是则打开测试开关*，#，如果不是测不显示测试代码
-	IsSysLib            bool      //是否为库中组件
-	Debug               bool      //判断是否被测试
-	SERVER              *UIServer //服务器引用
-	dirPath             string    //所在目录地址
-	path                string    //记录类的文件夹路径
-	htmlPath            string    //html模块的绝对路径
-	jsPath              string    //js模块的绝对路径
-	cssPath             string    //css模块路径
-	SYSTEM_PATH         string    //系统路径
+	IsPublic            bool              //JS方法是否公开，默认不公开，但是如果html使用了@this关键字，则默认公开且不可改变。
+	IsTest              bool              //是否为测试模块，如果是则打开测试开关*，#，如果不是测不显示测试代码
+	IsSysLib            bool              //是否为库中组件
+	SysLibDirs          map[string]string //存储为库中组件的lib目录
+	Debug               bool              //判断是否被测试
+	SERVER              *UIServer         //服务器引用
+	dirPath             string            //所在目录地址
+	path                string            //记录类的文件夹路径
+	htmlPath            string            //html模块的绝对路径
+	jsPath              string            //js模块的绝对路径
+	cssPath             string            //css模块路径
+	SYSTEM_PATH         string            //系统路径
 	CLASS_PATH          string
 	root                string //工程路径
 	parent              *UI
@@ -172,7 +173,6 @@ func (j *UI) CreateFrom(root string, domain string, node *HTML, className string
 				j.cssPath = JUSExist(j.path + ".css")
 				j.IsSysLib = true
 			}
-			//fmt.Println(j.htmlPath, j.jsPath)
 		}
 
 	}
@@ -202,15 +202,32 @@ func (j *UI) CreateFrom(root string, domain string, node *HTML, className string
 	return true
 }
 
+///获取此类需要导入的头文件
+func (j *UI) GetImportScript() map[string]*Attr {
+	return j.GetRoot().scriptElement
+}
+
 func (j *UI) PushImportScript(value *Attr) {
 	if j.GetRoot().scriptElement == nil {
 		j.GetRoot().scriptElement = make(map[string]*Attr, 10)
 	}
 	if j.GetRoot().scriptElement[value.Value] == nil {
+		j.GetRoot().scriptElement[value.Value] = value
 		pos := Index(value.Value, "\002")
 		if pos != -1 {
 			if Index(value.Value, "/") != -1 || Index(value.Value, "\\") != -1 { //for example import vue from "lib/js/vue.min.js";
-				j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, &ScriptElement{"I", value.Name, "U", value.Value}) //代表UMD规范的包导入
+				tp := string(value.Value[pos+1:])
+				if Index(tp, "/index.res") == 0 {
+					tp = j.SYSTEM_PATH + "/root" + tp[10:]
+				} else {
+					tp = j.root + "/" + tp
+					//value.Value = Substring(tp, StringLen(j.root), -1)
+				}
+				if Exist(tp) {
+					tp = filepath.Clean(tp)
+					m5, _ := jus.F2md5(tp)
+					j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, &ScriptElement{"I", value.Name, "U", m5 + value.Value}) //代表UMD规范的包导入
+				}
 				return
 			} else { //for example: import dialog from "jus.Dialog";
 				value.Value = Substring(value.Value, pos+1, -1)
@@ -235,7 +252,6 @@ func (j *UI) PushImportScript(value *Attr) {
 			return
 		}
 
-		j.GetRoot().scriptElement[value.Value] = value
 		ft := &UI{SERVER: j.SERVER, IsPublic: j.SERVER.IsPublic, SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH}
 		if ft.CreateFromParent(j.root, "", nil, strings.TrimSpace(value.Value), j) { //for example: import jus.Dialog;
 			ft.IsImport = value.Value
@@ -251,6 +267,13 @@ func (j *UI) PushImportScript(value *Attr) {
 			j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, &ScriptElement{"O", value.Value, "", value.Value + " isn't Exist."})
 		}
 	}
+}
+
+func (j *UI) PushSysLibDirs(className, path string) {
+	if j.SysLibDirs == nil {
+		j.SysLibDirs = make(map[string]string)
+	}
+	j.SysLibDirs[className] = path
 }
 
 /**
@@ -1079,7 +1102,7 @@ func (j *UI) initObj(html *HTML) {
 				p.SetAttr(attr.Name, ScriptInitD(strings.Replace(p.GetAttr(attr.Name), "@this", j.domain, -1), j.domain))
 				j.IsPublic = true
 			}
-			p.SetAttr(attr.Name, ScriptInitD(strings.Replace(p.GetAttr(attr.Name), "@lib", "./"+j.relativePath+".lib", -1), j.domain))
+			p.SetAttr(attr.Name, ScriptInitD(strings.Replace(p.GetAttr(attr.Name), "@lib", IfStr(j.IsSysLib, "index.src/", "./")+j.relativePath+".lib", -1), j.domain))
 		}
 		j.initObj(p)
 	}
@@ -1451,7 +1474,6 @@ func (j *UI) getName() string {
  * @param value		内容
  */
 func (j *UI) ToFormatLine(cls string, moduleName string, value string, data *bytes.Buffer) string {
-
 	md5Ctx := md5.New()
 	md5Ctx.Write([]byte(value))
 	cipherStr := md5Ctx.Sum(nil)

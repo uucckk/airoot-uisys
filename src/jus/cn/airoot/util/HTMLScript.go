@@ -316,8 +316,11 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _global string, _this string, _
 						f.Value = "/index.res"
 					} else if f.Value == "@lib" {
 						t.Value = "\"" + IfStr(s.ui.IsSysLib, "index.src/", "") + "/" + s.ui.relativePath + ".lib/\""
-					}
+						if s.ui.IsSysLib {
+							s.ui.GetRoot().PushSysLibDirs(s.ui.className, s.ui.relativePath+".lib")
+						}
 
+					}
 				}
 				tmp.WriteString(f.Value)
 				at = p - 1
@@ -397,6 +400,9 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _global string, _this string, _
 			t.Value = _this
 		} else if t.IsKeyWord && "@lib" == t.Value {
 			t.Value = "\"" + IfStr(s.ui.IsSysLib, "index.src/", "") + "/" + s.ui.relativePath + ".lib/\""
+			if s.ui.IsSysLib {
+				s.ui.GetRoot().PushSysLibDirs(s.ui.className, s.ui.relativePath+".lib")
+			}
 		} else if t.IsKeyWord && "@root" == t.Value {
 			f.Value = "/index.res/"
 		} else if t.Value[0] == '@' {
