@@ -68,7 +68,6 @@ class DOMBind{
 	 * 数据提供
 	 */
 	public function set dataContext(value:Object){
-		alert(value.\$ID);
 		if(typeof value == "object"){
 			if(_pdata != value){
 				_pdata = value;

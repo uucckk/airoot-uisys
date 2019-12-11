@@ -10,6 +10,10 @@ var __WINDOW__ = {};//全局静态函数总和
 
 var __MODULE_LIST__ = {};
 var __MODULE_COMMAND_LIST__ = {};//模块命令列表
+
+//styleSheets
+var __MODULE_COUNTER__ = [];//模块计数器，用于垃圾回收统计
+var __MODULE_STYLE__ = {};//MODULE 统一样式
 var __MODULE_INIT__ = {};
 var __MODULE_METHOD__ = {};//模块方法
 var __MODULE_EXTEND__ = {};//模块扩展方法
@@ -17,8 +21,7 @@ var __MODULE_RUNLIST__ = {};//模块初始化项目
 //AMD
 var __AMD_LIST__ = {};
 
-//styleSheets
-var __MODULE_STYLE__ = {};//MODULE 统一样式
+
 //
 var _MODULE_CONTENT_LIST_ = {};
 var _MODULE_CONTENT_LIST_ATTR_ = {};
@@ -105,160 +108,6 @@ function Event(type,value){
 }
 
 
-
-//唯一性句柄集合
-var __MODULE_HANDLE__ = {};
-//添加句柄
-function AddHandle(objName,listener){
-	if(!listener){
-		alert("AddHandle: " + "please tell me handle listener");
-		return;
-	}
-	if(__MODULE_HANDLE__[objName] == true){
-		return;
-	}
-	
-	if(__MODULE_HANDLE__[objName] && __MODULE_HANDLE__[objName].dom.parent().length != 0){
-		if(listener){
-			listener({target:__MODULE_HANDLE__[objName]});
-		}
-	}else{
-		if(listener){
-			var t = listener({target:null})
-			if(t.listener){
-				__MODULE_HANDLE__[objName] = true;
-				t.listener(function(e){
-					__MODULE_HANDLE__[objName] = e;
-				});
-			}else{
-				__MODULE_HANDLE__[objName] = t;
-			}
-			
-		}
-	}
-}
-//弹出框管理
-var PopManager = new function(){
-	var __ZINDEX_CONTENT__ = [];
-	//添加弹出框
-	this.addPopUp = function(child,content){//弹出类，弹出容器
-		if(!content){
-			content = document.body;
-		}
-		if(child.dom){
-			$(child.dom).bind("mousedown",function(){
-				PopManager.bringToFront(child);
-			});
-			content.appendChild(child);
-			var list = getList(content);
-			if(list.length>0){
-				for(var i in list){
-					if(list[i].child == child){
-						return;
-					}
-				}
-				__ZINDEX_CONTENT__.push({content:content,child:child,index:999});
-			}else{
-				__ZINDEX_CONTENT__.push({content:content,child:child,index:999});
-			}
-			this.bringToFront(child);
-		}
-		
-	}
-	this.bringToFront = function(child){//显示在最前
-		//找到自己所在对象
-		var c = getChildData(child);
-		//找到所有同级元素
-		if(c){
-			var pta = getList(c.content);
-			//查看有没有999级别的
-			var p = null;
-			var f = false;
-			for(var i in __ZINDEX_CONTENT__){
-				p = __ZINDEX_CONTENT__[i];
-				if(p != c && p.index == 999){
-					f = true;
-					break;
-				}
-			}
-			if(f){
-				//如果有999则降低所有级别
-				for(var i in __ZINDEX_CONTENT__){
-					__ZINDEX_CONTENT__[i].index --;
-				}
-			}
-			c.index = 999;
-			render();
-		}
-		
-	}
-	
-	this.removePopUp = function(child){//删除窗口
-		var p = null;
-		for(var i in __ZINDEX_CONTENT__){
-			p = __ZINDEX_CONTENT__[i];
-			if(p.child == child && p.child.dom){
-				__ZINDEX_CONTENT__.splice(i,1);
-				var qt = p.child.dom;
-				if(qt.attr("onRemove")){
-					var clearFunc = "";
-					qt.find("div[onRemove]").each(function(){
-						clearFunc += this.getAttribute("onRemove") + ";\r\n";
-					});
-					if(clearFunc != ""){
-						(new Function(clearFunc))();
-					}
-				}
-				p.child.dom.remove();
-				break;
-			}
-		}
-	}
-	
-	function getList(content){//获取容器列表
-		var list = [];
-		for(var i in __ZINDEX_CONTENT__){
-			if(__ZINDEX_CONTENT__[i].content == content){
-				list.push(__ZINDEX_CONTENT__[i]);
-			}
-		}
-		return list;	
-	}
-	function getChildData(child){
-		var p = null;
-		for(var i in __ZINDEX_CONTENT__){
-			p = __ZINDEX_CONTENT__[i];
-			if(p.child == child){
-				return p;
-			}
-		}
-		return null;
-	}
-	function render(){//渲染图层
-		var p = null;
-		var arr = [];
-		for(var i in __ZINDEX_CONTENT__){
-			p = __ZINDEX_CONTENT__[i];
-			if(p.child.dom){
-				if($(p.child.dom).parent().length != 0){
-					$(p.child.dom).css({"position":"absolute","z-index":p.index});
-					arr.push(p);
-				}else{
-					$(p.child.dom).unbind();
-				}
-				
-			}else{
-				p.child.css({"position":"absolute","z-index":p.index});
-			}
-		}
-		__ZINDEX_CONTENT__.length = 0;
-		__ZINDEX_CONTENT__ = arr;
-	}
-	
-}
-
-
-
 /**
  * 添加静态函数
  * @param className
@@ -290,7 +139,6 @@ function __ADD_STATIC_METHOD__(className,attrName,attrValue,domain){
 		}
 	}
 }
-
 function __EXTEND__(d,b){
 	for (var p in b){
 		if (!b.hasOwnProperty(p)){
@@ -307,8 +155,6 @@ function __EXTEND__(d,b){
 		}
 	}
 }
-
-
 function FormatRun(value){
 	var type = value.charAt(0);
 	value = value.substr(2);
@@ -339,7 +185,6 @@ function __LOAD_PACKAGE__(func){
 	}else{
 		func();
 	}
-	
 }
 /**
  * 装载内容
@@ -406,7 +251,6 @@ function __PACKAGE__(pkg,func){
 	__PACKAGE_COUNT__ ++;
 	ul.load(req);
 }
-
 /**
  * 将数据分析
  * @return 返回模块数据列表
@@ -415,7 +259,7 @@ var __FORMAT__ = function(__DATA__,__APPDOMAIN__,module){
 	if(!_MODULE_CONTENT_LIST_[__APPDOMAIN__]){
 		_MODULE_CONTENT_LIST_[__APPDOMAIN__] = {};
 	}
-	var list = __DATA__.split("\x01");
+	var list = __DATA__.indexOf("<!DOCTYPE html>") == 0 ? __DATA__.replace(/<\/script><script name='_data' type='text\/plain'>/g,"").split("\x01") :  __DATA__.split("\x01");
 	var p = null;
 	var t = null;
 	var v = null;
@@ -503,6 +347,7 @@ var __FORMAT__ = function(__DATA__,__APPDOMAIN__,module){
 						__MODULE_METHOD__[__APPDOMAIN__][v.module] = {};
 					}
 					__MODULE_METHOD__[__APPDOMAIN__][v.module] = eval(v.value);
+					__MODULE_COUNTER__.push({module:module,dep:v.module,type:"M",domain:__APPDOMAIN__});
 				break;
 				case "E"://扩展类
 					if(!__MODULE_EXTEND__[__APPDOMAIN__]){
@@ -521,9 +366,15 @@ var __FORMAT__ = function(__DATA__,__APPDOMAIN__,module){
 						__ADD_STATIC_METHOD__(v.module,d.name,__POS_VALUE__,__APPDOMAIN__);
 					})();
 				break;
+				case "T" ://头文件
+					var head = document.createElement("div");
+					head.innerText = v.value;
+					document.head.appendChild(head);
+					console.log("head",v.value);
+				break;
 				case "O" ://Error
 					____ERROR____(v.value.substring(1));
-          throw new Error(v.value.substring(1));
+					throw new Error(v.value.substring(1));
 				break;
 					
 			}
@@ -537,9 +388,7 @@ var __FORMAT__ = function(__DATA__,__APPDOMAIN__,module){
 var __FORMAT_VALUE__ = function(value){
 	var p = value.indexOf(' ');
 	return {name:value.substring(0,p),value:value.substring(p+1)};
-}
-
-/**
+}/**
  * 读取数据
  */
 var __READ_DATA__ = function(value){
@@ -551,8 +400,6 @@ var __READ_DATA__ = function(value){
 	return {uuid:uuid,module:module,value:value};
 	
 }
-
-
 /**
  * 将字符串改为CSS
  */
@@ -670,7 +517,7 @@ function __InitModule__(__APPDOMAIN__,moduleName,uuid,value,target,append){
 			var lst = m.runLst;
 			var p = null;
 			var pn = null;
-			var ct = null;//context
+			var ct = null;//context or 模块
 			for(var i = 0;i<lst.length;i++){
 				p = lst[i];
 				pn = p.name.replace(/[\b]/g,uuid);
@@ -682,6 +529,13 @@ function __InitModule__(__APPDOMAIN__,moduleName,uuid,value,target,append){
 					break;
 					case "X"://Context value
 						ct = {value:p.value};
+					break;
+					case "N"://导入模块
+						if(ct){
+							ct.module = getModule(p.value,__APPDOMAIN__);
+						}else{
+							ct = {module:getModule(p.value,__APPDOMAIN__)};
+						}
 					break;
 					case "S"://执行基本函数
 						if(method[p.value]){
@@ -708,6 +562,9 @@ function __InitModule__(__APPDOMAIN__,moduleName,uuid,value,target,append){
 							_MODULE_INNER_[uuid] = [];
 						}
 						_MODULE_INNER_[uuid].push(eval(p.value.replace(/[\b]/g,uuid))());
+					break;
+					case "Q":
+						ct = null;
 					break;
 				}
 			}
@@ -765,7 +622,6 @@ HTMLElement.prototype.remove = HTMLElement.prototype.removeChild = function(obj)
 
 //设置HTMLElement
 var ____D = HTMLElement.prototype.appendChild;
-//var ____I = HTMLElement.prototype.innerHTML;
 HTMLElement.prototype.append = HTMLElement.prototype.appendChild = function(obj){
 	if(obj instanceof Node){
 		return ____D.call(this,obj);
@@ -813,17 +669,6 @@ HTMLElement.prototype.addModule = function(){//module,value,listener,appDomain
 	}
 	return UI.addModule.apply(UI,p);
 };
-
-/*
-Object.defineProperty(HTMLElement.prototype,"innerHTML",{
-	set:function(value){
-		____I.call(this,value);
-	},
-	get:function(){
-		return _value;
-	}
-,enumerable:true});
-*/
 
 UI.loadClass = function(className,listener,appDomain){
 	var value,listener,appDomain;
@@ -888,6 +733,7 @@ UI.loadModule = function(target,module){
 		var data = e.target.data;
 		var uuid = __UUID__();
 		__FORMAT__(data,appDomain,module);
+		Info();
 		__LOAD_PACKAGE__(function(){
 			//执行函数
 			var w =  __InitModule__(appDomain,module,uuid,value,target);
@@ -923,16 +769,16 @@ UI.decode = function(target,module,code){
 		}
 	}
 	appDomain = appDomain || "local";
-		var data = code;
-		var uuid = __UUID__();
-		__FORMAT__(data,appDomain,module);
-		__LOAD_PACKAGE__(function(){
-			//执行函数
-			var w =  __InitModule__(appDomain,module,uuid,value,target);
-			if(listener){	
-				listener(w);
-			}
-		});
+	var data = code;
+	var uuid = __UUID__();
+	__FORMAT__(data,appDomain,module);
+	__LOAD_PACKAGE__(function(){
+		//执行函数
+		var w =  __InitModule__(appDomain,module,uuid,value,target);
+		if(listener){	
+			listener(w);
+		}
+	});
 }
 
 UI.addModule = function(target,module){
@@ -1012,7 +858,7 @@ var getModule = UI.getModule = function(module,__APPDOMAIN__){
 	__APPDOMAIN__ = __APPDOMAIN__ || "local";
 	if(__HAV_MODULE__(module,__APPDOMAIN__)){
 		return function(){
-			return __InitModule__(__APPDOMAIN__,module,__UUID__(),arguments,__OBJECT__,true);
+			return __InitModule__(__APPDOMAIN__,module,__UUID__(),arguments,window,true);
 		}
 	}else{
 		var mod = _MODULE_CONTENT_LIST_[__APPDOMAIN__][module];
@@ -1178,6 +1024,7 @@ function gcEvt(){
 				if(window.__DEBUG__ && console){
 					console.log("remove model id:" + name);
 				}
+				gcLibEvt();
 				continue;
 			}
 			obj._DELAY_TIME_ = new Date().getTime();
@@ -1185,9 +1032,49 @@ function gcEvt(){
 		}
 	}
 	gcDefer();
+	
 	clearTimeout(__CLEAR_ID__);
 	__CLEAR_ID__ = setTimeout(__CLEAR_FUNC__,5000);
 }
+
+function gcLibEvt(){
+	var c = null;
+	var r = null;
+	for(var l in __MODULE_RUNLIST__){
+		//搜索指定域
+		f:for(var c in __MODULE_RUNLIST__[l]){//域名内的名字
+			for(var j in __MODULE_LIST__){
+				r = __MODULE_LIST__[j];
+				console.log(r);
+				if(c == r.module){//说明存在引用
+					continue f;
+				}
+			}
+			delete __MODULE_RUNLIST__[l][c];
+			//说明已经消失
+			for(var k = __MODULE_COUNTER__.length - 1;k>=0;k--){
+				if(__MODULE_COUNTER__[k].module == c){
+					delete __MODULE_COUNTER__.splice(k,1);
+				}
+			}
+		}
+	}
+	
+	//删除没有关联的库
+	for(var l in __MODULE_METHOD__){
+		//搜索指定域
+		console.log("D",l);
+		f:for(var c in __MODULE_METHOD__[l]){//域名内的名字
+			for(var i in __MODULE_COUNTER__){
+				if(__MODULE_COUNTER__[i].module == c){
+					continue f;
+				}
+			}
+			delete __MODULE_METHOD__[l][c];
+		}
+	}
+}
+
 var __CLEAR_ID__ = -1;
 var __CLEAR_FUNC__ = function(e){
 	if(window.requestAnimationFrame){
@@ -1199,7 +1086,16 @@ var __CLEAR_FUNC__ = function(e){
 }
 __CLEAR_ID__ = setTimeout(__CLEAR_FUNC__,5000);
 window.UI = UI;
-window.PopManager = PopManager;
 window.Eval = function(value){
 	console.log(eval(value));
+}
+
+function Info(){
+	console.log("__MODULE_STYLE__",__MODULE_STYLE__);//MODULE 统一样式
+	console.log("__MODULE_INIT__",__MODULE_INIT__);
+	console.log("__MODULE_LIST__",__MODULE_LIST__);
+	console.log("__MODULE_METHOD__",__MODULE_METHOD__);//模块方法
+	console.log("__MODULE_EXTEND__",__MODULE_EXTEND__);//模块扩展方法
+	console.log("__MODULE_RUNLIST__",__MODULE_RUNLIST__);//模块初始化项目
+	console.log("__MODULE_COUNTER__",__MODULE_COUNTER__);//
 }

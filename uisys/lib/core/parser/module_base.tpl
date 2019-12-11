@@ -1,12 +1,7 @@
 "use strict";
-
-
 String.prototype.trim=function(){
 	return this.replace(/(^\s*)|(\s*$)/g, "");
 }
-
-
-
 function trace(){
 	var value = "";
 	var arr = null;

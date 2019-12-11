@@ -51,6 +51,7 @@ type UI struct {
 	contentTo           string  //内容信息变量添加到
 	paramValue          *Attr
 	innerValue          string //内部代码转string
+	innerModule         string //内部模块
 	html                *HTML
 	extendsScriptBuffer string
 	scriptBuffer        bytes.Buffer
@@ -251,8 +252,11 @@ func (j *UI) PushImportScript(value *Attr) {
 			}
 			return
 		}
-
-		ft := &UI{SERVER: j.SERVER, IsPublic: j.SERVER.IsPublic, SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH}
+		pub := false
+		if j.SERVER != nil {
+			pub = j.SERVER.IsPublic
+		}
+		ft := &UI{SERVER: j.SERVER, IsPublic: pub, SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH}
 		if ft.CreateFromParent(j.root, "", nil, strings.TrimSpace(value.Value), j) { //for example: import jus.Dialog;
 			ft.IsImport = value.Value
 			if ft.IsScript() {
@@ -525,6 +529,31 @@ func (j *UI) overHTML(node []*HTML) {
 		}
 	}
 
+	pList = j.html.GetElementsByTagName("@component")
+	cp := ""
+	if len(pList) > 0 {
+		if child.IsEmpty() { //文字
+			j.clearMark(pList[0].Child())
+			cp = ListToHTMLString(pList[0].Child())
+
+		} else {
+			j.clearMark(child.Child())
+			cp = ListToHTMLString(child.Child())
+		}
+
+		md5Ctx := md5.New()
+		md5Ctx.Write([]byte(cp))
+		cipherStr := md5Ctx.Sum(nil)
+		bs := hex.EncodeToString(cipherStr)
+		ft := &UI{SERVER: j.SERVER, SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH}
+		ft.CreateFromString(j.root, "", nil, cp, bs, nil)
+		j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, &ScriptElement{"I", bs, "H", ft.ToFormatString()})
+		j.innerModule = bs
+		for _, h := range pList {
+			h.Remove()
+		}
+	}
+
 } //overHTML
 
 func (j *UI) clearMark(child []*HTML) []*HTML {
@@ -603,7 +632,11 @@ func (j *UI) scanHTML(child []*HTML) {
 			if len(arr) > 1 {
 				tagName = arr[1]
 			}
-			var tFunc *UI = &UI{SERVER: j.SERVER, IsPublic: j.SERVER.IsPublic, SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH, IsImport: j.IsImport, Debug: j.Debug}
+			pub := false
+			if j.SERVER != nil {
+				pub = j.SERVER.IsPublic
+			}
+			var tFunc *UI = &UI{SERVER: j.SERVER, IsPublic: pub, SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH, IsImport: j.IsImport, Debug: j.Debug}
 			if tFunc.CreateFromParent(j.root, p.GetAttr("id"), p, tagName, j) {
 				if tFunc.IsScript() {
 					tFunc.SetConstructor(&Attr{tagName, p.GetConstructerParameter()}).setExtend(p.GetAttr("id") == j.domain)
@@ -1181,7 +1214,11 @@ func (j *UI) ReadHTML() *HTML {
 							v2.SetAttr("id", v2.GetAttr("domain")+v2.GetAttr("id"))
 						}
 					}
-					var tFunc *UI = &UI{SERVER: j.SERVER, IsPublic: j.SERVER.IsPublic, SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH}
+					pub := false
+					if j.SERVER != nil {
+						pub = j.SERVER.IsPublic
+					}
+					var tFunc *UI = &UI{SERVER: j.SERVER, IsPublic: pub, SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH}
 					j.idMap[v2.GetAttr("src_id")] = &HTMLObject{Name: v2.GetAttr("id"), HTMLObjectType: 1}
 					if tFunc.CreateFromParent(j.root, v2.GetAttr("id"), v2, v2.TagName(), j) {
 						if tFunc.IsScript() {
@@ -1339,10 +1376,6 @@ func (j *UI) ReadHTML() *HTML {
 		sb.WriteString("</css>")
 		cssHTML.ReadFromString(sb.String())
 		j.html.Insert(cssHTML, 0)
-	}
-	if j.headBuffer.Len() > 0 {
-		sb.Reset()
-		j.ToFormatLine("T", j.className, j.headBuffer.String(), sb) //便是Head
 	}
 
 	if len(j.CommandCode) > 0 {
@@ -1518,12 +1551,8 @@ func (j *UI) ToFormatBytes() []byte {
 	result := j.ReadHTML()
 	stls := result.GetElementsByTagName("css") //获取公共css属性
 	json := bytes.NewBufferString("\x01")
-	if j.pub != "" {
-		head := result.GetElementsByTagName("head") //获取Head属性
-		for _, v := range head {
-			json.Write(ListToHTMLStringBytes(v.Child()))
-			v.Remove()
-		}
+	if j.pub != "" && j.headBuffer.Len() > 0 {
+		j.ToFormatLine("T", j.className, j.headBuffer.String(), json)
 	}
 	for _, v := range stls {
 		json.WriteString(ListToHTMLString(v.Child()))

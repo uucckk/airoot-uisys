@@ -57,7 +57,7 @@ func init() {
 	zhCN["工程设置成功"] = "[%s] 的工程路径 [%s] 设置成功."
 	zhCN["工程设置失败"] = "[%s] 的工程路径 [%s] 设置失败."
 	zhCN["服务正在启动"] = "[%s] 服务在[%s]"
-	zhCN["关闭服务"] = "%s 服务关闭[%s]"
+	zhCN["关闭服务"] = "[%s] 服务关闭..."
 	zhCN["发布完成"] = "----发布完成----"
 	zhCN["清理完成"] = "----清理完成----"
 	zhCN["添加WEB用户成功"] = "添加WEB用户成功."
@@ -113,7 +113,7 @@ func init() {
 	enCH["工程设置成功"] = "The [%s] setted in [%s]."
 	enCH["工程设置失败"] = "The [%s] setted in [%s] failed."
 	enCH["服务正在启动"] = "The [%s] starting at  [%s]"
-	enCH["关闭服务"] = "%s Stop [%s]"
+	enCH["关闭服务"] = "[%s] Stopping..."
 	enCH["发布完成"] = "----Release Complete----"
 	zhCN["清理完成"] = "----Deleted Complete----"
 	enCH["添加WEB用户成功"] = "Add Web Controller [%s] Success."
@@ -870,14 +870,14 @@ func command(cmd *Cmd) (result bool, resultValue string) {
 		case "stop":
 			if len(cmds) > 1 {
 				if serverList[cmds[1]] == nil {
-					str = DevPrintln(335, lang["不存在服务"], cmds[1])
+					str = DevPrintln(4, lang["不存在服务"], cmds[1])
 				} else {
 					if serverList[cmds[1]].Close() != nil {
 						str = DevPrintln(8, lang["服务关闭失败"], cmds[1])
 					}
 				}
 				if str == "" {
-					str = DevPrintln(2, lang["关闭服务"], cmds[1], cmds[1])
+					str = DevPrintln(14, lang["关闭服务"], cmds[1])
 				}
 			} else {
 				str = DevPrintln(8, lang["stop"])

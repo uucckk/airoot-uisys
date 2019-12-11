@@ -132,6 +132,12 @@
 			}
 		});
 	}
+	
+	function load(url){
+		dom.loadModule(url,function(e){
+			trigger();
+		});
+	}
 
 	
 	/**

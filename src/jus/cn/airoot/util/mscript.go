@@ -313,7 +313,11 @@ func (m *MScript) ReadFromString(js string) {
 	tag = tag[0:0]
 	for _, p := range m.lst {
 		if p.TagType == 2 {
-			tag = appendRunes(tag, []rune(p.Value))
+			if p.Value == ":" {
+				tlst = append(tlst, p)
+			} else {
+				tag = appendRunes(tag, []rune(p.Value))
+			}
 		} else {
 			if len(tag) != 0 {
 				tlst = append(tlst, &Tag{Value: string(tag), TagType: 2})

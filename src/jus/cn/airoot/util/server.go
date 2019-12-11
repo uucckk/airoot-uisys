@@ -190,10 +190,10 @@ func (u *UIServer) Start(addr string, cfg string, printf func(string, int, strin
 		}
 
 		if err != nil {
-			printf("", 335, "status: ["+addr+"]"+err.Error()+".\r\n")
+			printf("", 4, "status: ["+addr+"] "+err.Error()+".")
 		}
 		u.Status = false
-		printf("", 335, "["+addr+"]JUS Server END.\r\n")
+		printf("", 2, "["+addr+"] UI Server END.")
 	}()
 	return ""
 }
@@ -1125,7 +1125,6 @@ func (u *UIServer) hasUrl(urlPath *url.URL, w http.ResponseWriter, req *http.Req
 	var p *urlMap = nil
 	for _, v := range u.pattern {
 		if Index(urlPath.Path, v.pattern) == 0 {
-
 			p = v
 			break
 		}
@@ -1367,7 +1366,6 @@ func relMethod(u *UIServer, dest string, path string, isPub bool) {
 	} else {
 		return
 	}
-	fmt.Println(">>", dest+path+".ui.html")
 	d, _ := os.Create(dest + "/" + path + ".ui.html")
 	t1 := time.Now()
 	ui := relEvt(isPub, u, path)
@@ -1392,7 +1390,6 @@ func relMethod(u *UIServer, dest string, path string, isPub bool) {
 	}
 	b := ui.GetRoot().SysLibDirs
 	for _, v := range b {
-		fmt.Println("<<<<<<<<<<<<", v, u.SysPath+"/src/"+v, dest+"/index.src/"+v)
 		Copy(u.SysPath+"/src/"+v, dest+"/index.src/"+v, ".ui;.es")
 	}
 }

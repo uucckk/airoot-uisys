@@ -769,7 +769,8 @@ func (s *HTMLScript) ReadFromString(script string) string {
 	if err != nil {
 		return ""
 	}
-	templ = strings.Replace(templ, "{@CLASS_NAME}", "//@ sourceURL=[UI]"+s.ui.className+"\r\n"+IfStr(s.ui.Debug, s.GetSourceHTML()+"\r\n", ""), -1)
+	templ = strings.Replace(templ, "{@CLASS_NAME}", s.ui.className, -1)
+	templ = strings.Replace(templ, "{@DESCRIPTION}", "//@ sourceURL=[UI]"+s.ui.className+"\r\n"+IfStr(s.ui.Debug, s.GetSourceHTML()+"\r\n", ""), -1)
 	templ = strings.Replace(templ, "{@GLOBAL}", IfStr(s.ui.IsPublic, "window[__NAME__] = ____;", ""), -1)
 	templ = strings.Replace(templ, "{@domain}", s.ui.domain, -1)
 	templ = strings.Replace(templ, "{@Base}", "\b", -1)
@@ -786,7 +787,13 @@ func (s *HTMLScript) ReadFromString(script string) string {
 
 	s.ui.ToFormatLine("M", s.ui.className, templ, out)
 	//加入执行列表
-	s.ui.AddRun(&RunElem{Type: "X", Name: s.ui.domain, Value: s.innerValue})
+	if s.innerValue != "" {
+		s.ui.AddRun(&RunElem{Type: "X", Name: s.ui.domain, Value: s.innerValue})
+	}
+	if s.ui.innerModule != "" {
+		s.ui.AddRun(&RunElem{Type: "N", Name: s.ui.domain, Value: s.ui.innerModule})
+	}
+
 	s.ui.AddRun(&RunElem{Type: "S", Name: s.ui.domain, Value: s.ui.className})
 
 	if s.extendScript != "" {
@@ -798,7 +805,8 @@ func (s *HTMLScript) ReadFromString(script string) string {
 		//加入执行列表
 		s.ui.AddRun(&RunElem{Type: "E", Name: s.ui.domain, Value: E})
 	}
-
+	//加入结束符号
+	s.ui.AddRun(&RunElem{Type: "Q", Name: s.ui.domain, Value: ""})
 	return out.String()
 }
 

@@ -8,6 +8,13 @@
 </div>
 <script>
 	var _self = $(dom);
+	
+	function load(url){
+		dom.loadModule(url,function(e){
+			trigger();
+		});
+	}
+	
 	public function trigger(event){
 		_self.children("div").each(function(){
 			var $this = $(this);
@@ -21,4 +28,5 @@
 		});
 		
 	}
+	
 </script>

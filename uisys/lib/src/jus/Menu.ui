@@ -58,6 +58,8 @@
 	<@value/>
 
 	<script>
+		import @root/js/jquery.min.js;
+		import @root/js/jus-xml.js;
 		var _self = $(dom);
 		var eventFlag = false;
 		var nextArr:Array = [];
@@ -68,6 +70,7 @@
 			
 
 		function init(){
+			var o = {pageX:100,pageY:100};
 			xml = new XML(context.value);
 			_self.append(initMenu(xml.child("elem"),0));
 		}
@@ -115,6 +118,7 @@
 
 		//展示出List
 		private function showList(node,level){
+			var o = {pageX:-100,pageY:-100};
 			clear({pageX:-100,pageY:-100},level);
 			var menu = $(node);
 			var obj = menu.children("ul");
