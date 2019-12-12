@@ -593,17 +593,17 @@ func (j *UI) scanHTML(child []*HTML) {
 		if p.GetAttr("isroot") != "" {
 			p.SetAttr("id", j.domain)
 		} else {
-			if p.GetAttr("id") == "" {
-				p.SetAttr("id", p.GetAttr("domain")+j.getName())
-			} else {
-				if p.GetAttr("id")[0] == '$' {
-					p.SetAttr("src_id", p.GetAttr("id")[1:])
-					p.SetAttr("id", p.GetAttr("domain")+p.GetAttr("id")[1:])
-				} else {
-					p.SetAttr("src_id", p.GetAttr("id"))
-					p.SetAttr("id", p.GetAttr("domain")+p.GetAttr("id"))
-				}
-			}
+			// if p.GetAttr("id") == "" {
+			// 	p.SetAttr("id", p.GetAttr("domain")+j.getName())
+			// } else {
+			// 	if p.GetAttr("id")[0] == '$' {
+			// 		p.SetAttr("src_id", p.GetAttr("id")[1:])
+			// 		p.SetAttr("id", p.GetAttr("domain")+p.GetAttr("id")[1:])
+			// 	} else {
+			// 		p.SetAttr("src_id", p.GetAttr("id"))
+			// 		p.SetAttr("id", p.GetAttr("domain")+p.GetAttr("id"))
+			// 	}
+			// }
 		}
 
 		//解读指令
@@ -640,10 +640,9 @@ func (j *UI) scanHTML(child []*HTML) {
 			if tFunc.CreateFromParent(j.root, p.GetAttr("id"), p, tagName, j) {
 				if tFunc.IsScript() {
 					tFunc.SetConstructor(&Attr{tagName, p.GetConstructerParameter()}).setExtend(p.GetAttr("id") == j.domain)
-					if p.GetConstructerCode() != "" {
-						j.idMap[p.GetAttr("src_id")] = &HTMLObject{Name: p.GetAttr("id"), HTMLObjectType: 1}
-
-					}
+					// if p.GetConstructerCode() != "" {
+					// 	j.idMap[p.GetAttr("src_id")] = &HTMLObject{Name: p.GetAttr("id"), HTMLObjectType: 1}
+					// }
 					th := tFunc.ReadHTML()
 					j.AddRun(&RunElem{"L", j.domain, th.ToString()})
 					tHTML = &HTML{}
@@ -705,7 +704,7 @@ func (j *UI) setExtend(flag bool) *UI {
 func (j *UI) componentId(child []*HTML) {
 	for _, p := range child {
 		if p.GetAttr("domain") != "" && p.GetAttr("domain") == j.domain {
-			if p.GetAttr("class_id") != "" {
+			if p.GetAttr("class_id") != "" || Index(p.TagName(), ".") != -1 {
 				j.idMap[p.GetAttr("src_id")] = &HTMLObject{Name: p.GetAttr("id"), HTMLObjectType: 1}
 			} else {
 				j.idMap[p.GetAttr("src_id")] = &HTMLObject{Name: p.GetAttr("id"), HTMLObjectType: 0}
@@ -952,11 +951,6 @@ func (j *UI) domainHTML(child []*HTML) {
 			continue
 		}
 
-		if tagName != "" && !("\b" == tagName) {
-			if p.GetAttr("domain") == "" {
-				p.SetAttr("domain", j.domain)
-			}
-		}
 		j.domainHTML(p.Child())
 	}
 }
@@ -1117,6 +1111,22 @@ func useFunc(html *HTML, arr *[]*HTML) {
  */
 func (j *UI) initObj(html *HTML) {
 	for _, p := range html.Child() {
+		if p.TagName() != "" && !("\b" == p.TagName()) {
+			if p.GetAttr("domain") == "" {
+				p.SetAttr("domain", j.domain)
+			}
+		}
+		if p.GetAttr("id") == "" {
+			p.SetAttr("id", p.GetAttr("domain")+j.getName())
+		} else {
+			if p.GetAttr("id")[0] == '$' {
+				p.SetAttr("src_id", p.GetAttr("id")[1:])
+				p.SetAttr("id", p.GetAttr("domain")+p.GetAttr("id")[1:])
+			} else {
+				p.SetAttr("src_id", p.GetAttr("id"))
+				p.SetAttr("id", p.GetAttr("domain")+p.GetAttr("id"))
+			}
+		}
 		if p.TagName() == "@uncare" {
 			continue
 		}
@@ -1174,7 +1184,6 @@ func (j *UI) ReadHTML() *HTML {
 		//解析节点属性值
 		if j.node != nil {
 			for _, va := range j.node.Attrs() {
-				//tst.WriteString(Replace(j.domain, "\b", "____"))
 				tst.WriteString("$$.")
 				tst.WriteString(va.Name)
 				tst.WriteString("=\"")
@@ -1183,9 +1192,11 @@ func (j *UI) ReadHTML() *HTML {
 				} else {
 					tst.WriteString(va.Value)
 				}
-
 				tst.WriteString("\";\r\n")
 			}
+			tst.WriteString("__OBJECT__.")
+			tst.WriteString(j.node.GetAttr("id"))
+			tst.WriteString("= $$;\r\n")
 		}
 
 		//解析内部设置值
@@ -1292,6 +1303,7 @@ func (j *UI) ReadHTML() *HTML {
 
 	j.overHTML(j.innerContent)
 	j.packageHTML([]*HTML{j.html})
+	j.componentId([]*HTML{j.html})
 	j.domainHTML([]*HTML{j.html})
 	if j.styleBuffer.Len() > 0 {
 		j.style = &CSS{jus: j, CurrentPath: "./" + j.relativePath + ".lib"}
@@ -1309,9 +1321,9 @@ func (j *UI) ReadHTML() *HTML {
 	}
 	headCss = "-" + headCss
 	j.scanHTML([]*HTML{j.html})
-	j.componentId([]*HTML{j.html})
+
 	if j.contentTo != "" {
-		j.scriptBuffer.WriteString("____." + j.contentTo + "=_MODULE_INNER_[__DOMAIN__];")
+		j.scriptBuffer.WriteString("if(_MODULE_INNER_[__DOMAIN__]){____." + j.contentTo + "=_MODULE_INNER_[__DOMAIN__];}")
 	}
 	j.html.SetAttr("class", headCss+" "+j.html.GetAttr("class"))
 	if j.html.GetAttr("class") == "" || Index(j.html.GetAttr("class"), j.domain) == -1 {
@@ -1322,14 +1334,10 @@ func (j *UI) ReadHTML() *HTML {
 		style.ReadFromString("<style>" + j.styleFormat() + "</style>")
 		j.html.Insert(style, 0)
 	}
-	//scriptCode := bytes.NewBufferString("<script>")
-
 	//开始组装参数
 	script := &HTMLScript{}
 	script.CreateFrom(j, j.root, j.domain, j.paramValue, j.innerValue, j.extendsScriptBuffer)
 	scriptCodeString := script.ReadFromString(j.scriptBuffer.String())
-	//scriptCode.WriteString("</script>")
-	//j.html.InsertFromString(scriptCode.String(), 0)
 
 	if len(scriptCodeString) != 0 {
 		node := &HTML{}

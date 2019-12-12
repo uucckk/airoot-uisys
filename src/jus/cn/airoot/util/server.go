@@ -1493,7 +1493,11 @@ func (u *UIServer) AddServerVar(cls string, key string, value string) {
 }
 
 func (u *UIServer) GetServerVar(key string) string {
-	return u.attribute[key]
+	p := u.attribute[key]
+	if p == "" {
+		return "undefind"
+	}
+	return p
 }
 
 /**
@@ -1529,6 +1533,14 @@ func (u *UIServer) SetData(cmds []string) {
 
 	if Index(cmds[0], "pattern") == 0 {
 		u.AddProxy(cmds[1], cmds[2], true)
+	}
+
+	if Index(cmds[0], "string") == 0 {
+		u.AddServerVar("string", "@"+cmds[1], cmds[2])
+	}
+
+	if Index(cmds[0], "variable") == 0 {
+		u.AddServerVar("variable", "@"+cmds[1], cmds[2])
 	}
 
 	//对源文件备份

@@ -90,11 +90,7 @@
 			<@value/>
       </div>
   </position>
-  
-
-
   <script>
-	import vue from @root/js/vue.min.js;
 	import @root/js/jquery.min.js;
 	var _self = $(dom);
 	

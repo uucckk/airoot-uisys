@@ -296,11 +296,12 @@ var __FORMAT__ = function(__DATA__,__APPDOMAIN__,module){
 					}	
 				break;
 				case 'B' ://内部CSS
-					style = v.value + "\r\n" + style;
+					//style = v.value + "\r\n" + style;
 					if(!__GET_MOUDLE__(__APPDOMAIN__,v.module).style){
 						__GET_MOUDLE__(__APPDOMAIN__,v.module).style = "";
 					}
-					__GET_MOUDLE__(__APPDOMAIN__,v.module).style = v.value + "\r\n" + __GET_MOUDLE__(__APPDOMAIN__,v.module).style
+					//__GET_MOUDLE__(__APPDOMAIN__,v.module).style = v.value + "\r\n" + __GET_MOUDLE__(__APPDOMAIN__,v.module).style
+					__GET_MOUDLE__(__APPDOMAIN__,v.module).style +=  v.value + "\r\n"
 				break;
 				case 'H' ://HTML
 					__GET_MOUDLE__(__APPDOMAIN__,v.module).html = v.value

@@ -226,6 +226,8 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _global string, _this string, _
 					}
 					if hObj.HTMLObjectType == -1 {
 						t.Value = "dom"
+					} else if hObj.HTMLObjectType == 1 {
+						t.Value = "__OBJECT__[__NAME__+'" + t.Value + "']" //hObj.Name
 					} else {
 						t.Value = "window[__NAME__+'" + t.Value + "']" //hObj.Name
 					}

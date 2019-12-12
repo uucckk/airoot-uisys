@@ -1,0 +1,308 @@
+<!-- 
+	展示 
+	@type TMAX
+-->
+<div>
+	<div id="container"></div>
+	<@content to="ct" />
+	<script>
+		import @root/js/jquery.min.js;
+		import @root/js/three/three.js;
+		import @root/js/three/controls/OrbitControls.js;
+		
+		
+		private var _self = $(dom);
+		private var renderer, stats, scene, _camera,_control;
+		private var grid,axis;
+		private var container = null;
+		private var group = null;
+		private var ct = [];
+		private var enterframeFc = [];
+		function init() {
+			container = document.getElementById( '$container' );
+			scene = new ? THREE.Scene();
+			_camera = new ? THREE.PerspectiveCamera( 50, _self.width() / _self.height(), 1, 1000 );
+			_camera.position.set( 0, 0, 10 );
+			window.camera = _camera;
+			if(dom.getAttribute("gridhelper") != "false" || dom.getAttribute("axishelper") != "false"){
+				this.group = new ? THREE.Group();
+				//group.castShadow = true;
+				scene.add( group );
+				if(dom.getAttribute("gridhelper") != "false"){
+					grid = new ? THREE.GridHelper( 160, 20 );
+					//helper.rotation.x = Math.PI / 2;
+					group.add( grid );
+				}
+				if(dom.getAttribute("axishelper") != "false"){
+					//生成一个坐标轴，辅助线
+					axis = new ? THREE.AxisHelper(100);
+					scene.add(axis);
+				}
+			}
+			
+			//光照
+			var directionalLight = new ? THREE.DirectionalLight(0xffffff, 1 );
+			directionalLight.position.set( 100, 100, 100 ).normalize();
+			//directionalLight.castShadow = true;
+			scene.add( directionalLight );
+			var ambientLight = new ? THREE.AmbientLight( 0xffffff, 0.7 );
+			//ambientLight.castShadow = true;
+			scene.add( ambientLight );
+			
+			for(var i = 0;i<ct.length;i++){
+				addChild(ct[i]);
+			}
+			
+			
+
+			renderer = new ? THREE.WebGLRenderer( {alpha:true,antialias: true } );
+			//renderer.shadowMapEnabled = true;
+			renderer.setPixelRatio( window.devicePixelRatio );
+			renderer.setSize(_self.width(), _self.height());
+			container.appendChild( renderer.domElement );
+
+			//
+
+			_control = new ? THREE.OrbitControls( _camera, renderer.domElement );
+			window.controls = _control;
+			//
+
+			
+
+			animate();
+			//setInterval(animate,100);
+		}
+		
+		
+		/**
+		 * 是否显示网格线
+		 * @param value	true or false
+		 */
+		public set gridHelper(value){
+			grid.visible = value;
+		}
+		
+		public get gridHelper():boolean{
+			return grid.visible;
+		}
+		
+		
+		/**
+		 * 是否显示坐标辅助线
+		 * @param value	true or false
+		 */
+		public set axisHelper(value){
+			axis.visible = value;
+		}
+		
+		public get axisHelper():boolean{
+			return axis.visible;
+		}
+		
+		/**
+		 * 添加sd对象
+		 * @param obj	3d对象
+		 */
+		public function addChild(obj:3DObject){
+			if(obj.type == "line"){
+				_addLine(group,obj);
+			}else if(obj.type == "box"){
+				_addChild(group,obj);
+			}else if(obj.type == "text"){
+				_addText(group,obj);
+			}else if(obj.type == "custom"){
+				_addCustom(group,obj);
+			}else if(obj.type == "content"){
+				_addContent(group,obj);
+			}else{
+				obj.parent = this;
+			}
+		}
+		
+		//获取摄像头
+		public get camera(){
+			return _camera;
+		}
+		
+		//获取窗口控制
+		public get control(){
+			return _control;
+		}
+		
+		/**
+		 * 添加元素
+		 */
+		private function _addChild(group, obj ) {
+			var paths = obj.paths;
+			var amounts = obj.amounts;
+			var colors = obj.colors;
+			var center = obj.center;
+			var shape = createShape(obj.data);
+			var shape3d = new ? THREE.ExtrudeBufferGeometry( shape, {
+				amount: obj.depth,
+				bevelEnabled: false,
+				bevelSize:1,
+				bevelThickness:1,
+				curveSegments:12
+			} );
+			var material = new ? THREE.MeshLambertMaterial({//MeshLambertMaterial,MeshBasicMaterial
+				color: obj.color,
+				//emissive: color,
+				transparent:true,
+				opacity: 0.5
+			});
+			material.needsUpdate=true;
+			var mesh = new ? THREE.Mesh( shape3d, material );
+			//mesh.receiveShadow = true;
+			//mesh.castShadow = true;
+			//mesh.rotation.x = Math.PI;
+			mesh.translateZ(obj.z);
+			mesh.translateX(obj.x);
+			mesh.translateY(obj.y);
+			//mesh.rotation.x = -Math.PI / 2;
+			scene.add(mesh);
+		};
+		
+		private function _addLine(group, obj ):void{
+			var colors = obj.colors;
+			 //定义材质THREE.LineBasicMaterial . MeshBasicMaterial...都可以
+			var material = new ?THREE.LineBasicMaterial({color:0x000000});
+			// 空几何体，里面没有点的信息,不想BoxGeometry已经有一系列点，组成方形了。
+			var geometry = new ?THREE.Geometry();
+			// 给空白几何体添加点信息，这里写3个点，geometry会把这些点自动组合成线，面。
+			var paths = [
+				{x:0,y:0},
+				{x:100,y:0},
+				{x:100,y:100},
+				{x:0,y:100},
+				{x:0,y:0}
+			];
+			
+			var p = null;
+			for(var i:int = 0;i<paths.length;i++){
+				p = paths[i];
+				geometry.vertices.push(new ?THREE.Vector3(p.x,p.y,0));
+			}
+			//线构造
+			var line = new ?THREE.Line(geometry,material);
+			
+			line.translateZ(obj.z);
+			line.translateX(obj.x);
+			line.translateY(obj.y);
+			
+			scene.add(line);
+		}
+		
+		
+		/**
+		 * 创建文字标签
+		 */
+		private function _addText(group,obj){
+			initText("仓库",obj);
+
+		}
+		
+		private function initText( wordFont, obj){
+			
+			/*1、创建一个画布，记得设置画布的宽高，否则将使用默认宽高，有可能会导致图像显示变形*/
+			let canvas = document.createElement("canvas");
+			canvas.width = 120;
+			canvas.height = 50;
+			/*2、创建图形，这部分可以去看w3c canvas教程*/
+			let ctx = canvas.getContext("2d");
+			ctx.fillStyle = "#ffffff";
+			ctx.fillRect(0,0,140,34);
+			ctx.beginPath();
+                ctx.font="bold 24px Microsoft YaHei";
+                ctx.fillStyle="#222222";
+                ctx.fillText( obj.text , 0, 26 );
+			ctx.closePath();
+			/*3、将canvas作为纹理，创建Sprite*/
+			let texture = new ?THREE.Texture(canvas);
+			texture.needsUpdate = true; //注意这句不能少
+			let material = new ?THREE.SpriteMaterial({map:texture});
+			let mesh = new ?THREE.Sprite(material);
+			/*4、放大图片，每个精灵有自己的大小，默认情况下都是很小的，如果你不放大，基本是看不到的*/
+			mesh.scale.set(5,2,1);
+			scene.add(mesh);
+			//mesh.position.x = 0;
+			//mesh.position.y = 0;
+			//mesh.position.z = 0;
+			
+			mesh.translateZ(obj.z - 4);
+			mesh.translateX(obj.x + 4);
+			mesh.translateY(obj.y + 5);
+			mesh.lookAt(_camera.position);
+		}
+
+		
+		/**
+		 * 创建shape
+		 */
+		function createShape(points:Array):Shape{
+			var shape = new ? THREE.Shape();
+			var p = null;
+			if(points.length>0){
+				p = points[0];
+				shape.moveTo(p.x,p.y);
+			}
+			
+			for(var i:int = 1;i<points.length;i++){
+				p = points[i];
+				shape.lineTo(p.x,p.y);
+			}
+			
+			return shape;
+		}
+		
+		private function _addCustom(group, obj){
+			scene.add(obj.mesh);
+		}
+		
+		/**
+		 * 添加容器
+		 */
+		private function _addContent(group,obj){
+			obj.parent = this;
+		}
+		
+		
+		function loadData(value):void{
+			addChild(group,{paths:[],amounts:[4],colors:[0xabcdef],center:{ x: 0, y: 0 }});
+			_addLine(group,{paths:[],amounts:[4],colors:[0xabcdef],center:{ x: 0, y: 0 }});
+		}
+		
+
+		
+	
+		function enterframe(obj:Object,callBack:Function){
+			enterframeFc.push({o:obj,f:callBack});
+		}
+
+		function animate() {
+
+			requestAnimationFrame( animate );
+			render();
+
+		}
+
+		function render() {
+			renderer.render( scene, _camera );
+			var i = 0;
+			while(i<enterframeFc.length){
+				enterframeFc[i].f();
+				if(enterframeFc[i].o._destroy_){
+					enterframeFc.splice(i,1);
+				}
+				i++;
+			}
+		}
+		
+		public function trigger(event):void{
+			_camera.aspect = _self.width() / _self.height();
+			_camera.updateProjectionMatrix();
+			renderer.setSize(_self.width(), _self.height());
+		}
+
+	</script>
+</div>
