@@ -1,0 +1,3 @@
+*.js linguist-language=UISYS
+*.go linguist-language=go
+*.js linguist-language=javascript

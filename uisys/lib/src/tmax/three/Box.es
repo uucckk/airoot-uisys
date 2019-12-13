@@ -1,12 +1,12 @@
 class Box{
-	public var type = "box";
+	public var type = "custom";
 	var _data:Array = [];
 	var _depth:int = 10;//厚度
 	var _x = 0,_y = 0,_z = 0;
 	var _color:int = 0xaaaaaa;
-	
-	function init(){
-		//alert("A");
+	var _mesh = null;
+	function init(data:Array){
+		//this.data = data;
 	}
 	
 	
@@ -42,7 +42,8 @@ class Box{
 	
 	
 	public function set x(value:int):void{
-		_x = parseInt(value);
+		_x = value - 0;
+		render();
 	}
 	
 	public function get x():int{
@@ -50,7 +51,8 @@ class Box{
 	}
 	
 	public function set y(value:int):void{
-		_y = parseInt(value);
+		_y = value - 0;
+		render();
 	}
 	
 	public function get y():int{
@@ -58,11 +60,37 @@ class Box{
 	}
 	
 	public function set z(value:int):void{
-		_z = parseInt(value);
+		_z = value - 0;
+		render();
 	}
 	
 	public function get z():int{
 		return _z;
+	}
+	
+	public get mesh(){
+		var shape = createShape(data);
+		var shape3d = new ? THREE.ExtrudeBufferGeometry( shape, {
+			amount: depth,
+			bevelEnabled: false,
+			bevelSize:1,
+			bevelThickness:1,
+			curveSegments:12
+		} );
+		var material = new ? THREE.MeshLambertMaterial({//MeshLambertMaterial,MeshBasicMaterial
+			color: color,
+			//emissive: color,
+			transparent:true,
+			opacity: 0.5
+		});
+		material.needsUpdate=true;
+		_mesh = new ? THREE.Mesh( shape3d, material );
+		//mesh.receiveShadow = true;
+		//mesh.castShadow = true;
+		//mesh.rotation.x = Math.PI;
+		
+		//mesh.rotation.x = -Math.PI / 2;
+		return _mesh;
 	}
 	
 	public function set color(value:String):void{
@@ -81,5 +109,28 @@ class Box{
 	
 	function isNumber(obj) {  
 		return obj === +obj  
-	} 
+	}
+	
+	/**
+	 * 创建shape
+	 */
+	function createShape(points:Array):Shape{
+		var shape = new ? THREE.Shape();
+		var p = null;
+		if(points.length>0){
+			p = points[0];
+			shape.moveTo(p.x,p.y);
+		}
+		for(var i:int = 1;i<points.length;i++){
+			p = points[i];
+			shape.lineTo(p.x,p.y);
+		}
+		return shape;
+	}
+	
+	function render(){
+		_mesh.position.x = x;
+		_mesh.position.y = y;
+		_mesh.position.z = z;
+	}
 }
