@@ -1,12 +1,31 @@
-class Box{
+class Shape{
 	public var type = "custom";
 	var _data:Array = [];
 	var _depth:int = 10;//厚度
 	var _x = 0,_y = 0,_z = 0;
 	var _color:int = 0xaaaaaa;
 	var _mesh = null;
-	function init(data:Array){
-		//this.data = data;
+	var _material = null;
+	var _alpha = 1;
+	function init(value:Array){
+		data = value;
+		_material = new ? THREE.MeshLambertMaterial({	//MeshLambertMaterial,MeshBasicMaterial
+			color: color,
+			//emissive: color,
+			//transparent:true,
+			//opacity: 0.5
+		});
+		_material.needsUpdate=true;
+		var shape = createShape(data);
+		var shape3d = new ? THREE.ExtrudeBufferGeometry( shape, {
+			amount: depth,
+			bevelEnabled: false,
+			bevelSize:1,
+			bevelThickness:1,
+			curveSegments:12
+		} );
+		
+		_mesh = new ? THREE.Mesh( shape3d, _material );
 	}
 	
 	
@@ -33,7 +52,24 @@ class Box{
 	}
 	
 	public function set depth(value:String):void{
-		_depth = parseInt(value);
+		_depth = value;
+		_material = new ? THREE.MeshLambertMaterial({	//MeshLambertMaterial,MeshBasicMaterial
+			color: color,
+			//emissive: color,
+			//transparent:true,
+			//opacity: 0.5
+		});
+		_material.needsUpdate=true;
+		var shape = createShape(data);
+		var shape3d = new ? THREE.ExtrudeBufferGeometry( shape, {
+			amount: depth,
+			bevelEnabled: false,
+			bevelSize:1,
+			bevelThickness:1,
+			curveSegments:12
+		} );
+		
+		_mesh = new ? THREE.Mesh( shape3d, _material );
 	}
 	
 	public function get depth():int{
@@ -68,23 +104,18 @@ class Box{
 		return _z;
 	}
 	
+	public set alpha(value){
+		_alpha = value;
+		_material.transparent = value < 1 ? true : false;
+		_material.opacity = value;
+	}
+	
+	public get alpha(){
+		return _alpha;
+	}
+	
 	public get mesh(){
-		var shape = createShape(data);
-		var shape3d = new ? THREE.ExtrudeBufferGeometry( shape, {
-			amount: depth,
-			bevelEnabled: false,
-			bevelSize:1,
-			bevelThickness:1,
-			curveSegments:12
-		} );
-		var material = new ? THREE.MeshLambertMaterial({//MeshLambertMaterial,MeshBasicMaterial
-			color: color,
-			//emissive: color,
-			transparent:true,
-			opacity: 0.5
-		});
-		material.needsUpdate=true;
-		_mesh = new ? THREE.Mesh( shape3d, material );
+		
 		//mesh.receiveShadow = true;
 		//mesh.castShadow = true;
 		//mesh.rotation.x = Math.PI;
@@ -127,7 +158,9 @@ class Box{
 		}
 		return shape;
 	}
-	
+	public get base(){
+		return _mesh;
+	}
 	function render(){
 		_mesh.position.x = x;
 		_mesh.position.y = y;

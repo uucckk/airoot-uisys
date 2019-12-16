@@ -94,7 +94,7 @@
 	import @root/js/jquery.min.js;
 	var _self = $(dom);
 	
-	var lineHeight:int = 24;
+	var lineHeight:int = 20;
 	var fontSize:int = 14;
 	
     var keyWords = [
@@ -192,7 +192,7 @@
 				fontSize++;
 			}
 		}else{
-			if(lineHeight>24){
+			if(lineHeight>20){
 				lineHeight--;
 				fontSize--;
 			}

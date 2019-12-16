@@ -21,18 +21,14 @@
 						var tmp = $this.attr("height");
 						if(!tmp){
 							tmp = _self.height();
-						}
-						
-						if(tmp.lastIndexOf("%") == -1){
+						}else if(tmp.lastIndexOf("%") == -1){
 							$this.height(parseInt(tmp));
 						}
 						//设置宽度
 						var tmp = $this.attr("width");
 						if(!tmp){
 							tmp = _self.width();
-						}
-						
-						if(tmp.lastIndexOf("%") == -1){
+						}else if(tmp.lastIndexOf("%") == -1){
 							$this.width(parseInt(tmp));
 						}
 

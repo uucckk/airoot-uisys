@@ -19,7 +19,6 @@ class Sphere{
 		});
 		_material.needsUpdate=true;
 		_mesh = new ? THREE.Mesh(_geometry, _material);
-		window.g = _geometry;
 	}
 	
 	
@@ -36,17 +35,15 @@ class Sphere{
 	}
 	
 	get mesh():Mesh{
-		window.mesh = _mesh;
 		_mesh.position.z = z;
 		_mesh.position.x = x;
 		_mesh.position.y = y;
-		_mesh.rotation.x = -Math.PI / 2;
 		return _mesh;
 	}
 	
 	
 	set x(value:int):void{
-		_x = parseInt(value);
+		_x = value - 0;
 		_mesh.position.x = x
 	}
 	
@@ -55,7 +52,7 @@ class Sphere{
 	}
 	
 	set y(value:int):void{
-		_y = parseInt(value);
+		_y = value - 0;
 		_mesh.position.y = y
 	}
 	
@@ -64,7 +61,7 @@ class Sphere{
 	}
 	
 	set z(value:int):void{
-		_z = parseInt(value);
+		_z = value - 0;
 		_mesh.position.z = z;
 	}
 	

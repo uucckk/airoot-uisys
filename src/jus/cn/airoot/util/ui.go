@@ -1444,6 +1444,11 @@ func (j *UI) ReadHTML() *HTML {
 			j.html.Append(node)
 		}
 
+		pList := j.html.GetElementsByTagName("@uncare")
+		for _, v := range pList {
+			v.ReplaceWithFromList(v.Child())
+		}
+
 		sb.Reset()
 		sb = nil
 	}

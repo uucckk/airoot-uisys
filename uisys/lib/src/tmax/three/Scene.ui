@@ -29,7 +29,7 @@
 				//group.castShadow = true;
 				scene.add( group );
 				if(dom.getAttribute("gridhelper") != "false"){
-					grid = new ? THREE.GridHelper( 160, 20 );
+					grid = new ? THREE.GridHelper( 160, 40 );
 					//helper.rotation.x = Math.PI / 2;
 					group.add( grid );
 				}
@@ -41,11 +41,11 @@
 			}
 			
 			//光照
-			var directionalLight = new ? THREE.DirectionalLight(0xffffff, 1 );
-			directionalLight.position.set( 100, 100, 100 ).normalize();
+			var directionalLight = new ? THREE.DirectionalLight(0xffffff, 0.8 );
+			directionalLight.position.set( 0, 100, 10 ).normalize();//之前100,100,100
 			//directionalLight.castShadow = true;
 			scene.add( directionalLight );
-			var ambientLight = new ? THREE.AmbientLight( 0xffffff, 0.7 );
+			var ambientLight = new ? THREE.AmbientLight( 0xf0f0ff, 0.7 );
 			//ambientLight.castShadow = true;
 			scene.add( ambientLight );
 			
@@ -64,6 +64,8 @@
 			//
 
 			_control = new ? THREE.OrbitControls( _camera, renderer.domElement );
+			//_control.autoRotate = true;
+			//_control.enableDamping = true;
 			window.controls = _control;
 			//
 
@@ -104,9 +106,7 @@
 		 * @param obj	3d对象
 		 */
 		public function addChild(obj:3DObject){
-			if(obj.type == "line"){
-				_addLine(group,obj);
-			}else if(obj.type == "text"){
+			if(obj.type == "text"){
 				_addText(group,obj);
 			}else if(obj.type == "custom"){
 				_addCustom(group,obj);
@@ -129,36 +129,6 @@
 		
 		
 		
-		private function _addLine(group, obj ):void{
-			var colors = obj.colors;
-			 //定义材质THREE.LineBasicMaterial . MeshBasicMaterial...都可以
-			var material = new ?THREE.LineBasicMaterial({color:0x000000});
-			// 空几何体，里面没有点的信息,不想BoxGeometry已经有一系列点，组成方形了。
-			var geometry = new ?THREE.Geometry();
-			// 给空白几何体添加点信息，这里写3个点，geometry会把这些点自动组合成线，面。
-			var paths = [
-				{x:0,y:0},
-				{x:100,y:0},
-				{x:100,y:100},
-				{x:0,y:100},
-				{x:0,y:0}
-			];
-			
-			var p = null;
-			for(var i:int = 0;i<paths.length;i++){
-				p = paths[i];
-				geometry.vertices.push(new ?THREE.Vector3(p.x,p.y,0));
-			}
-			//线构造
-			var line = new ?THREE.Line(geometry,material);
-			
-			line.translateZ(obj.z);
-			line.translateX(obj.x);
-			line.translateY(obj.y);
-			
-			scene.add(line);
-		}
-		
 		
 		/**
 		 * 创建文字标签
@@ -168,37 +138,6 @@
 
 		}
 		
-		private function initText( wordFont, obj){		
-			/*1、创建一个画布，记得设置画布的宽高，否则将使用默认宽高，有可能会导致图像显示变形*/
-			let canvas = document.createElement("canvas");
-			canvas.width = 120;
-			canvas.height = 50;
-			/*2、创建图形，这部分可以去看w3c canvas教程*/
-			let ctx = canvas.getContext("2d");
-			ctx.fillStyle = "#ffffff";
-			ctx.fillRect(0,0,140,34);
-			ctx.beginPath();
-                ctx.font="bold 24px Microsoft YaHei";
-                ctx.fillStyle="#222222";
-                ctx.fillText( obj.text , 0, 26 );
-			ctx.closePath();
-			/*3、将canvas作为纹理，创建Sprite*/
-			let texture = new ?THREE.Texture(canvas);
-			texture.needsUpdate = true; //注意这句不能少
-			let material = new ?THREE.SpriteMaterial({map:texture});
-			let mesh = new ?THREE.Sprite(material);
-			/*4、放大图片，每个精灵有自己的大小，默认情况下都是很小的，如果你不放大，基本是看不到的*/
-			mesh.scale.set(5,2,1);
-			scene.add(mesh);
-			//mesh.position.x = 0;
-			//mesh.position.y = 0;
-			//mesh.position.z = 0;
-			
-			mesh.translateZ(obj.z - 4);
-			mesh.translateX(obj.x + 4);
-			mesh.translateY(obj.y + 5);
-			mesh.lookAt(_camera.position);
-		}
 
 		
 		
@@ -235,6 +174,8 @@
 
 		function render() {
 			renderer.render( scene, _camera );
+			_control.update();
+			return;
 			var i = 0;
 			while(i<enterframeFc.length){
 				enterframeFc[i].f();
