@@ -1,0 +1,9 @@
+<div>
+	<div id="menu">
+	
+	</div>
+	<@content/>
+</div>
+<script>
+	
+</script>

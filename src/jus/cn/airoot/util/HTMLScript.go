@@ -480,7 +480,7 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _global string, _this string, _
 		if t.Domain == "" && t.TagType == 0 && !t.IsAttr {
 			he := GetSingle(s.hMap, t.Value)
 			if he != nil {
-				tlt = append(tlt, &Tag{Value: "__WINDOW__[__APPDOMAIN__]['" + he.Name + "']", TagType: 0})
+				tlt = append(tlt, &Tag{Value: "__WINDOW__[__APPDOMAIN__]['" + he.Value + "']", TagType: 0})
 				continue
 			}
 		}
@@ -615,9 +615,6 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _global string, _this string, _
 						}
 					}
 				}
-				//if t.IsPublic {
-				//tlt = append(tlt, &Tag{Value: IfStr(t.IsSet, "var", _this+".") + t.Value + " = __WINDOW__[__APPDOMAIN__]['" + s.jus.className + "']." + t.Value + ";", TagType: 0})
-				//}
 			} else if t.IsVar {
 				level = 0
 				for p < len(tl) {

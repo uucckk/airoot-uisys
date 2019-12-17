@@ -1,0 +1,84 @@
+<!--
+	@author			sunxy
+	@type			JUS 布局框架
+	@description	桌面布局主框架，如果使用桌面布局首先要引入此模块
+-->
+<jus.vbox>
+	<style>
+		body{
+			position:fixed;
+			overflow:hidden;
+		}
+	</style>
+	<@content />
+</jus.vbox>
+<script>
+	import @root/js/jquery.min.js;
+	var _self = $(dom);
+	var stageWidth = 0.0;
+	var stageHeight = 0.0;
+	var win = null;
+	
+	/**
+	 * 新增内容可以增加横屏纵屏幕效果
+	 */
+	function init(){
+		$("body").css("overflow","hidden");
+		win = $(window);
+		win.bind("resize",resizeEvt);
+		win.trigger("resize");
+	}
+	
+	function resizeEvt(){
+		stageWidth = win.width();
+		stageHeight = win.height();
+		var tmp = _self.attr("width");
+		if(tmp && tmp.indexOf("%") == -1){
+			stageWidth = parseInt(tmp);
+		}
+		
+		tmp = _self.attr("min-width");
+		if(tmp){
+			tmp = parseInt(tmp);
+			if(stageWidth<tmp){
+				stageWidth = tmp;
+				$("body").css({"overflow-x":"auto"});
+				_self.css("position","absolute");
+			}else{
+				//$("body").css({"overflow":"hidden","position":"fixed"});
+			}
+		}
+		
+		var tmp = _self.attr("height");
+		if(tmp && tmp.indexOf("%") == -1){
+			stageHeight = parseInt(tmp);
+		}
+		
+		tmp = _self.attr("min-height");
+		if(tmp){
+			tmp = parseInt(tmp);
+			if(stageHeight<tmp){
+				stageHeight = tmp;
+				$("body").css({"overflow-y":"auto"});
+				_self.css("position","absolute");
+			}else{
+				//$("body").css({"overflow":"hidden","position":"fixed"});
+			}
+			
+		}
+		
+		
+		var padding = _self.outerWidth(true) - _self.width();
+		_self.width(stageWidth - padding);
+		padding = _self.outerHeight(true) - _self.height();
+		_self.height(stageHeight - padding);
+		setTimeout(function(){
+			super.trigger(_self.attr("auto") == "true" ? (stageWidth>=stageHeight ? 0 : 1) : 0);
+		},0);
+		
+	}
+	
+	function finalize():void{
+		win.unbind("resize",resizeEvt);
+	}
+</script>

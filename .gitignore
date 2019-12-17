@@ -18,3 +18,4 @@
 /pkg/*
 /uisys/example/*
 /uisys/boot.conf
+/uisys/lib/root/*

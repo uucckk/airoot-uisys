@@ -109,9 +109,19 @@ func (s *Script) initScriptFrom(js *MScript, _global string, _this string, _pri 
 					}
 					break
 				}
-				if f.IsKeyWord && f.Value == "from" { //说明要用commandJS规范导读
-					f.Value = "\002"
-					isFrom = true
+				if f.IsKeyWord { //说明要用commandJS规范导读
+					if f.Value == "from" {
+						f.Value = "\002"
+						isFrom = true
+					} else if f.Value == "@root" {
+						f.Value = "/index.res"
+					} else if f.Value == "@lib" {
+						t.Value = "\"" + IfStr(s.jus.IsSysLib, "index.src/", "") + "/" + s.jus.relativePath + ".lib/\""
+						if s.jus.IsSysLib {
+							s.jus.GetRoot().PushSysLibDirs(s.jus.className, s.jus.relativePath+".lib")
+						}
+
+					}
 				}
 				tmp += f.Value
 				at = p - 1
