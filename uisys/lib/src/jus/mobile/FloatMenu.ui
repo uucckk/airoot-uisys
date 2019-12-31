@@ -1,9 +1,62 @@
-<div>
-	<div id="menu">
-	
-	</div>
+<style>
+	body{
+		position: fixed;
+		display:flex;
+		width: 90%;
+		height: 100px;
+		background-color: #ffffff;
+		border-radius: 8px;
+		overflow: hidden;
+		box-sizing: border-box;
+		box-shadow: 0px 0px 10px rgba(0,0,0,0.3);
+		justify-content:center;
+		align-items:center;
+	}
+	.navBtn{
+		width: 80px;
+		height: 80px;
+		border-radius: 50%;
+		overflow: hidden;
+		margin: 10px;
+		background-repeat:no-repeat;
+		background-position:center;
+		background-size:40%;
+	}
+	.navBtn.selected{
+		background-color: rgba(0,0,0,0.2);
+	}
+</style>
+<div top="150">
 	<@content/>
 </div>
 <script>
+	import @root/js/jquery.min.js;
+	var _self = $(dom);
+	var top from "top";
+	public var onChange = null;
+	function init(){
+		_self.css("top",top + "px");
+		var menus = _self.find(">");
+		var count = 0;
+		menus.each(function(){
+			var $this = $(this);
+			$this.css("background-image","url(" + $this.attr('url') + ")");
+			$this.attr("index",count ++);
+		}).click(function(){
+			var $this = $(this);
+			menus.removeClass("selected");
+			$this.addClass("selected");
+			if(onChange){
+				onChange($this.attr("index"));
+			}
+		});
+	}
 	
+	
+	
+	public function trigger(){
+		var left = (window.innerWidth - _self.outerWidth(true))/2; 
+		_self.css("left",left + "px");
+		console.log(left + "px")
+	}
 </script>

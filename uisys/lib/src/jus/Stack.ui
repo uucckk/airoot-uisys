@@ -5,7 +5,7 @@
 	@description	
 -->
 <@import value="jus.*" />
-<contain width="100%" height="100%">
+<Box width="100%" height="100%">
 	<position id="content" width="100%" height="100%">
 		<@content />
 	</position>
@@ -59,4 +59,4 @@
 			});
 		}
 	</script>
-</contain>
+</Box>

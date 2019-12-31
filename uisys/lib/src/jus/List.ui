@@ -5,8 +5,9 @@
 	@description	垂直可变化布局
 	
 -->
-<css>
+<style>
 	body{
+		overflow:auto;
 		border:solid 1px #eeeeee;
 		border-bottom:none;
 		background-color:#ffffff;
@@ -29,136 +30,38 @@
 	}
 	
 	
-</css>
-<module dataLabel="" dataField="">
-	<ul id="content">
-		<@value/>
+</style>
+<jus.Box dataLabel="" dataField="">
+	<ul id="content" style="padding-top:265px;">
+		<@component/>
 	</ul>
-</module>
+</jus.Box>
 <script>
 	var dataLabel from "dataLabel";
 	var dataField from "dataField";
 	var _self = $(dom);
 	private var _selectedIndex:int = 0;
-	private var _dataLabel:String = null;
-	private var _dataField:String = null;
 	private var data:Array = null;
 	public var onClick = null;
+	public var onScroll = null;
+	private var _data = [];
 	function init(){
-		
-		try{
-			data = JSON.parse(context.value);
-			initList(data);
-		
-		}catch(e){
-			console.log(e);
+		dom.onscroll = function(e){
+			onScroll(e)
 		}
-		#content.on("click",">li",mouseEvt);
 	}
 	
-	public function set dataLabel(value:String):void{
-		_dataLabel = value;
-		dataProvider = data;
+	public set dataProvider(value){
+		_data = value;
+		console.log(">>>>>",_data);
+		initList();
 	}
 	
-	public function get dataLabel():String{
-		return _dataLabel;
-	}
-	
-	public function set dataField(value:String):void{
-		_dataField = value;
-		dataProvider = data;
-	}
-	
-	public function get dataField():String{
-		return _dataField;
-	}
-	
-
-	private function initList(xml:XML):void{
+	private function initList(){
 		var p = null;
-		for(var i:int = 0;i<xml.length;i++){
-			p = xml[i];
-			var li = document.createElement("li");
-			li.setAttribute("value",p[dataField]);
-			li.innerHTML = p[dataLabel];
-			#content.append(li);
+		for(var i = 0;i<_data.length;i++){
+			p = _data[i];
+			#content.appendChild(context.module(p));
 		}
-		initEffect();
-	}
-
-	private function initEffect():void{
-		var list = #content.find(">li");
-		list.mouseover(function(){
-			var $this = $(this);
-			$this.addClass("over");
-		});
-		list.mouseout(function(){
-			var $this = $(this);
-			$this.removeClass("over");
-		});
-	}
-	
-	
-	public function set dataProvider(data:Array):void{
-		if(!data){
-			return data;
-		}
-		this.data = data;
-		#content.children().remove();
-		var p = null;
-		for(var i:int = 0;i<data.length;i++){
-			p = data[i];
-			var li = document.createElement("li");
-			li.setAttribute("value",p[dataField]);
-			li.innerHTML = p[dataLabel];
-			#content.append(li);
-		}
-		initEffect();
-	}
-
-	/**
-	 * 
-	 */
-	private function mouseEvt(e:Event):void{
-		e = e.currentTarget;
-		if(onClick){
-			onClick({target:{label:$(e).text(),value:$(e).attr("value")}});
-		}
-	}
-	
-	
-	public function set selectedIndex(value:int):void{
-		_selectedIndex = value;
-		
-		if(data && data.length>0){
-			onClick({target:{label:data[value][_dataLabel],value:data[value][_dataField]}});
-		}
-	}
-	
-
-	public function get selectedLabel():String{
-		return "--请选择--";
-	}
-	
-	
-	
-	/**
-	 * 通过值返回标签内容
-	 */
-	public function getLabelByValue(value:String):void{
-		var p = null;
-		for(var i:int = 0;i<data.length;i++){
-			p = data[i];
-			if(p[dataField] == value){
-				return p[dataLabel];
-			}
-		}
-		return "-";
-	}
-	
-	
-	public function finalize():void{
-		//alert("$list");
 	}
 </script>

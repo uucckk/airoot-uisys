@@ -311,7 +311,6 @@ var __FORMAT__ = function(__DATA__,__APPDOMAIN__,module){
 						var isImport = false;
 						var md5 = v.value.substr(1,32)
 						var importStr = v.value.substr(33).trim();
-						console.log('i',importStr)
 						for(var n = 0;n<__PACKAGE_LIST__.length;n++){
 							if(__PACKAGE_LIST__[n].md5 == md5){
 								isImport = true;
@@ -319,7 +318,6 @@ var __FORMAT__ = function(__DATA__,__APPDOMAIN__,module){
 							}
 						}
 						if(!isImport){
-							console.log(importStr)
 							__PACKAGE_LIST__.push({url:importStr,type:"P",md5:md5});
 						}
 					}else if(v.value.charAt(0) == "S"){
@@ -734,7 +732,6 @@ UI.loadModule = function(target,module){
 		var data = e.target.data;
 		var uuid = __UUID__();
 		__FORMAT__(data,appDomain,module);
-		Info();
 		__LOAD_PACKAGE__(function(){
 			//执行函数
 			var w =  __InitModule__(appDomain,module,uuid,value,target);
@@ -1038,23 +1035,60 @@ function gcEvt(){
 	__CLEAR_ID__ = setTimeout(__CLEAR_FUNC__,5000);
 }
 
+//查找是否有此实例的模块
+function hasInstance(module,domain){
+	var r = null;
+	for(var j in __MODULE_LIST__){
+		r = __MODULE_LIST__[j];
+		if(module == r.module && domain == r.domain){//说明存在引用
+			return true;
+		}
+	}
+	return false;
+}
+//查询它是否作为依赖
+function hasMain(dep,domain){
+	var result = [];
+	var r = null;
+	for(var k = __MODULE_COUNTER__.length - 1;k>=0;k--){
+		r = __MODULE_COUNTER__[k];
+		if(r.dep == dep && r.domain == domain && r.module != dep){
+			result.push(r.module);
+		}
+	}
+	return result;
+}
+
+//递归查找
+function sdep(c,l){
+	//查找实例化中是否存在
+	if(hasInstance(c,l)){
+		return true;
+	}
+	//如果不存在,查下上级依赖
+	var result = hasMain(c,l);
+	for(var k in result){
+		if(sdep(result[k],l)){
+			return true;
+		}
+	}
+	return false;
+}
 function gcLibEvt(){
 	var c = null;
 	var r = null;
+	
 	for(var l in __MODULE_RUNLIST__){
 		//搜索指定域
 		f:for(var c in __MODULE_RUNLIST__[l]){//域名内的名字
-			for(var j in __MODULE_LIST__){
-				r = __MODULE_LIST__[j];
-				console.log(r);
-				if(c == r.module){//说明存在引用
-					continue f;
-				}
+			if(sdep(c,l)){
+				continue;
 			}
 			delete __MODULE_RUNLIST__[l][c];
 			//说明已经消失
 			for(var k = __MODULE_COUNTER__.length - 1;k>=0;k--){
 				if(__MODULE_COUNTER__[k].module == c){
+					console.log("DELETE_0",l,c,__MODULE_COUNTER__[k]);
 					delete __MODULE_COUNTER__.splice(k,1);
 				}
 			}
@@ -1064,13 +1098,13 @@ function gcLibEvt(){
 	//删除没有关联的库
 	for(var l in __MODULE_METHOD__){
 		//搜索指定域
-		console.log("D",l);
 		f:for(var c in __MODULE_METHOD__[l]){//域名内的名字
 			for(var i in __MODULE_COUNTER__){
-				if(__MODULE_COUNTER__[i].module == c){
+				if(__MODULE_COUNTER__[i].dep == c){
 					continue f;
 				}
 			}
+			console.log("DELETE_1",l,c);
 			delete __MODULE_METHOD__[l][c];
 		}
 	}

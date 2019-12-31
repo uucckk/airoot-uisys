@@ -4,6 +4,6 @@
 	var dom = ____.dom;
 	{@jscode}
 	__MODULE_INIT__[__DOMAIN__].push({domain:____,name:____.init,value:__NAME__});__OBJECT__[__NAME__] = ____;
-	__MODULE_LIST__[__NAME__] = {module:"{@CLASS_NAME}",target:____};
+	__MODULE_LIST__[__NAME__] = {module:"{@CLASS_NAME}",target:____,domain:__APPDOMAIN__};
 	{@GLOBAL}
 })
