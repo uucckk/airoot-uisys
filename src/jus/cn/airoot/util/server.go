@@ -57,14 +57,15 @@ type WsUser struct {
 }
 
 type UIServer struct {
-	IsUIPro       bool   //判断是否为UISYS的工程
-	IsStatic      bool   //判断是否为静态发布
-	IsPublic      bool   //表示是发布的网页的每个模块的方法是否可以被全局访问。
-	protocol      string //连接协议http or https
-	Addr          string //连接地址
-	Status        bool   //运行状态
-	Datetime      time.Time
-	server        *http.Server
+	IsUIPro       bool                    //判断是否为UISYS的工程
+	IsStatic      bool                    //判断是否为静态发布
+	IsPublic      bool                    //表示是发布的网页的每个模块的方法是否可以被全局访问。
+	protocol      string                  //连接协议http or https
+	Addr          string                  //连接地址
+	Status        bool                    //运行状态
+	Datetime      time.Time               //服务器启动事件
+	server        *http.Server            //HTTP、HTTPS服务器
+	Index         []string                //索引页地址数组
 	fServerList   map[string]http.Handler //内部映射的路径
 	osName        string                  //操作系统名称
 	SysPath       string
@@ -208,6 +209,8 @@ func (u *UIServer) SetProject(path string) int {
 
 		if Exist(u.RootPath + "/" + configName) {
 			u.fServerList[rpath] = http.FileServer(http.Dir(path))
+			//获取首页索引
+			u.SetIndexPage(u.GetAttr("index"))
 			for _, v := range u.GetAttrLike("pattern") {
 				u.AddProxy(v[0], v[1], true)
 			}
@@ -541,6 +544,17 @@ func (u *UIServer) root(w http.ResponseWriter, req *http.Request) {
 		w.Header().Add("Access-Control-Allow-Credentials", "true")
 	}
 
+	url := req.URL.Path
+	if url != "" && CharAt(url, StringLen(url)-1) == "/" {
+		for _, v := range u.Index {
+			if Exist(u.RootPath + "/" + url + "/" + v) {
+				if v != "index.html" {
+					req.URL.Path += v
+				}
+				break
+			}
+		}
+	}
 	if !u.IsStatic && req.URL.Path != "/" {
 		if IsType(req.URL.Path, ".ui") {
 			u.jusEvt(w, req, ".ui")
@@ -1445,6 +1459,19 @@ func (u *UIServer) GetData() [][]string {
 	return FmtCmdList(data)
 }
 
+func (u *UIServer) SetIndexPage(arr []string) {
+	u.Index = u.Index[0:0]
+	for _, v := range arr {
+		sp := strings.Split(v, ",")
+		for _, v0 := range sp {
+			if strings.TrimSpace(v0) != "" {
+				u.Index = append(u.Index, v0)
+			}
+		}
+	}
+
+}
+
 /**
  * 增加虚拟目录和反向代理
  */
@@ -1482,11 +1509,11 @@ func (u *UIServer) AddServerVar(cls string, key string, value string) {
 	switch cls {
 	case "string":
 		u.attribute[key] = "\"" + value + "\""
-		fmt.Println(cls, key, "=", "\""+value+"\"")
+		fmt.Println(" ", cls, key, "=", "\""+value+"\"")
 		break
 	case "variable":
 		u.attribute[key] = value
-		fmt.Println(cls, key, "=", value)
+		fmt.Println(" ", cls, key, "=", value)
 		break
 	}
 
@@ -1530,7 +1557,9 @@ func (u *UIServer) SetData(cmds []string) {
 	} else {
 		command[pos] = cmds
 	}
-
+	if cmds[0] == "index" {
+		u.SetIndexPage([]string{cmds[1]})
+	}
 	if Index(cmds[0], "pattern") == 0 {
 		u.AddProxy(cmds[1], cmds[2], true)
 	}
