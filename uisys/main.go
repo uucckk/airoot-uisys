@@ -5,7 +5,7 @@ import (
 	"bufio"
 	"fmt"
 	"io/ioutil"
-	. "jus/tool"
+	. "uisys/tool"
 
 	//_ "image/jpeg"
 	//_ "image/png"
@@ -16,11 +16,11 @@ import (
 	"strings"
 	"time"
 
-	. "jus/str"
+	. "uisys/str"
 
-	. "jus/cn/airoot/util"
+	. "uisys/cn/airoot/util"
 
-	. "jus"
+	. "uisys"
 
 	"github.com/dop251/goja"
 	"golang.org/x/net/websocket"
@@ -314,12 +314,19 @@ func jusEvt(w http.ResponseWriter, req *http.Request, ext string) {
 		jus := &UI{SYSTEM_PATH: "lib", CLASS_PATH: "lib/src/"}
 		className := Substring(req.RequestURI, 0, LastIndex(req.RequestURI, ext))
 		className = Replace(className, "/", ".")
-		if jus.CreateFrom("lib/manager/", "", nil, className) {
+		if err := jus.CreateFrom("lib/manager/", "", nil, className); err == nil {
 			b := jus.ToFormatBytes()
 			w.Header().Add("Content-Length", strconv.Itoa(len(b)))
 			w.Write(b)
 		} else {
-			fmt.Println("不存在", className)
+			fmt.Println("service.go ->", className, err)
+			if err.Error() == "ui.go -> the file isn't exist." {
+				w.WriteHeader(404)
+				w.Write([]byte("<h1>" + err.Error() + "</h1>"))
+			} else {
+				w.WriteHeader(500)
+				w.Write([]byte("<h1>" + err.Error() + "</h1>"))
+			}
 		}
 	}
 }

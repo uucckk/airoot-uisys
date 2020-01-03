@@ -3,8 +3,8 @@ package str
 
 import (
 	"bytes"
-	"jus/tool"
 	"strings"
+	"uisys/tool"
 )
 
 /**

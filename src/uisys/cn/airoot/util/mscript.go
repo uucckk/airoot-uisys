@@ -4,9 +4,9 @@ package util
 import (
 	"bytes"
 	"fmt"
-	. "jus/tool"
 	"strconv"
 	"strings"
+	. "uisys/tool"
 )
 
 //---------------------------UName-----------------------------
@@ -145,7 +145,7 @@ type MScript struct {
  * @param value
  * @throws Exception
  */
-func (m *MScript) ReadFromString(js string) {
+func (m *MScript) ReadFromString(js string) error {
 	m.tag = &Tag{Value: "", TagType: -99}
 	m.domainList = make(map[string]*TagSet, 10)
 
@@ -219,7 +219,11 @@ func (m *MScript) ReadFromString(js string) {
 			}
 			m.position--
 			var tXML *HTML = nil
-			tXML, m.position = (&HTML{}).ReadOneBlock(m.code, m.position)
+			var err error
+			tXML, m.position, err = (&HTML{}).ReadOneBlock(m.code, m.position)
+			if err != nil {
+				return err
+			}
 			tp = &Tag{Value: tXML.At(0).ToString(), TagType: 12} //XML对象
 			m.lst = append(m.lst, tp)
 			continue
@@ -392,9 +396,8 @@ func (m *MScript) ReadFromString(js string) {
 				}
 			}
 		}
-
 	}
-
+	return nil
 } //ReadFromString
 
 /**
@@ -1490,7 +1493,11 @@ func (m *MScript) GetFromOther() []*Attr {
 			continue
 		}
 		if t.IsFrom {
-			arr = append(arr, &Attr{Name: t.Value, Value: t.Note.Value})
+			n := ""
+			if t.Note != nil {
+				n = t.Note.Value
+			}
+			arr = append(arr, &Attr{Name: t.Value, Value: n})
 		}
 	}
 	return arr

@@ -362,3 +362,28 @@ function URLLoader(id){
 		}
 	}
 }//URLLoader
+
+//url#hash
+window.addEventListener("hashchange", function(e){
+	var hash = __Hash__();
+	UI.loadModule(document.body,hash["loc"]);
+}, false);
+//获取Hash
+function __Hash__(){
+	var hash =  window.location.hash;
+	var d = hash.indexOf("#");
+	if(d != -1){
+		hash = hash.substring(d + 1);
+		var arr = hash.split("&");
+		var obj = {};
+		var t = null;
+		for(var i = 0;i<arr.length;i++){
+			t = arr[i].split("=");
+			obj[t[0]] = t[1];
+		}
+		return obj;
+	}else{
+		return null
+	}
+}
+

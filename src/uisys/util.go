@@ -6,9 +6,9 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	. "jus/str"
-	. "jus/tool"
 	"os"
+	. "uisys/str"
+	. "uisys/tool"
 )
 
 func trace(value ...interface{}) {

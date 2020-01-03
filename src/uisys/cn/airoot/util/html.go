@@ -2,11 +2,12 @@ package util
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
-	. "jus/str"
-	. "jus/tool"
 	"sort"
 	"strings"
+	. "uisys/str"
+	. "uisys/tool"
 )
 
 //特殊关键字
@@ -235,20 +236,20 @@ func (h *HTML) Create() *HTML {
 /**
  * 从字符串中获取HTML
  */
-func (h *HTML) ReadFromString(value string) *HTML {
-	html, _ := h.read([]rune(value), -1)
-	return html
+func (h *HTML) ReadFromString(value string) (*HTML, error) {
+	html, _, err := h.read([]rune(value), -1)
+	return html, err
 }
 
 /**
  * 从文字序列里读取一块HTML内容
  * 内容是以<标签开始的一段HTML内容
  */
-func (h *HTML) ReadOneBlock(code []rune, index int) (*HTML, int) {
+func (h *HTML) ReadOneBlock(code []rune, index int) (*HTML, int, error) {
 	return h.read(code, index)
 }
 
-func (h *HTML) read(code []rune, index int) (*HTML, int) {
+func (h *HTML) read(code []rune, index int) (*HTML, int, error) {
 	h.list = make([]*HTML, 0, 100)
 	h.tagData = make(map[string]string, 20)
 	position := 0
@@ -311,6 +312,9 @@ m:
 				sb = append(sb, ch)
 
 			}
+			if tagName == "" {
+				return h, position, errors.New("html.go -> tagName is empty.")
+			}
 			for position < len(code) {
 				ch = code[position]
 				position++
@@ -332,9 +336,8 @@ m:
 					sb = sb[0:0] //清除
 					block--
 					if block == 0 && index != -1 {
-						return h, position
+						return h, position, nil
 					}
-
 				}
 
 			} else {
@@ -355,10 +358,8 @@ m:
 						ch = code[position]
 						position++
 						sb = append(sb, ch)
-
 						if keys[k] == ch || (keys[k] == '.' && ch == ' ') {
 							k++
-
 						} else {
 							if k > 1 && ch == '>' {
 								sb = sb[:(len(sb) - k - 1)]
@@ -375,7 +376,7 @@ m:
 					parent = parent.parent
 					block--
 					if block == 0 && index != -1 {
-						return h, position
+						return h, position, nil
 					}
 				}
 			}
@@ -403,7 +404,7 @@ m:
 
 	//变换为HTML
 
-	return h, position
+	return h, position, nil
 }
 
 //返回标签名称
@@ -516,10 +517,13 @@ func (h *HTML) InsertList(list []*HTML, index int) *HTML {
  * @param index
  * @return
  */
-func (h *HTML) InsertFromString(value string, index int) *HTML {
+func (h *HTML) InsertFromString(value string, index int) (*HTML, error) {
 	html := &HTML{}
-	html.ReadFromString(value)
-	return h.Insert(html, index)
+	_, err := html.ReadFromString(value)
+	if err != nil {
+		return h, err
+	}
+	return h.Insert(html, index), nil
 }
 
 //获取指定索引节点的HTML
@@ -608,10 +612,13 @@ func (h *HTML) ReplaceWithFromList(list []*HTML) []*HTML {
  * @param value
  * @return
  */
-func (h *HTML) ReplaceWithFromString(value string) *HTML {
+func (h *HTML) ReplaceWithFromString(value string) (*HTML, error) {
 	html := &HTML{}
-	html.ReadFromString(value)
-	return h.ReplaceWith(html)
+	_, err := html.ReadFromString(value)
+	if err != nil {
+		return h, err
+	}
+	return h.ReplaceWith(html), nil
 }
 
 /**
@@ -633,14 +640,17 @@ func (h *HTML) ReplaceInnerWidthHTML(html *HTML) *HTML {
  * 通过String
  * InnerHTML
  */
-func (h *HTML) SetInnerHTML(value string) *HTML {
+func (h *HTML) SetInnerHTML(value string) (*HTML, error) {
 	if len(value) == 0 {
 		h.list = make([]*HTML, 0)
-		return h
+		return h, nil
 	}
 	html := &HTML{}
-	html.ReadFromString(value)
-	return h.ReplaceInnerWidthHTML(html)
+	_, err := html.ReadFromString(value)
+	if err != nil {
+		return h, err
+	}
+	return h.ReplaceInnerWidthHTML(html), nil
 }
 
 func (h *HTML) GetInnerHTML() string {

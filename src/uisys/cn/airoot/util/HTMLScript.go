@@ -6,11 +6,11 @@ import (
 	"bytes"
 	"crypto/md5"
 	"encoding/hex"
-	. "jus"
-	. "jus/str"
-	. "jus/tool"
 	"path/filepath"
 	"strings"
+	. "uisys"
+	. "uisys/str"
+	. "uisys/tool"
 )
 
 //--------------------------------Script----------------------------------------

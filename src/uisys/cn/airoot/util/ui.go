@@ -5,16 +5,16 @@ import (
 	"crypto/md5"
 	"encoding/base64"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io/ioutil"
-	"jus"
-	. "jus"
-	. "jus/str"
-	. "jus/tool"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	. "uisys"
+	. "uisys/str"
+	. "uisys/tool"
 
 	"github.com/dop251/goja"
 )
@@ -88,7 +88,7 @@ type UI struct {
  * @param file			读取文件路径
  * @throws IOException
  */
-func (j *UI) CreateFromString(root string, domain string, node *HTML, code string, className string, parent *UI) bool {
+func (j *UI) CreateFromString(root string, domain string, node *HTML, code string, className string, parent *UI) error {
 	j.parent = parent
 	j.moduleMap = make(map[string]*Attr, 10)
 	j.pkgMap = make(map[string]string, 10)
@@ -104,12 +104,15 @@ func (j *UI) CreateFromString(root string, domain string, node *HTML, code strin
 	}
 
 	if className == "" {
-		return false
+		return errors.New("ui.go -> className is empty.")
 	}
 
 	j.html = &HTML{}
 
-	j.html.ReadFromString(CodeFx(code, j.IsTest)) //j.html.ReadFromString(j.scanMedia(t))
+	_, err := j.html.ReadFromString(CodeFx(code, j.IsTest)) //j.html.ReadFromString(j.scanMedia(t))
+	if err != nil {
+		return err
+	}
 
 	if domain == "" {
 		j.domain = "\b"
@@ -117,7 +120,7 @@ func (j *UI) CreateFromString(root string, domain string, node *HTML, code strin
 		j.domain = domain
 	}
 
-	return true
+	return nil
 }
 
 /**
@@ -127,7 +130,7 @@ func (j *UI) CreateFromString(root string, domain string, node *HTML, code strin
  * @param file			读取文件路径
  * @throws IOException
  */
-func (j *UI) CreateFrom(root string, domain string, node *HTML, className string) bool {
+func (j *UI) CreateFrom(root string, domain string, node *HTML, className string) error {
 	root = filepath.Clean(root)
 	className = Replace(className, "/", ".")
 	className = Replace(className, "\\", ".")
@@ -146,7 +149,7 @@ func (j *UI) CreateFrom(root string, domain string, node *HTML, className string
 	}
 
 	if className == "" {
-		return false
+		return errors.New("ui.go -> className is empty.")
 	}
 	j.relativePath = strings.Replace(className, ".", "/", -1)
 	file := j.relativePath
@@ -183,14 +186,17 @@ func (j *UI) CreateFrom(root string, domain string, node *HTML, className string
 		j.html = &HTML{}
 		t, err := GetCode(j.htmlPath)
 		if err != nil {
-			return false
+			return err
 		}
-		j.html.ReadFromString(CodeFx(t, j.IsTest))
+		_, err = j.html.ReadFromString(CodeFx(t, j.IsTest))
+		if err != nil {
+			return err
+		}
 	} else if j.jsPath != "" {
 		j.scriptFile = true
 		j.PushImportScript(&Attr{className, className}) //change by sunxy 2018-3-2
 	} else {
-		return false
+		return errors.New("ui.go -> the file isn't exist.")
 
 	}
 
@@ -200,7 +206,7 @@ func (j *UI) CreateFrom(root string, domain string, node *HTML, className string
 		j.domain = domain
 	}
 
-	return true
+	return nil
 }
 
 ///获取此类需要导入的头文件
@@ -226,7 +232,7 @@ func (j *UI) PushImportScript(value *Attr) {
 				}
 				if Exist(tp) {
 					tp = filepath.Clean(tp)
-					m5, _ := jus.F2md5(tp)
+					m5, _ := F2md5(tp)
 					j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, &ScriptElement{"I", value.Name, "U", m5 + value.Value}) //代表UMD规范的包导入
 				}
 				return
@@ -244,7 +250,7 @@ func (j *UI) PushImportScript(value *Attr) {
 			}
 			if Exist(tp) {
 				tp = filepath.Clean(tp)
-				m5, _ := jus.F2md5(tp)
+				m5, _ := F2md5(tp)
 
 				j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, &ScriptElement{"I", value.Name, "P", m5 + value.Value})
 			} else {
@@ -257,7 +263,7 @@ func (j *UI) PushImportScript(value *Attr) {
 			pub = j.SERVER.IsPublic
 		}
 		ft := &UI{SERVER: j.SERVER, IsPublic: pub, SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH}
-		if ft.CreateFromParent(j.root, "", nil, strings.TrimSpace(value.Value), j) { //for example: import jus.Dialog;
+		if err := ft.CreateFromParent(j.root, "", nil, strings.TrimSpace(value.Value), j); err == nil { //for example: import jus.Dialog;
 			ft.IsImport = value.Value
 			if ft.IsScript() {
 				scriptObj := &Script{}
@@ -268,7 +274,7 @@ func (j *UI) PushImportScript(value *Attr) {
 				j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, &ScriptElement{"I", value.Value, "H", ft.ToFormatString()})
 			}
 		} else {
-			j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, &ScriptElement{"O", value.Value, "", value.Value + " isn't Exist."})
+			j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, &ScriptElement{"O", value.Value, "", err.Error()})
 		}
 	}
 }
@@ -321,7 +327,7 @@ func (j *UI) GetInitString() (string, bool) {
  * @param parent
  * @throws IOException
  */
-func (j *UI) CreateFromParent(root string, domain string, node *HTML, className string, parent *UI) bool {
+func (j *UI) CreateFromParent(root string, domain string, node *HTML, className string, parent *UI) error {
 	j.parent = parent
 	return j.CreateFrom(root, domain, node, className)
 
@@ -637,7 +643,7 @@ func (j *UI) scanHTML(child []*HTML) {
 				pub = j.SERVER.IsPublic
 			}
 			var tFunc *UI = &UI{SERVER: j.SERVER, IsPublic: pub, SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH, IsImport: j.IsImport, Debug: j.Debug}
-			if tFunc.CreateFromParent(j.root, p.GetAttr("id"), p, tagName, j) {
+			if err := tFunc.CreateFromParent(j.root, p.GetAttr("id"), p, tagName, j); err == nil {
 				if tFunc.IsScript() {
 					tFunc.SetConstructor(&Attr{tagName, p.GetConstructerParameter()}).setExtend(p.GetAttr("id") == j.domain)
 					// if p.GetConstructerCode() != "" {
@@ -666,7 +672,7 @@ func (j *UI) scanHTML(child []*HTML) {
 					}
 				}
 			} else {
-				tHTML = (&HTML{}).ReadFromString("<div style='font-size:14px;font-weight:bold;background-color: #E91E63;color: #fefefe;padding: 5px;border-radius: 5px;display: inline;'>" + tagName + " isn't exist.</div>")
+				tHTML, _ = (&HTML{}).ReadFromString("<div style='font-size:14px;font-weight:bold;background-color: #E91E63;color: #fefefe;padding: 5px;border-radius: 5px;display: inline;'>" + err.Error() + "</div>")
 			}
 			if p == j.html {
 				j.html = tHTML
@@ -1231,7 +1237,7 @@ func (j *UI) ReadHTML() *HTML {
 					}
 					var tFunc *UI = &UI{SERVER: j.SERVER, IsPublic: pub, SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH}
 					j.idMap[v2.GetAttr("src_id")] = &HTMLObject{Name: v2.GetAttr("id"), HTMLObjectType: 1}
-					if tFunc.CreateFromParent(j.root, v2.GetAttr("id"), v2, v2.TagName(), j) {
+					if err := tFunc.CreateFromParent(j.root, v2.GetAttr("id"), v2, v2.TagName(), j); err == nil {
 						if tFunc.IsScript() {
 							tFunc.SetConstructor(&Attr{v2.TagName(), v2.GetConstructerParameter()}).setExtend(v2.GetAttr("id") == j.domain)
 							if v2.GetConstructerCode() != "" {
@@ -1265,6 +1271,8 @@ func (j *UI) ReadHTML() *HTML {
 							tst2.Write(tst.Bytes())
 							tst = tst2
 						}
+					} else {
+						tst.WriteString("__ERROR__('" + err.Error() + "')")
 					}
 					//tst.WriteString(Replace(j.domain, "\b", "____"))
 					tst.WriteString("$$")

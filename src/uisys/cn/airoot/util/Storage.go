@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	. "jus/str"
 	"os"
 	. "os"
 	"path/filepath"
 	"strings"
+	. "uisys/str"
 )
 
 type FileAttr struct {

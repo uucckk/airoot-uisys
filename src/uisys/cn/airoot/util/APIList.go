@@ -2,9 +2,9 @@
 package util
 
 import (
-	. "jus"
-	. "jus/str"
 	"strings"
+	. "uisys"
+	. "uisys/str"
 )
 
 //修饰符

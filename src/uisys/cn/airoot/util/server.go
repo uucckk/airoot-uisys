@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	. "jus"
-	. "jus/str"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -16,6 +14,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+	. "uisys"
+	. "uisys/str"
 
 	"golang.org/x/net/websocket"
 )
@@ -495,13 +495,13 @@ func (u *UIServer) havUser(cmds []string) (bool, string, string) {
 ///param ext 文件扩展名
 func (u *UIServer) jusEvt(w http.ResponseWriter, req *http.Request, ext string) {
 	query := false
-	if req.URL.RawQuery == "test" {
+	if Index(req.URL.RawQuery, "only") == 0 {
 		query = true
 	}
 	jus := &UI{IsPublic: u.IsPublic, SERVER: u, SYSTEM_PATH: u.SysPath, CLASS_PATH: u.SysPath + "/src/", Debug: true, IsTest: query}
 	className := Substring(req.URL.Path, 0, LastIndex(req.URL.Path, ext))
 	className = Replace(className, "/", ".")
-	if jus.CreateFrom(u.RootPath+"/", "", nil, className) {
+	if err := jus.CreateFrom(u.RootPath+"/", "", nil, className); err == nil {
 		b := jus.Bytes()
 		total := len(b)
 		if jus.pub == "" {
@@ -512,9 +512,15 @@ func (u *UIServer) jusEvt(w http.ResponseWriter, req *http.Request, ext string) 
 		w.Header().Set("Content-Length", strconv.Itoa(total))
 		w.Write(b)
 	} else {
-		fmt.Println("不存在", className)
-		w.WriteHeader(404)
-		w.Write([]byte("<h1>404</h1>"))
+		fmt.Println("service.go ->", className, err)
+		if err.Error() == "ui.go -> the file isn't exist." {
+			w.WriteHeader(404)
+			w.Write([]byte("<h1>" + err.Error() + "</h1>"))
+		} else {
+			w.WriteHeader(500)
+			w.Write([]byte("<h1>" + err.Error() + "</h1>"))
+		}
+
 	}
 	jus = nil
 
@@ -1092,10 +1098,10 @@ func (u *UIServer) apiEvt(req *http.Request) string {
 		jus := &UI{SERVER: u, SYSTEM_PATH: u.SysPath, CLASS_PATH: u.SysPath + "/"}
 		className := Substring(req.RequestURI, 0, LastIndex(req.RequestURI, "."))
 		className = Replace(className, "/", ".")
-		if jus.CreateFromString(u.RootPath+"/", "", nil, req.FormValue("value"), className, nil) {
+		if err := jus.CreateFromString(u.RootPath+"/", "", nil, req.FormValue("value"), className, nil); err == nil {
 			return jus.ToFormatString()
 		} else {
-			fmt.Println("no exist: ", className)
+			fmt.Println(err)
 		}
 		jus = nil
 		return ""
@@ -1414,8 +1420,10 @@ func relEvt(isPub bool, u *UIServer, className string) *UI {
 	lp := LastIndex(className, ".")
 	className = Substring(className, 0, lp)
 	fmt.Print("export:", className)
-	if ui.CreateFrom(u.RootPath+"/", "", nil, className) {
+	if err := ui.CreateFrom(u.RootPath+"/", "", nil, className); err == nil {
 		return ui
+	} else {
+		fmt.Println(err)
 	}
 	return nil
 }

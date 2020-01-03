@@ -4,11 +4,11 @@ package util
 
 import (
 	"fmt"
-	. "jus"
-	. "jus/str"
-	. "jus/tool"
 	"path/filepath"
 	"strings"
+	. "uisys"
+	. "uisys/str"
+	. "uisys/tool"
 )
 
 //--------------------------------GSetter---------------------------------------
@@ -776,7 +776,7 @@ func (s *Script) initClass(name string, data string) string {
 
 			}
 			ft := &UI{SYSTEM_PATH: s.jus.SYSTEM_PATH, CLASS_PATH: s.jus.CLASS_PATH}
-			if ft.CreateFromParent(s.root, "", nil, strings.TrimSpace(value), s.jus) {
+			if err := ft.CreateFromParent(s.root, "", nil, strings.TrimSpace(value), s.jus); err == nil {
 				if ft.IsScript() {
 					code += "var __UP__ = new " + ft.ReadHTML().ToString() + ";\r\n"
 				} else {
@@ -789,7 +789,7 @@ func (s *Script) initClass(name string, data string) string {
 					return "\"" + Escape(tHTML.ToString()) + "\";\r\n"
 				}
 			} else {
-				fmt.Println("Load Class Path Error:", strings.TrimSpace(value))
+				fmt.Println("Script.go ->", strings.TrimSpace(value), err)
 			}
 		}
 	}

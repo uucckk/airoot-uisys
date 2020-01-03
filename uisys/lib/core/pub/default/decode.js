@@ -68,8 +68,8 @@ function main(){
 	try{
 		__FORMAT__(code);
 		var p = mod[UI.GetClassName()];
-		var html = "<!DOCTYPE html><html><head><meta charset='utf-8' >" + (p.head ? p.head : "") + "</head><body>";
-		html += "<div style='display:none;'>" + p.html.replace(/[\b]/g,uuid) + "</div>";
+		var html = "<!DOCTYPE html><html><head><meta charset='utf-8' ><script src='/uisys.js'></script><base href='/' />" + (p.head ? p.head : "") + "</head><body>";
+		html += "<div style = 'display:none'>" + p.html.replace(/[\b]/g,uuid) + "</div>";
 		var tmp = code.split("</script");
 		var data = "";
 		for(var i = 0;i<tmp.length;i++){
@@ -82,10 +82,10 @@ function main(){
 		}
 		
 		var run = "<script type='text/javascript'>";
-		run += UI.GetCode(UI.SYSTEM_PATH + "/core/parser/module_base.tpl");
+		//run += UI.GetCode(UI.SYSTEM_PATH + "/core/parser/module_base.tpl");
 		run += "var fExt=" + (UI.Debug ? " '.ui'" : "'.ui.html'") + ";\r\n";
 		run += "!function(){";
-		run += UI.GetCode(UI.SYSTEM_PATH + "/core/parser/module_manager.tpl");
+		//run += UI.GetCode(UI.SYSTEM_PATH + "/core/parser/module_manager.tpl");
 		//此处兼容ie11 不能用innerText 只能用innerHTML
 		run += "\r\nvar code = '';var lst = document.getElementsByName('_data');for(var i=0;i<lst.length;i++){code += lst[i].innerHTML;}"
 		run += "\r\nUI.decode(document.body,'" + UI.GetClassName() + "',code);";

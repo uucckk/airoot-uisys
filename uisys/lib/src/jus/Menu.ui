@@ -4,7 +4,7 @@
 	@type			JUS 控件
 	@description	
 -->
-<module>
+<module label="name" child="child">
 	<style>
 		body{
 			overflow:hidden;
@@ -59,11 +59,12 @@
 
 	<script>
 		import @root/js/jquery.min.js;
-		import @root/js/jus-xml.js;
 		var _self = $(dom);
 		var eventFlag = false;
 		var nextArr:Array = [];
-		var xml:XML = null;
+		var data:JSONArray = null;
+		var label from "label";
+		var child from "child";
 		
 		//过滤器
 		private var _filter:Function = null;
@@ -71,8 +72,8 @@
 
 		function init(){
 			var o = {pageX:100,pageY:100};
-			xml = new XML(context.value);
-			_self.append(initMenu(xml.child("elem"),0));
+			data = JSON.parse(context.value);
+			_self.append(initMenu(data,0));
 		}
 		
 		/**
@@ -83,23 +84,24 @@
 		public function filter(f:Function):void{
 			_filter = f;
 			_self.children("ul").remove();
-			_self.append(initMenu(xml.child("elem"),0));
+			_self.append(initMenu(data[child],0));
 		}
 
 		/**
 		 * 初始化MENU
 		 */
-		private function initMenu(list:XMLList,level):List{
+		private function initMenu(list:JSONArray,level):List{
+			if(!list){return [];}
 			var ul = $("<ul/>");
 			var li = $("<li/>");
-			var p:XML = null;
+			var p:Object = null;
 			var t:li = null;
 			var tmp = null;
-			for(var i:int = 0;i<list.length();i++){
-				p = list.at(i);
+			for(var i:int = 0;i<list.length;i++){
+				p = list[i];
 				t = li.clone();
-				t.html(_filter ? _filter(p) : "<a href='#'>" + p.child("@label") + "</a>");
-				tmp = initMenu(p.child("elem"),level + 1);
+				t.html(_filter ? _filter(p) : "<a href='#'>" + p[label] + "</a>");
+				tmp = initMenu(p[child],level + 1);
 				if(tmp){
 					t.append(tmp);
 				}
@@ -113,7 +115,7 @@
 				});
 				ul.append(t);
 			}
-			return list.length() >0 ? ul :null;
+			return list.length >0 ? ul :null;
 		}
 
 		//展示出List

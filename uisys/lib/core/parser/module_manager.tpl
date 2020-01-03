@@ -514,69 +514,74 @@ function __InitModule__(__APPDOMAIN__,moduleName,uuid,value,target,append){
 		if(m){
 			__InitBody__(__APPDOMAIN__,uuid,m.html,m.style,target,append);
 			var lst = m.runLst;
-			var p = null;
-			var pn = null;
-			var ct = null;//context or 模块
-			for(var i = 0;i<lst.length;i++){
-				p = lst[i];
-				pn = p.name.replace(/[\b]/g,uuid);
-				if(__OBJECT__[pn] instanceof HTMLElement){__OBJECT__[pn] = {dom:__OBJECT__[pn]};}
-				else if(!__OBJECT__[pn]){__OBJECT__[pn] = {dom:document.getElementById(pn)};};
-				switch(p.type){
-					case "P":
-						param.push(pn,p.value.replace(/[\b]/g,uuid));
-					break;
-					case "X"://Context value
-						ct = {value:p.value};
-					break;
-					case "N"://导入模块
-						if(ct){
-							ct.module = getModule(p.value,__APPDOMAIN__);
-						}else{
-							ct = {module:getModule(p.value,__APPDOMAIN__)};
-						}
-					break;
-					case "S"://执行基本函数
-						if(method[p.value]){
-							method[p.value](pn,uuid,__APPDOMAIN__,ct);
-						}else{
-							trace("S",p.name,p.value);
-						}
-						
-					break;
-					case "E"://执行扩展函数
-						extend[p.value].method(pn,uuid,__APPDOMAIN__,ct);
-					break;
-					case "C"://执行命令函数
-						AddC2C(uuid,p,__APPDOMAIN__)//AddCommandToCompoent
-					break;
-					case "T"://执行外连接函数
-						if(!_MODULE_INNER_[uuid]){
-							_MODULE_INNER_[uuid] = [];
-						}
-						_MODULE_INNER_[uuid].push(__OBJECT__[pn]);
-					break;
-					case "L"://执行外连接函数
-						if(!_MODULE_INNER_[uuid]){
-							_MODULE_INNER_[uuid] = [];
-						}
-						_MODULE_INNER_[uuid].push(eval(p.value.replace(/[\b]/g,uuid))());
-					break;
-					case "Q":
-						ct = null;
-					break;
+			if(lst.length>0){
+				var p = null;
+				var pn = null;
+				var ct = null;//context or 模块
+				for(var i = 0;i<lst.length;i++){
+					p = lst[i];
+					pn = p.name.replace(/[\b]/g,uuid);
+					if(__OBJECT__[pn] instanceof HTMLElement){__OBJECT__[pn] = {dom:__OBJECT__[pn]};}
+					else if(!__OBJECT__[pn]){__OBJECT__[pn] = {dom:document.getElementById(pn)};};
+					switch(p.type){
+						case "P":
+							param.push(pn,p.value.replace(/[\b]/g,uuid));
+						break;
+						case "X"://Context value
+							ct = {value:p.value};
+						break;
+						case "N"://导入模块
+							if(ct){
+								ct.module = getModule(p.value,__APPDOMAIN__);
+							}else{
+								ct = {module:getModule(p.value,__APPDOMAIN__)};
+							}
+						break;
+						case "S"://执行基本函数
+							if(method[p.value]){
+								method[p.value](pn,uuid,__APPDOMAIN__,ct);
+							}else{
+								trace("S",p.name,p.value);
+							}
+							
+						break;
+						case "E"://执行扩展函数
+							extend[p.value].method(pn,uuid,__APPDOMAIN__,ct);
+						break;
+						case "C"://执行命令函数
+							AddC2C(uuid,p,__APPDOMAIN__)//AddCommandToCompoent
+						break;
+						case "T"://执行外连接函数
+							if(!_MODULE_INNER_[uuid]){
+								_MODULE_INNER_[uuid] = [];
+							}
+							_MODULE_INNER_[uuid].push(__OBJECT__[pn]);
+						break;
+						case "L"://执行外连接函数
+							if(!_MODULE_INNER_[uuid]){
+								_MODULE_INNER_[uuid] = [];
+							}
+							_MODULE_INNER_[uuid].push(eval(p.value.replace(/[\b]/g,uuid))());
+						break;
+						case "Q":
+							ct = null;
+						break;
+					}
 				}
+				for(var i = 0;i<param.length;i+=2){
+					_MODULE_CONTENT_LIST_ATTR_[param[i]] = eval(param[i+1]);
+				}
+				if(value != undefined){
+					
+					_MODULE_CONTENT_LIST_ATTR_[uuid] = value;
+				}
+				//初始化列表
+				__initLst__(uuid);
+				return __OBJECT__[uuid];
+			}else{
+				return window[uuid];
 			}
-			for(var i = 0;i<param.length;i+=2){
-				_MODULE_CONTENT_LIST_ATTR_[param[i]] = eval(param[i+1]);
-			}
-			if(value != undefined){
-				
-				_MODULE_CONTENT_LIST_ATTR_[uuid] = value;
-			}
-			//初始化列表
-			__initLst__(uuid);
-			return __OBJECT__[uuid];
+			
 		}else{
 			____ERROR____("module: " + moduleName + " isn't exist.");
 		}
@@ -705,6 +710,22 @@ UI.loadClass = function(className,listener,appDomain){
 UI.getClass = function(className,appDomain){
 	appDomain = appDomain || "local";
 	return _MODULE_CONTENT_LIST_[appDomain][className];
+}
+
+//加载#参数
+UI.loadHash = function(hash,target,module){
+	var th = __Hash__();
+	var url = th[hash];
+	var args = [];
+	var p = null;
+	for(var i = 1;i<arguments.length;i++){
+		p = arguments[i];
+		if(i == 2){
+			p = url ? url : module;
+		}
+		args.push(p);
+	}
+	UI.loadModule.apply(UI,args);
 }
 
 
