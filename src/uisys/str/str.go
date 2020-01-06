@@ -369,7 +369,7 @@ func CodeFx(code string, flag bool) string {
 	s := bytes.NewBufferString("")
 	if flag {
 		for _, v := range arr {
-			if len(v) != 0 && (v[0] == '#' || v[0] == '*') {
+			if len(v) != 0 && (v[0] == '#' || v[0] == '+' || v[0] == '-') {
 				v = v[1:]
 			}
 			s.WriteString(v)
