@@ -16,6 +16,7 @@ import (
 	"time"
 	. "uisys"
 	. "uisys/str"
+	"uisys/tool"
 
 	"golang.org/x/net/websocket"
 )
@@ -1284,7 +1285,8 @@ func (u *UIServer) Release(cmd *Cmd) {
 	if filepath.Clean(u.RootPath) != filepath.Clean(path) || cmd.Attr["m"] != nil {
 		u.rel(path, cmd)
 	} else {
-		fmt.Println("destination", path, "is exist uisys project.")
+		cmd.Attr["m"] = &tool.Attr{}
+		u.rel(path, cmd)
 	}
 }
 
@@ -1538,15 +1540,18 @@ func (u *UIServer) GetServerVar(key string) string {
 /**
  * 设置环境变量
  */
-func (u *UIServer) SetData(cmds []string) {
+func (u *UIServer) SetData(cmds []string) error {
 	path := u.RootPath + "/" + configName
-	if Exist(path) {
-		os.MkdirAll(path, 0777)
+	if !Exist(path) {
+		f, err := os.Create(path)
+		f.Close()
+		if err != nil {
+			return err
+		}
 	}
 	data, err := GetCode(path)
 	if err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
 	var pos int = 0
 	var obj []string = nil
@@ -1581,7 +1586,10 @@ func (u *UIServer) SetData(cmds []string) {
 	}
 
 	//对源文件备份
-	os.Rename(u.RootPath+"/"+configName, u.RootPath+"/"+configName+"b")
+	err = os.Rename(u.RootPath+"/"+configName, u.RootPath+"/"+configName+"b")
+	if err != nil {
+		return err
+	}
 	//生成新文件
 	f, e := os.Create(u.RootPath + "/" + configName)
 	defer f.Close()
@@ -1602,7 +1610,10 @@ func (u *UIServer) SetData(cmds []string) {
 		}
 		f.WriteString(sb)
 		os.Remove(u.RootPath + "/" + configName + "b")
+	} else {
+		return e
 	}
+	return nil
 }
 
 /**

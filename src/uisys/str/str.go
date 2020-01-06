@@ -367,26 +367,26 @@ func FmtCmdAdv(s string) *Cmd {
 func CodeFx(code string, flag bool) string {
 	arr := strings.Split(code, "\n")
 	s := bytes.NewBufferString("")
-	f := true
 	if flag {
 		for _, v := range arr {
 			if len(v) != 0 && (v[0] == '#' || v[0] == '*') {
 				v = v[1:]
 			}
-			if f {
-				s.WriteString(v)
-				s.WriteByte('\n')
-			}
+			s.WriteString(v)
+			s.WriteByte('\n')
 
 		}
 	} else {
+		f := true
 		for _, v := range arr {
 			if len(v) != 0 {
-				if v[0] == '*' {
-					f = !f
+				if v[0] == '+' {
+					f = false
 					continue
-				}
-				if v[0] == '#' {
+				} else if v[0] == '-' {
+					f = true
+					continue
+				} else if v[0] == '#' {
 					continue
 				}
 			}

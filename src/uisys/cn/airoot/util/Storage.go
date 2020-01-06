@@ -24,11 +24,14 @@ func init() {
 func GetCode(path string) (string, error) {
 	f, err := os.Open(path)
 	if err != nil {
-		fmt.Println(">>", err)
+		return "", err
 	}
 	defer f.Close()
-	d, _ := ioutil.ReadAll(f)
-	return string(d), err
+	d, e := ioutil.ReadAll(f)
+	if e != nil {
+		return "", e
+	}
+	return string(d), nil
 }
 
 func GetBytes(path string) ([]byte, error) {

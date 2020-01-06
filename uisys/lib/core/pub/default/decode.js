@@ -68,8 +68,8 @@ function main(){
 	try{
 		__FORMAT__(code);
 		var p = mod[UI.GetClassName()];
-		var html = "<!DOCTYPE html><html><head><meta charset='utf-8' ><script src='/uisys.js'></script><base href='/' />" + (p.head ? p.head : "") + "</head><body>";
-		html += "<div style = 'display:none'>" + p.html.replace(/[\b]/g,uuid) + "</div>";
+		var html = "<!DOCTYPE html><html><head><meta charset='utf-8' ><script src='/uisys.js'></script><base href='/' />" + (p.head ? p.head : "") + "</head>";
+		var temp = "<div style = 'display:none'>" + p.html.replace(/[\b]/g,uuid) + "</div>";
 		var tmp = code.split("</script");
 		var data = "";
 		for(var i = 0;i<tmp.length;i++){
@@ -91,7 +91,7 @@ function main(){
 		run += "\r\nUI.decode(document.body,'" + UI.GetClassName() + "',code);";
 		run += "}();";
 		run += "</script>";
-		return html + data + run + "</body></html>";
+		return html + data + "<body>" + temp + run + "</body></html>";
 	}catch(e){
 		return "<span>decode:" + e + "</sapn>"
 	}

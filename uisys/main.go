@@ -602,7 +602,7 @@ func command(cmd *Cmd) (result bool, resultValue string) {
 						_, v := BatCode(cmds[i], true)
 						str += v
 					} else {
-						str += DevPrintln(335, lang["文件不存在"], cmds[i]) //文件不存在
+						str += DevPrintln(4, lang["文件不存在"], cmds[i]) //文件不存在
 					}
 
 				}
@@ -653,13 +653,13 @@ func command(cmd *Cmd) (result bool, resultValue string) {
 					serverList[cmds[1]].CreateServer(SysLibPath, "", "", "/")
 					str = DevPrintln(2, lang["添加成功"], cmds[1]) //添加成功
 				} else {
-					str = DevPrintln(335, lang["已经添加"], cmds[1]) //已经添加
+					str = DevPrintln(4, lang["已经添加"], cmds[1]) //已经添加
 				}
 				if len(cmds) > 2 {
 					if Exist(cmds[2]) {
 						_, str = commandEvt("stp " + cmds[1] + " @\"" + cmds[2] + "\"")
 					} else {
-						str = DevPrintln(335, lang["不存在工程"], cmds[2])
+						str = DevPrintln(4, lang["不存在工程"], cmds[2])
 						commandEvt("rm " + cmds[1])
 						return true, str
 					}
@@ -696,7 +696,7 @@ func command(cmd *Cmd) (result bool, resultValue string) {
 				if Exist(cmds[1]) {
 					_, str = commandEvt("stp " + pNode + " @\"" + cmds[1] + "\"")
 				} else {
-					str = DevPrintln(335, lang["不存在工程"], cmds[1])
+					str = DevPrintln(4, lang["不存在工程"], cmds[1])
 					commandEvt("rm " + pNode)
 					return true, str
 				}
@@ -787,13 +787,13 @@ func command(cmd *Cmd) (result bool, resultValue string) {
 		case "stp": //设置工程目录
 			if len(cmds) == 2 {
 				if serverList[cmds[1]] == nil {
-					str = DevPrintln(335, lang["不存在服务"], cmds[1])
+					str = DevPrintln(4, lang["不存在服务"], cmds[1])
 				} else {
 					str = DevPrintln(8, cmds[1]+" "+serverList[cmds[1]].RootPath)
 				}
 			} else if len(cmds) > 2 {
 				if serverList[cmds[1]] == nil {
-					str = DevPrintln(335, lang["不存在服务"], cmds[1])
+					str = DevPrintln(4, lang["不存在服务"], cmds[1])
 				} else {
 					result := serverList[cmds[1]].SetProject(cmds[2])
 					if result == 2 { //module 版本不一致
@@ -813,14 +813,14 @@ func command(cmd *Cmd) (result bool, resultValue string) {
 		case "ctf": //创建模块文件
 			if len(cmds) == 2 {
 				if serverList[cmds[1]] == nil {
-					str = DevPrintln(335, lang["不存在服务"], cmds[1])
+					str = DevPrintln(4, lang["不存在服务"], cmds[1])
 				} else {
 					str = DevPrintln(8, cmds[1]+" "+serverList[cmds[1]].RootPath)
 				}
 
 			} else if len(cmds) > 3 {
 				if serverList[cmds[1]] == nil {
-					str = DevPrintln(335, lang["不存在服务"], cmds[1])
+					str = DevPrintln(4, lang["不存在服务"], cmds[1])
 				} else {
 					serverList[cmds[1]].CreateModule(cmds[2], cmds[3])
 					str = DevPrintln(2, lang["模块创建成功"])
@@ -828,7 +828,7 @@ func command(cmd *Cmd) (result bool, resultValue string) {
 
 			} else if len(cmds) > 2 {
 				if serverList[cmds[1]] == nil {
-					str = DevPrintln(335, lang["不存在服务"], cmds[1])
+					str = DevPrintln(4, lang["不存在服务"], cmds[1])
 				} else {
 					serverList[cmds[1]].CreateModule("-h", cmds[2])
 					str = DevPrintln(2, lang["模块创建成功"])
@@ -840,7 +840,7 @@ func command(cmd *Cmd) (result bool, resultValue string) {
 		case "send": //向服务器的WebSocket用户发送信息
 			if len(cmds) > 1 {
 				if serverList[cmds[1]] == nil {
-					str = DevPrintln(335, lang["不存在服务"], cmds[1])
+					str = DevPrintln(4, lang["不存在服务"], cmds[1])
 				} else if len(cmds) > 4 {
 					serverList[cmds[1]].Send(cmds[2], cmds[3], cmds[4])
 				} else if len(cmds) > 3 {
@@ -861,13 +861,13 @@ func command(cmd *Cmd) (result bool, resultValue string) {
 					}
 				}
 				if serverList[cmds[1]] == nil {
-					str = DevPrintln(335, lang["不存在服务"], cmds[1])
+					str = DevPrintln(4, lang["不存在服务"], cmds[1])
 				} else {
 					if serverList[cmds[1]].RootPath != "" {
 						str = DevPrintln(2, lang["服务正在启动"], cmds[1], port)
 						serverList[cmds[1]].Start(port, cfg, BroadCast)
 					} else {
-						str = DevPrintln(335, lang["run_not_set"])
+						str = DevPrintln(4, lang["run_not_set"])
 					}
 				}
 			} else {
@@ -894,7 +894,7 @@ func command(cmd *Cmd) (result bool, resultValue string) {
 		case "rm":
 			if len(cmds) > 1 {
 				if serverList[cmds[1]] == nil {
-					str = DevPrintln(335, lang["不存在服务"], cmds[1])
+					str = DevPrintln(4, lang["不存在服务"], cmds[1])
 				} else {
 					if serverList[cmds[1]].Destroy() == nil {
 						delete(serverList, cmds[1])
@@ -912,7 +912,7 @@ func command(cmd *Cmd) (result bool, resultValue string) {
 				if e {
 					DevPrintln(2, str)
 				} else {
-					DevPrintln(335, str)
+					DevPrintln(4, str)
 				}
 
 			} else {
@@ -922,7 +922,7 @@ func command(cmd *Cmd) (result bool, resultValue string) {
 		case "release": //发布项目
 			if len(cmds) > 1 {
 				if serverList[cmds[1]] == nil {
-					str = DevPrintln(335, lang["不存在服务"], cmds[1])
+					str = DevPrintln(4, lang["不存在服务"], cmds[1])
 				} else {
 					//release a0 -l 代表只发布到当前目录下
 					serverList[cmds[1]].Release(cmd)
@@ -935,7 +935,7 @@ func command(cmd *Cmd) (result bool, resultValue string) {
 		case "clean":
 			if len(cmds) > 1 {
 				if serverList[cmds[1]] == nil {
-					str = DevPrintln(335, lang["不存在服务"], cmds[1])
+					str = DevPrintln(4, lang["不存在服务"], cmds[1])
 				} else {
 					serverList[cmds[1]].Clean()
 					str = DevPrintln(8, lang["清理完成"])
@@ -947,7 +947,7 @@ func command(cmd *Cmd) (result bool, resultValue string) {
 		case "info": //查看项目设置
 			if len(cmds) > 1 {
 				if serverList[cmds[1]] == nil {
-					str = DevPrintln(335, lang["不存在服务"], cmds[1])
+					str = DevPrintln(4, lang["不存在服务"], cmds[1])
 				} else {
 					for j, v := range serverList[cmds[1]].GetData() {
 						for i, n := range v {
@@ -982,10 +982,14 @@ func command(cmd *Cmd) (result bool, resultValue string) {
 		case "set": //设置项目变量
 			if len(cmds) > 3 {
 				if serverList[cmds[1]] == nil {
-					str = DevPrintln(335, lang["不存在服务"], cmds[1])
+					str = DevPrintln(4, lang["不存在服务"], cmds[1])
 				} else {
-					serverList[cmds[1]].SetData(cmds[2:])
-					str = DevPrintln(2, lang["设置成功"], cmds[1])
+					if err := serverList[cmds[1]].SetData(cmds[2:]); err == nil {
+						str = DevPrintln(2, lang["设置成功"], cmds[1])
+					} else {
+						str = DevPrintln(4, "server.go SetData -> "+err.Error())
+					}
+
 				}
 
 			} else {
@@ -996,7 +1000,7 @@ func command(cmd *Cmd) (result bool, resultValue string) {
 		case "ret": //移除项目变量
 			if len(cmds) > 2 {
 				if serverList[cmds[1]] == nil {
-					str = DevPrintln(335, lang["不存在服务"], cmds[1])
+					str = DevPrintln(4, lang["不存在服务"], cmds[1])
 				} else {
 					if serverList[cmds[1]].RetData(cmds[2:]) {
 						str = DevPrintln(2, lang["属性移除成功"], cmds[1])
@@ -1049,7 +1053,7 @@ func command(cmd *Cmd) (result bool, resultValue string) {
 		case "lw": //显示目前socket链接用户
 			if len(cmds) > 1 {
 				if serverList[cmds[1]] == nil {
-					str = DevPrintln(335, lang["不存在服务"], cmds[1])
+					str = DevPrintln(4, lang["不存在服务"], cmds[1])
 				} else {
 					if len(cmds) > 2 && cmds[2] == "-h" {
 						str += "<table class='list'>"
@@ -1142,7 +1146,7 @@ func command(cmd *Cmd) (result bool, resultValue string) {
 				//将这个文件里的内容，交给js执行。
 				_, re := vm.RunString("main(__ARG__)")
 				if re != nil {
-					str = DevPrintln(335, re.Error(), cmds[0])
+					str = DevPrintln(4, re.Error(), cmds[0])
 				} else {
 					str = DevPrintln(7, "")
 				}
