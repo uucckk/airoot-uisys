@@ -2,7 +2,7 @@ class Text{
 	public var type = "custom";
 	var _text:String = "";
 	var _x = 0,_y = 0,_z = 0;
-	var _color:int = 0xaaaaaa;
+	var _color:int = "#000000";
 	var _mesh= null;
 	function init(){
 		//alert("A");
@@ -54,12 +54,7 @@ class Text{
 	}
 	
 	public function set color(value:String):void{
-		if(isNumber(value)){
-			_color = value;
-		}else if(value.length>0 && value.charAt(0) == "#"){
-			value = "0x" + value.substring(1);
-			_color = parseInt(value);
-		}
+		_color = value;
 		
 	}
 	
@@ -84,7 +79,7 @@ class Text{
 			//ctx.fillStyle = "rgb(58,255,250)";//设定画布颜色
 			//ctx.fillRect(0,0,width,width);
 			ctx.font = "bolder 24px Arial ";//设定字体属性，和css语法一致
-			ctx.fillStyle = "rgb(0,0,0)";//设定画布颜色
+			ctx.fillStyle = _color;//设定画布颜色
 			ctx.fillText(text,0,width/2);//添加文字，并设置文字的位置
 			ctx.globalAlpha =1;//设定canvas透明
 			//将画布生成的图片作为贴图给精灵使用，并将精灵创建在设定好的位置

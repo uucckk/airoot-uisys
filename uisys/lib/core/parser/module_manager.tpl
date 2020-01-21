@@ -690,7 +690,7 @@ UI.loadClass = function(className,listener,appDomain){
 			return;
 		}
 	}
-	var url = UI.PATH + "/" + className + ".ui.html";
+	var url = UI.PATH + className + ".ui.html";
 	var load = window.location.toString().indexOf("http:") == 0 ? asjs.post : asjs.get;
 	var _CF_ = null;
 	load(url,function(e){
@@ -745,7 +745,7 @@ UI.loadModule = function(target,module){
 			return;
 		}
 	}
-	var url = UI.PATH + "/" + module.replace(/\./g,"/") + ".ui.html";
+	var url = UI.PATH + module.replace(/\./g,"/") + ".ui.html";
 	var load = window.location.toString().indexOf("http:") == 0 ? asjs.post : asjs.get;
 	var _CF_ = null;
 	load(url,function(e){
@@ -816,7 +816,7 @@ UI.addModule = function(target,module){
 			return;
 		}
 	}
-	var url = UI.PATH + "/" + module.replace(/\./g,"/") + ".ui.html";
+	var url = UI.PATH + module.replace(/\./g,"/") + ".ui.html";
 	var load = window.location.toString().indexOf("http:") == 0 ? asjs.post : asjs.get;
 	var _CF_ = null;
 	load(url,function(e){

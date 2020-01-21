@@ -22,7 +22,7 @@ import (
 //-------------------------------HTMLObject-------------------------------------
 type HTMLObject struct {
 	Name           string
-	HTMLObjectType int
+	HTMLObjectType int //-1代表容器节点，0代表普通元素，1代表对象
 }
 
 //----------------------------------JUS-----------------------------------------
@@ -224,11 +224,10 @@ func (j *UI) PushImportScript(value *Attr) {
 		if pos != -1 {
 			if Index(value.Value, "/") != -1 || Index(value.Value, "\\") != -1 { //for example import vue from "lib/js/vue.min.js";
 				tp := string(value.Value[pos+1:])
-				if Index(tp, "/index.res") == 0 {
-					tp = j.SYSTEM_PATH + "/root" + tp[10:]
+				if Index(tp, "index.res") == 0 {
+					tp = j.SYSTEM_PATH + "/root/" + tp[10:]
 				} else {
 					tp = j.root + "/" + tp
-					//value.Value = Substring(tp, StringLen(j.root), -1)
 				}
 				if Exist(tp) {
 					tp = filepath.Clean(tp)
@@ -242,11 +241,11 @@ func (j *UI) PushImportScript(value *Attr) {
 		}
 		if Index(value.Value, "/") != -1 || Index(value.Value, "\\") != -1 { //for example: import /lib/js/jquery.min.js;
 			tp := ""
-			if Index(value.Value, "/index.res") == 0 {
-				tp = j.SYSTEM_PATH + "/root" + value.Value[10:]
+			if Index(value.Value, "index.res") == 0 {
+				tp = j.SYSTEM_PATH + "/root/" + value.Value[10:]
 			} else {
 				tp = j.root + "/" + value.Value
-				value.Value = Substring(tp, StringLen(j.root), -1)
+				//value.Value = Substring(tp, StringLen(j.root), -1)
 			}
 			if Exist(tp) {
 				tp = filepath.Clean(tp)
@@ -598,18 +597,6 @@ func (j *UI) scanHTML(child []*HTML) {
 
 		if p.GetAttr("isroot") != "" {
 			p.SetAttr("id", j.domain)
-		} else {
-			// if p.GetAttr("id") == "" {
-			// 	p.SetAttr("id", p.GetAttr("domain")+j.getName())
-			// } else {
-			// 	if p.GetAttr("id")[0] == '$' {
-			// 		p.SetAttr("src_id", p.GetAttr("id")[1:])
-			// 		p.SetAttr("id", p.GetAttr("domain")+p.GetAttr("id")[1:])
-			// 	} else {
-			// 		p.SetAttr("src_id", p.GetAttr("id"))
-			// 		p.SetAttr("id", p.GetAttr("domain")+p.GetAttr("id"))
-			// 	}
-			// }
 		}
 
 		//解读指令
@@ -663,7 +650,9 @@ func (j *UI) scanHTML(child []*HTML) {
 					tFunc.SetConstructor(&Attr{tagName, p.GetConstructerParameter()}).setExtend(p.GetAttr("id") == j.domain)
 
 					tHTML = tFunc.ReadHTML()
+					clsTmp := tHTML.GetAttr("class")
 					tHTML.CopyFrom(p)
+					tHTML.SetAttr("class", clsTmp+" "+tHTML.GetAttr("class"))
 					if len(arr) > 1 {
 						tHTML.SetTagName(arr[0])
 					}
@@ -761,8 +750,6 @@ func (j *UI) styleFormat() string {
  * 公共css属性，也可以认为某个控件的全局css样式
  */
 func (j *UI) cssFormat() string {
-	//j.css.AddDomain("[class_id='" + j.className + "']")
-	//j.css.ReplaceSelecter("body", "[class_id='"+j.className+"']")
 	j.css.AddDomain(".-" + Replace(j.className, ".", "-"))
 	j.css.ReplaceSelecter("body", ".-"+Replace(j.className, ".", "-"))
 	return ScriptInitD(j.css.ToString(0), j.domain)
@@ -1314,11 +1301,10 @@ func (j *UI) ReadHTML() *HTML {
 	j.componentId([]*HTML{j.html})
 	j.domainHTML([]*HTML{j.html})
 	if j.styleBuffer.Len() > 0 {
-		j.style = &CSS{jus: j, CurrentPath: "./" + j.relativePath + ".lib"}
+		j.style = &CSS{Root: &Attr{"#" + j.html.GetAttr("src_id"), j.html.TagName()}, jus: j, CurrentPath: "./" + j.relativePath + ".lib"}
 		j.style.ReadFromString(j.scanMedia(j.styleBuffer.String()))
 	}
-
-	j.idMap[j.html.GetAttr("id")] = &HTMLObject{Name: j.domain, HTMLObjectType: -1} //代表容器节点
+	j.idMap[j.html.GetAttr("src_id")] = &HTMLObject{Name: j.domain, HTMLObjectType: -1} //代表容器节点
 	j.html.SetAttr("id", j.domain)
 	j.html.SetAttr("isroot", "true")
 	headCss := ""
@@ -1327,16 +1313,17 @@ func (j *UI) ReadHTML() *HTML {
 	} else {
 		headCss = Replace(j.html.TagName(), ".", "-")
 	}
-	headCss = "-" + headCss
+	headCss = "-" + headCss + " " + j.domain
 	j.scanHTML([]*HTML{j.html})
 
 	if j.contentTo != "" {
 		j.scriptBuffer.WriteString("if(_MODULE_INNER_[__DOMAIN__]){____." + j.contentTo + "=_MODULE_INNER_[__DOMAIN__];}")
 	}
 	j.html.SetAttr("class", headCss+" "+j.html.GetAttr("class"))
-	if j.html.GetAttr("class") == "" || Index(j.html.GetAttr("class"), j.domain) == -1 {
-		j.html.SetAttr("class", IfStr(j.html.GetAttr("class") != "", j.html.GetAttr("class")+" ", "")+j.domain)
-	}
+	// if Index(j.html.GetAttr("class"), j.domain) == -1 {
+	// 	fmt.Println(">>>")
+	// 	j.html.SetAttr("class", IfStr(j.html.GetAttr("class") != "", j.html.GetAttr("class")+" ", "")+j.domain)
+	// }
 	if j.style != nil {
 		style := &HTML{}
 		style.ReadFromString("<style>" + j.styleFormat() + "</style>")
@@ -1378,7 +1365,7 @@ func (j *UI) ReadHTML() *HTML {
 	}
 
 	if j.cssBuffer.Len() > 0 {
-		j.css = &CSS{jus: j, CurrentPath: "./" + j.relativePath + ".lib"}
+		j.css = &CSS{Root: &Attr{"#" + j.html.GetAttr("src_id"), j.html.TagName()}, jus: j, CurrentPath: "./" + j.relativePath + ".lib"}
 		j.css.ReadFromString(j.scanMedia(j.cssBuffer.String()))
 		j.AddStyleCode(j.className, j.cssFormat())
 	}

@@ -1400,13 +1400,13 @@ func relMethod(u *UIServer, dest string, path string, isPub bool) {
 			if p := Index(k, "\002"); p != -1 {
 				k = string(k[p+1:])
 			}
-			if Index(k, "/index.res") == 0 {
-				cd := dest + "/index.res" + k[10:]
+			if Index(k, "index.res") == 0 {
+				cd := dest + "/index.res/" + k[10:]
 				cdir := filepath.Dir(cd)
 				if !Exist(cdir) {
 					os.MkdirAll(cdir, 0777)
 				}
-				CopyFile(cd, u.SysPath+"/root"+k[10:])
+				CopyFile(cd, u.SysPath+"/root/"+k[10:])
 			}
 		}
 	}

@@ -106,7 +106,7 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _global string, _this string, _
 				} else if t.TagType == 3 && "}" == t.Value {
 					level--
 				}
-				if level == 0 {
+				if level == 0 || p == len(lst) {
 					tl = append(tl, &Tag{Value: s.initClass(f.Value, tjs.ToECSMAScript5()), TagType: 1})
 					tjs = nil
 					break
@@ -315,7 +315,7 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _global string, _this string, _
 						f.Value = "\002"
 						isFrom = true
 					} else if f.Value == "@root" {
-						f.Value = "/index.res"
+						f.Value = "index.res"
 					} else if f.Value == "@lib" {
 						t.Value = "\"" + IfStr(s.ui.IsSysLib, "index.src/", "") + "/" + s.ui.relativePath + ".lib/\""
 						if s.ui.IsSysLib {
@@ -406,7 +406,7 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _global string, _this string, _
 				s.ui.GetRoot().PushSysLibDirs(s.ui.className, s.ui.relativePath+".lib")
 			}
 		} else if t.IsKeyWord && "@root" == t.Value {
-			f.Value = "/index.res/"
+			f.Value = "index.res/"
 		} else if t.Value[0] == '@' {
 			t.Value = s.ui.SERVER.GetServerVar(t.Value)
 		} else if t.IsKeyWord && "this" == t.Value {

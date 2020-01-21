@@ -114,7 +114,7 @@ func (s *Script) initScriptFrom(js *MScript, _global string, _this string, _pri 
 						f.Value = "\002"
 						isFrom = true
 					} else if f.Value == "@root" {
-						f.Value = "/index.res"
+						f.Value = "index.res"
 					} else if f.Value == "@lib" {
 						t.Value = "\"" + IfStr(s.jus.IsSysLib, "index.src/", "") + "/" + s.jus.relativePath + ".lib/\""
 						if s.jus.IsSysLib {

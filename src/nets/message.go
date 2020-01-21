@@ -49,7 +49,6 @@ func (m *Message) Read() (string, error) {
 	for true {
 		_, e := m.Socket.Read(m.data)
 		if e != nil {
-			fmt.Println("Message 读取错误")
 			return "", e
 		}
 		c = m.data[0]
@@ -58,7 +57,7 @@ func (m *Message) Read() (string, error) {
 		}
 		count++
 		if count > 65536 {
-			fmt.Println("溢出")
+			fmt.Println("Message -> fulldeep")
 		}
 		m.buf.WriteByte(c)
 	}
@@ -71,8 +70,4 @@ func (m *Message) SetReadDeadline(t time.Time) error {
 
 func (m *Message) Close() error {
 	return m.Socket.Close()
-}
-
-func main() {
-	fmt.Println("Hello World!")
 }

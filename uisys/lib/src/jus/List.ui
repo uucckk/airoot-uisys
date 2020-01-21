@@ -32,7 +32,7 @@
 	
 </style>
 <jus.Box dataLabel="" dataField="">
-	<ul id="content" style="padding-top:265px;">
+	<ul id="content">
 		<@component/>
 	</ul>
 </jus.Box>
@@ -47,7 +47,10 @@
 	private var _data = [];
 	function init(){
 		dom.onscroll = function(e){
-			onScroll(e)
+			if(onScroll){
+				onScroll(e);
+			}
+			
 		}
 	}
 	
@@ -58,6 +61,7 @@
 	}
 	
 	private function initList(){
+		$(#content).empty();
 		var p = null;
 		for(var i = 0;i<_data.length;i++){
 			p = _data[i];

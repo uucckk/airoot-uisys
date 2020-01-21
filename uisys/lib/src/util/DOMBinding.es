@@ -180,6 +180,7 @@ class DOMBind{
 			p = node[i];
 			if(p instanceof Text){
 				if(p.length>2 && p.nodeValue.indexOf("{") != -1){
+					start = 0;
 					while((m = a.exec(p.nodeValue)) != null){
 						name = p.nodeValue.substring(m.index + 1,a.lastIndex - 1).trim();
 						if(start != m.index){
@@ -187,6 +188,7 @@ class DOMBind{
 							p.parentNode.insertBefore(txt,p);
 							i ++;
 						}
+						
 						txt = document.createTextNode("{" + name +  "}");//插入当前匹配项目
 						pushText(fx(name),txt);
 						p.parentNode.insertBefore(txt,p);
@@ -206,7 +208,6 @@ class DOMBind{
 					for(var t = 0;t<atl.length;t++){
 						nm = atl[t];
 						if(nm.name.charAt(0) == ":"){
-							console.log(">>",nm,nm.value);
 							pushText(fx(nm.value),p,nm.name.substring(1));
 						}
 					}
@@ -296,7 +297,7 @@ class DOMBind{
 			sb += p;
 		}
 		stat = sb.trim();
-		console.log({stat:stat,arr:stat.split("."),value:val,filter:filter});
+		//console.log({stat:stat,arr:stat.split("."),value:val,filter:filter});
 		return {stat:stat,arr:stat.split("."),value:val,filter:filter};
 	}
 	

@@ -775,8 +775,9 @@ func (m *MScript) attrMethod(i int, domain string, paramType int) int {
 
 func (m *MScript) elseLogicMethod(i int, domain string, paramType int) int {
 	var p *Tag = nil
+	ml := len(m.lst)
 sg:
-	for i < len(m.lst) {
+	for i < ml {
 		p = m.lst[i]
 		i++
 		if p.TagType < 0 || p.TagType == 5 {
@@ -788,9 +789,9 @@ sg:
 		}
 
 		if p.TagType == 3 && "{" == p.Value {
-			for i < len(m.lst) {
+			for i < ml {
 				i = m.readArea(i, domain, paramType) + 1
-				if "}" == m.lst[i-1].Value {
+				if i > ml || "}" == m.lst[i-1].Value {
 					break sg
 				}
 			}
@@ -812,8 +813,9 @@ sg:
 func (m *MScript) classMethod(i int, domain string, paramType int) int {
 	var p *Tag = nil
 	isClass := false
+	ml := len(m.lst)
 sg:
-	for i < len(m.lst) {
+	for i < ml {
 		p = m.lst[i]
 		i++
 		if p.TagType < 0 || p.TagType == 5 {
@@ -833,10 +835,9 @@ sg:
 		}
 		if isClass {
 			if p.TagType == 3 && "{" == p.Value {
-				for i < len(m.lst) {
-
+				for i < ml {
 					i = m.readArea(i, domain, paramType) + 1
-					if "}" == m.lst[i-1].Value {
+					if i > ml || "}" == m.lst[i-1].Value {
 						break sg
 					}
 				}
@@ -858,8 +859,9 @@ sg:
 func (m *MScript) logicMethod(i int, domain string, paramType int) int {
 	var p *Tag = nil
 	isArea := false //逻辑判断域名
+	ml := len(m.lst)
 sg:
-	for i < len(m.lst) {
+	for i < ml {
 		p = m.lst[i]
 		p.Domain = domain
 		i++
@@ -877,9 +879,9 @@ sg:
 		}
 		if isArea {
 			if p.TagType == 3 && "{" == p.Value {
-				for i < len(m.lst) {
+				for i < ml {
 					i = m.readArea(i, domain, paramType) + 1
-					if "}" == m.lst[i-1].Value {
+					if i > ml || "}" == m.lst[i-1].Value {
 						break sg
 					}
 				}

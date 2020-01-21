@@ -40,7 +40,7 @@ addEventListener("message",function(e){
 					if(ch == '\r'){
 						continue;
 					}
-					buf += "<span class='word' type='SYMBOL' style='color:#234678;font-weight:bold;'>" + ch + "</span>";
+					buf += "<span class='word' type='SYMBOL' style='color:#234678;'>" + ch + "</span>";
 					
 				}
 				
@@ -70,7 +70,7 @@ addEventListener("message",function(e){
 function formatWord(value){
 	for(var i = 0;i<keyWords.length;i++){
 		if(keyWords[i].name == value){
-			return "<span class='word' style='color:" + keyWords[i].color + ";font-weight:bold;' type='KEYWORD'>" + value + "</span>";
+			return "<span class='word' style='color:" + keyWords[i].color + ";' type='KEYWORD'>" + value + "</span>";
 		}
 	}
 	return "<span class='word'>" + value + "</span>";

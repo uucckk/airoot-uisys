@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"strings"
 	. "uisys"
+	"uisys/tool"
 )
 
 //CSS Class 元素
@@ -70,6 +71,7 @@ var res [3]rune = [3]rune{'l', 'i', 'b'}
 
 //转为JUS定制的CSS样式解析器
 type CSS struct {
+	Root        *tool.Attr //根元素
 	selecter    []*Selecter
 	jus         *UI
 	CurrentPath string
@@ -198,11 +200,23 @@ out:
 func (c *CSS) AddDomain(domain string) {
 	var p []*ClassElement = nil
 	var ce *ClassElement = nil
+	var l int
 	for _, v := range c.selecter {
 		p = v.Element
-		for i := 0; i < len(p); i++ {
+		l = len(p)
+		for i := 0; i < l; i++ {
+
 			ce = p[i]
+			if ce.Value == c.Root.Value {
+				t := &ClassElement{Value: domain, ElementType: 0}
+				t.Next = ce.Next
+				v.AddRule(t)
+			}
 			if strings.IndexRune(ce.Value, '$') != -1 || "body" == ce.Value {
+				continue
+			}
+			if ce.Value[0] == '#' && ce.Value == c.Root.Name {
+				ce.Value = domain
 				continue
 			}
 			nce := &ClassElement{Value: domain, ElementType: 0}
@@ -302,7 +316,6 @@ func (c *CSS) ToString(tp int) string {
 								sb.WriteString("#" + c.jus.GetDefine(ce.Value[1:]).Name)
 							}
 						}
-
 					} else {
 						sb.WriteString(ce.Value)
 					}
