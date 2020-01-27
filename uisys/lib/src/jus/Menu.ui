@@ -38,6 +38,7 @@
 			background-color:#ffffff;
 			border:1px solid #cccccc;
 			box-shadow: 1px 1px 5px #aaaaaa;
+			z-index:99;
 		}
 		.$menuList li{
 			padding:5px 10px 5px 10px;

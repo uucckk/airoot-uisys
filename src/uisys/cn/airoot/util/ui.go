@@ -482,10 +482,9 @@ func (j *UI) overHTML(node []*HTML) {
 					j.extendsScriptBuffer += ListToHTMLString(p.Child())
 					continue
 				}
-				t = j.html.GetElementById(p.GetAttr("id"))
+				t = j.html.GetElementById(Replace(p.GetAttr("id"), "\b", j.domain))
 				if t != nil {
 					t.ReplaceWith(p)
-
 				}
 			}
 		}
@@ -1301,7 +1300,7 @@ func (j *UI) ReadHTML() *HTML {
 	j.componentId([]*HTML{j.html})
 	j.domainHTML([]*HTML{j.html})
 	if j.styleBuffer.Len() > 0 {
-		j.style = &CSS{Root: &Attr{"#" + j.html.GetAttr("src_id"), j.html.TagName()}, jus: j, CurrentPath: "./" + j.relativePath + ".lib"}
+		j.style = &CSS{Root: &Attr{"#" + j.html.GetAttr("src_id"), j.html.TagName()}, Class: j.html.GetAttr("class"), jus: j, CurrentPath: "./" + j.relativePath + ".lib"}
 		j.style.ReadFromString(j.scanMedia(j.styleBuffer.String()))
 	}
 	j.idMap[j.html.GetAttr("src_id")] = &HTMLObject{Name: j.domain, HTMLObjectType: -1} //代表容器节点
@@ -1365,7 +1364,7 @@ func (j *UI) ReadHTML() *HTML {
 	}
 
 	if j.cssBuffer.Len() > 0 {
-		j.css = &CSS{Root: &Attr{"#" + j.html.GetAttr("src_id"), j.html.TagName()}, jus: j, CurrentPath: "./" + j.relativePath + ".lib"}
+		j.css = &CSS{Root: &Attr{"#" + j.html.GetAttr("src_id"), j.html.TagName()}, Class: j.html.GetAttr("class"), jus: j, CurrentPath: "./" + j.relativePath + ".lib"}
 		j.css.ReadFromString(j.scanMedia(j.cssBuffer.String()))
 		j.AddStyleCode(j.className, j.cssFormat())
 	}

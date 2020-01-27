@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"strings"
 	. "uisys"
+	"uisys/str"
 	"uisys/tool"
 )
 
@@ -71,6 +72,7 @@ var res [3]rune = [3]rune{'l', 'i', 'b'}
 
 //转为JUS定制的CSS样式解析器
 type CSS struct {
+	Class       string
 	Root        *tool.Attr //根元素
 	selecter    []*Selecter
 	jus         *UI
@@ -147,6 +149,7 @@ out:
 			lvl = 1
 			values.Reset()
 			values.WriteRune('{')
+			buf := bytes.NewBufferString("")
 			for position < len(code) {
 				ch = code[position]
 				position++
@@ -178,7 +181,21 @@ out:
 					continue
 				}
 
+				if ch == ':' {
+					if buf.String() == "animation" {
+						//fmt.Println(buf.String())
+					}
+
+				}
+
+				if ch != ' ' && ch != '\t' {
+					buf.WriteRune(ch)
+				}
+
 				values.WriteRune(ch)
+				if ch == '\r' || ch == '\n' || ch == '{' {
+					buf.Reset()
+				}
 				if lvl == 0 {
 					sel.Value = values.String()
 					c.selecter = append(c.selecter, sel)
@@ -205,9 +222,8 @@ func (c *CSS) AddDomain(domain string) {
 		p = v.Element
 		l = len(p)
 		for i := 0; i < l; i++ {
-
 			ce = p[i]
-			if ce.Value == c.Root.Value {
+			if ce.Value == c.Root.Value || str.Index(c.Class, ce.Value[1:]) != -1 {
 				t := &ClassElement{Value: domain, ElementType: 0}
 				t.Next = ce.Next
 				v.AddRule(t)
@@ -219,13 +235,16 @@ func (c *CSS) AddDomain(domain string) {
 				ce.Value = domain
 				continue
 			}
+			if ce.Value[0] == '@' {
+				continue
+			}
 			nce := &ClassElement{Value: domain, ElementType: 0}
 			nce.Next = ce
 			p[i] = nce
 		}
 	}
-
 }
+
 func (c *CSS) isChar(ch rune) bool {
 	if (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') || ch == '-' {
 		return true

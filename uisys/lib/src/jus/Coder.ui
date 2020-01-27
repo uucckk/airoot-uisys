@@ -1,5 +1,5 @@
 <@import value="jus.*"/>
-<vbox width="100%" height="100%">
+<box width="100%" height="100%">
   <style>
     body{
 		overflow:hidden;
@@ -300,14 +300,17 @@
 	 * 设置显示的文本内容
 	 */
 	public function set text(value:String):void{
-		console.log(">>>>",@lib , "format/html.js");
-		value = fx(value);
+		value = fx(value).trim();
 		var worker = new Worker(@lib + "format/html.js");
 		worker.addEventListener("message",function(e){
 			area.innerHTML = e.data.data;
+			console.log("value",value,">>",e.data.count);
 			for(var i:int = 0;i<e.data.count;i++){
 				num.appendChild(createNewNum(count++));
 			}
+			dom.style.height = num.offsetHeight + "px";
+			content.style.height = dom.style.height;
+			bg.style.height = dom.style.height;
 		});
 		
 		
@@ -352,14 +355,6 @@
 		}
 		return str;
 	}
-	
-	
-	
-	
-	
-
-	
-	
 	
 	
 	private function scrollEvt(e:Event){

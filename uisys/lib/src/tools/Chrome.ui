@@ -1,0 +1,17 @@
+<@pub/>
+<style>
+	body{
+		border:1px solid #707070;
+	}
+	#head{
+		background-color:#dee1e6;
+		height:40px;
+		border-top:1px solid #1883d7;
+	}
+</style>
+<jus.Box>
+	<div id="head">
+	
+	</div>
+	<jus.HTMLLoader url="http://www.163.com/" />
+</jus.Box>
