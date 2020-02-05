@@ -1005,17 +1005,28 @@ func (j *UI) scanMedia(value string) string {
 
 					tmp = append(tmp, ch)
 				}
-
+				file := string(tmp)
+				file = Replace(Replace(file, "'", ""), "\"", "")
 				path, err := filepath.Abs(j.htmlPath)
 				if err != nil {
-					//fmt.Println(path, err)
+					fmt.Println(path, err)
 				}
-				f := IfStr(j.IsSysLib, "index.src/", "") + Substring(path, 0, LastIndex(path, ".")) + ".lib/" + Substring(string(tmp), 1, len(tmp)-1)
-				//f := Substring(path, 0, LastIndex(path, ".")) + ".lib/" + Substring(string(tmp), 1, len(tmp)-1)
-				//fmt.Println(filepath.Abs(f))
+
+				f := Substring(path, 0, LastIndex(path, ".")) + ".lib/" + file
+
 				if Exist(f) {
 					data, _ := GetBytes(f)
-					sb.WriteString("data:image/png;base64," + base64.StdEncoding.EncodeToString(data))
+					switch filepath.Ext(file) {
+					case ".svg":
+						sb.WriteString("data:image/svg+xml;base64," + base64.StdEncoding.EncodeToString(data))
+					case ".jpg":
+						fallthrough
+					case ".jpeg":
+						sb.WriteString("data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(data))
+					default:
+						sb.WriteString("data:image/png;base64," + base64.StdEncoding.EncodeToString(data))
+					}
+
 				}
 
 				tmp = tmp[0:0]
@@ -1300,7 +1311,7 @@ func (j *UI) ReadHTML() *HTML {
 	j.componentId([]*HTML{j.html})
 	j.domainHTML([]*HTML{j.html})
 	if j.styleBuffer.Len() > 0 {
-		j.style = &CSS{Root: &Attr{"#" + j.html.GetAttr("src_id"), j.html.TagName()}, Class: j.html.GetAttr("class"), jus: j, CurrentPath: "./" + j.relativePath + ".lib"}
+		j.style = &CSS{Root: &Attr{"#" + j.html.GetAttr("src_id"), j.html.TagName()}, Class: j.html.GetAttr("class"), jus: j, CurrentPath: IfStr(j.IsSysLib, "index.src/", "./") + j.relativePath + ".lib"}
 		j.style.ReadFromString(j.scanMedia(j.styleBuffer.String()))
 	}
 	j.idMap[j.html.GetAttr("src_id")] = &HTMLObject{Name: j.domain, HTMLObjectType: -1} //代表容器节点
@@ -1314,7 +1325,6 @@ func (j *UI) ReadHTML() *HTML {
 	}
 	headCss = "-" + headCss + " " + j.domain
 	j.scanHTML([]*HTML{j.html})
-
 	if j.contentTo != "" {
 		j.scriptBuffer.WriteString("if(_MODULE_INNER_[__DOMAIN__]){____." + j.contentTo + "=_MODULE_INNER_[__DOMAIN__];}")
 	}
@@ -1323,11 +1333,13 @@ func (j *UI) ReadHTML() *HTML {
 	// 	fmt.Println(">>>")
 	// 	j.html.SetAttr("class", IfStr(j.html.GetAttr("class") != "", j.html.GetAttr("class")+" ", "")+j.domain)
 	// }
+
 	if j.style != nil {
 		style := &HTML{}
 		style.ReadFromString("<style>" + j.styleFormat() + "</style>")
 		j.html.Insert(style, 0)
 	}
+
 	//开始组装参数
 	script := &HTMLScript{}
 	script.CreateFrom(j, j.root, j.domain, j.paramValue, j.innerValue, j.extendsScriptBuffer)
@@ -1362,9 +1374,8 @@ func (j *UI) ReadHTML() *HTML {
 			j.html.Append(node)
 		}
 	}
-
 	if j.cssBuffer.Len() > 0 {
-		j.css = &CSS{Root: &Attr{"#" + j.html.GetAttr("src_id"), j.html.TagName()}, Class: j.html.GetAttr("class"), jus: j, CurrentPath: "./" + j.relativePath + ".lib"}
+		j.css = &CSS{Root: &Attr{"#" + j.html.GetAttr("src_id"), j.html.TagName()}, Class: j.html.GetAttr("class"), jus: j, CurrentPath: IfStr(j.IsSysLib, "index.src/", "./") + j.relativePath + ".lib"}
 		j.css.ReadFromString(j.scanMedia(j.cssBuffer.String()))
 		j.AddStyleCode(j.className, j.cssFormat())
 	}

@@ -8,6 +8,7 @@
 	</iframe>
 </module>
 <script>
+	import @root/js/jquery.min.js;
 	var _self = $(dom);
 	private var frame = null;
 	public var onLoad:Function = null;

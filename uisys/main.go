@@ -26,7 +26,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-var version string = "AIroot UISYS v1.0"
+var version string = "AIroot UISYS v1"
 var lang map[string]string
 
 var zhCN = make(map[string]string, 0)
@@ -1134,7 +1134,7 @@ func command(cmd *Cmd) (result bool, resultValue string) {
 
 			v, e := GetCode("lib/cmd/" + cmds[0])
 			if e != nil {
-				fmt.Println(cmds[0] + " 没有这个文件")
+				//fmt.Println(cmds[0] + " 没有这个文件")
 			} else {
 				vm := goja.New()
 				console := &Console{Name: str}

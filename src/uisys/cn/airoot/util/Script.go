@@ -3,6 +3,7 @@
 package util
 
 import (
+	"bytes"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -64,7 +65,8 @@ func (s *Script) initScript(js *MScript) string {
  * @throws Exception
  */
 func (s *Script) initScriptFrom(js *MScript, _global string, _this string, _pri string) string {
-	out := ""
+	out := bytes.NewBufferString("")
+	sb := bytes.NewBufferString("")
 	tmp := ""
 	var hObj *HTMLObject = nil
 	var tjs *MScript = nil
@@ -86,7 +88,7 @@ func (s *Script) initScriptFrom(js *MScript, _global string, _this string, _pri 
 		p++
 		// 3.import
 		if t.IsKeyWord && "import" == t.Value {
-			tmp = ""
+			sb.Reset()
 			point := -1
 			at := 0
 			isFrom := false
@@ -123,9 +125,10 @@ func (s *Script) initScriptFrom(js *MScript, _global string, _this string, _pri 
 
 					}
 				}
-				tmp += f.Value
+				sb.WriteString(f.Value)
 				at = p - 1
 			}
+			tmp = sb.String()
 			if Index(tmp, ".") == 0 { //说明是获取自己本地路径
 				tmp = Substring(s.jus.dirPath, StringLen(s.jus.root), -1) + "/" + tmp
 				tmp = filepath.Clean(tmp)
@@ -636,39 +639,39 @@ func (s *Script) initScriptFrom(js *MScript, _global string, _this string, _pri 
 	tl = appendArray(tl, tlt)
 	tlt = tlt[0:0]
 
-	out += js.ToStringFrom(tl)
+	out.WriteString(js.ToStringFrom(tl))
 	//处理Getter Setter
 	var pgs *GSetter = nil
-	tsb := ""
+	tsb := bytes.NewBufferString("")
 	for name, value := range s.gsMap {
 		pgs = value
-		tsb += "Object.defineProperty(" + _this + ",'" + name + "',{"
+		tsb.WriteString("Object.defineProperty(" + _this + ",'" + name + "',{")
 		if pgs.Setter != nil {
-			tsb += "set:"
+			tsb.WriteString("set:")
 			if pgs.Setter.IsStatic {
-				tsb += "__WINDOW__[__APPDOMAIN__]['" + s.className + "']." + pgs.Setter.Value
+				tsb.WriteString("__WINDOW__[__APPDOMAIN__]['" + s.className + "']." + pgs.Setter.Value)
 			} else {
-				tsb += pgs.Setter.Value
+				tsb.WriteString(pgs.Setter.Value)
 			}
 		}
 		if pgs.Getter != nil {
 			if pgs.Setter != nil {
-				tsb += ","
+				tsb.WriteRune(',')
 			}
-			tsb += "get:"
+			tsb.WriteString("get:")
 			if pgs.Getter.IsStatic {
-				tsb += "__WINDOW__[__APPDOMAIN__]['" + s.className + "']." + pgs.Getter.Value
+				tsb.WriteString("__WINDOW__[__APPDOMAIN__]['" + s.className + "']." + pgs.Getter.Value)
 			} else {
-				tsb += pgs.Getter.Value
+				tsb.WriteString(pgs.Getter.Value)
 			}
 		}
-		tsb += ",enumerable:true});\r\n"
+		tsb.WriteString(",enumerable:true});\r\n")
 		delete(s.gsMap, name)
 	}
 
-	out += tsb
+	out.Write(tsb.Bytes())
 
-	return strings.Replace(out, "@this", "__MODULE_METHOD__."+s.domain, -1)
+	return strings.Replace(out.String(), "@this", "__MODULE_METHOD__."+s.domain, -1)
 
 }
 
@@ -678,7 +681,7 @@ func (s *Script) initScriptFrom(js *MScript, _global string, _this string, _pri 
  * @return
  */
 func ScriptInitD(value string, domain string) string {
-	sb := ""
+	sb := bytes.NewBufferString("")
 	code := []rune(value)
 	l := len(code)
 	var ch rune
@@ -689,9 +692,11 @@ func ScriptInitD(value string, domain string) string {
 			i++
 			ch = code[i]
 			if ch == '$' {
-				sb += string(ch)
+				//sb += string(ch)
+				sb.WriteRune(ch)
 			} else {
-				sb += "\\" + string(ch)
+				//sb += "\\" + string(ch)
+				sb.WriteString("\\" + string(ch))
 			}
 			continue
 		}
@@ -700,19 +705,22 @@ func ScriptInitD(value string, domain string) string {
 			i++
 			ch = code[i]
 			if (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_' || ch == '$' {
-				sb += domain
+				//sb += domain
+				sb.WriteString(domain)
 			} else {
-				sb += "$"
+				//sb += "$"
+				sb.WriteRune('$')
 			}
-			sb += string(ch)
+			//sb += string(ch)
+			sb.WriteRune(ch)
 			continue
 		}
 
-		sb += string(ch)
-
+		//sb += string(ch)
+		sb.WriteRune(ch)
 	}
 
-	return sb
+	return sb.String()
 }
 
 /**

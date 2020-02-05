@@ -1,17 +1,149 @@
 <@pub/>
+
 <style>
 	body{
 		border:1px solid #707070;
 	}
 	#head{
-		background-color:#dee1e6;
-		height:40px;
+		position:relative;
+		display:flex;
+		box-sizing:border-box;
+		background-image: linear-gradient(#dee1e6 50%,#ffffff 50%);
+		height:38px;
 		border-top:1px solid #1883d7;
+
+	}
+	.tab{
+		display:flex;
+		border-radius:8px;
+		shrink:0;
+		white-space: nowrap;
+		background-image:url(@lib/earth.svg);
+		background-repeat:no-repeat;
+		background-position:12px center;
+		background-size:14px;
+		background-color:#ffffff;
+		height:100%;
+		align-items:center;
+		font-size:12px;
+		padding:0px 10px 0px 35px;
+		
+	}
+	.label{
+		padding-right:35px;
+	}
+	.ctrl{
+		display:flex;
+		align-items:center;
+		background-color:#dee1e6;
+		height:36px;
+		width:100%;
+		border-radius:0px 0px 0px 10px;
+		justify-content:flex-end;
+		padding-right:20px;
+	}
+	.ctrl>div{
+		width:12px;
+		height:12px;
+		margin-left:30px
+	}
+	.close{
+		width:10px;
+		height:10px;
+		background:url(@lib/close.svg) no-repeat;
+		background-size:100%;
+	}
+	.hidden{
+		width:10px;
+		height:10px;
+		background:url(@lib/hidden.svg) no-repeat;
+		background-size:100%;
+	}
+	.reback{
+		width:10px;
+		height:10px;
+		background:url(@lib/reback.svg) no-repeat;
+		background-size:100%;
+	}
+	.address{
+		display:flex;
+		align-items:center;
+		height:36px;
+	}
+	.address>div{
+		width:14px;
+		height:14px;
+		margin:5px 8px;
+		flex-shrink:0;
+		padding-bottom:2px;
+	}
+	.back{
+		background:url(@lib/next.svg) no-repeat;
+		transform:scaleX(-1);
+		background-size:100%;
+	}
+	.next{
+		background:url(@lib/next.svg) no-repeat;
+		background-size:100%;
+	}
+	.refresh{
+		background:url(@lib/refresh.svg) no-repeat;
+		background-size:100%;
+	}
+	.user{
+		background:url(@lib/user.svg) no-repeat;
+		background-size:100%;
+	}
+	.more{
+		background:url(@lib/more.svg) no-repeat;
+		background-size:100%;
+	}
+	.input{
+		display:block;
+		background:url(@lib/fav.svg) no-repeat;
+		background-size:14px;
+		background-position:right 10px center;
+		border-radius:20px;
+		background-color:#eee;
+		width:100%;height:30px;
+		line-height:30px;
+		padding-left:20px;
 	}
 </style>
-<jus.Box>
+
+<jus.VBox title="AIroot UISYS" url="http://www.airoot.cn/">
 	<div id="head">
-	
+		<div style="background-color:#dee1e6;height:36px;width:8px;border-radius:0px 0px 10px 0px;">
+		</div>
+		<div style="padding-top:5px;box-sizing:border-box;position:relative;" >
+			<div class="tab">
+				<div class="label" id="title">About Blank</div>
+				<div class="close"></div>
+			</div>
+		</div>
+		<div class="ctrl">
+			<div class="hidden"></div>
+			<div class="reback"></div>
+			<div class="close"></div>
+		</div>
 	</div>
-	<jus.HTMLLoader url="http://www.163.com/" />
-</jus.Box>
+	<div class="address">
+		<div class="back"></div>
+		<div class="next"></div>
+		<div class="refresh"></div>
+		<span class="input" id="ipt"></span>
+		<div class="user" style="width:20px;height:20px;"></div>
+		<div class="more" style="width:20px;height:20px;"></div>
+	</div>
+	<jus.HTMLLoader id="win" height="100%" />
+</jus.VBox>
+
+<script>
+	var _url from "url";
+	var _title from "title";
+	function init(){
+		ipt.innerText = _url;
+		title.innerText = _title;
+		win.url = _url;
+	}
+</script>

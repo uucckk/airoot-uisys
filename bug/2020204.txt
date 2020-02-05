@@ -1,0 +1,1 @@
+引用uisys 核心库里的tools.Chrome 插件时候，Chrome.ui引用的市本地Chrome.lib文件夹下的图片，结果@lib 方式找到的不是相对路径，而是绝对路径

@@ -334,7 +334,7 @@ func FmtCmdAdv(s string) *Cmd {
 	f := false
 	var k, v string
 	for _, t := range l {
-		if t[0] == '-' {
+		if t[0] == '-' && len(t) > 1 && t[1] != '-' {
 			if f {
 				v = ""
 				m[k] = &tool.Attr{k, v}

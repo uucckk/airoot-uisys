@@ -3,10 +3,58 @@ package tool
 
 import (
 	"net"
+	"sync"
 	"time"
 )
 
+type SocketMap struct {
+	sync.RWMutex
+	m map[net.Conn]*SocketInfo
+}
+
+func (s *SocketMap) Init() {
+	s.Lock()
+	s.m = make(map[net.Conn]*SocketInfo)
+	s.Unlock()
+}
+
+func (s *SocketMap) Get(socket net.Conn) *SocketInfo {
+	var info *SocketInfo
+	s.Lock()
+	info = s.m[socket]
+	s.Unlock()
+	return info
+}
+
+func (s *SocketMap) GetMap() map[net.Conn]*SocketInfo {
+	return s.m
+}
+
+func (s *SocketMap) GetList() []*SocketInfo {
+	s.Lock()
+	list := make([]*SocketInfo, 0, 100)
+	for _, v := range s.m {
+		list = append(list, v)
+	}
+	s.Unlock()
+	return list
+}
+
+func (s *SocketMap) Append(t *SocketInfo) {
+	s.Lock()
+	s.m[t.HostSocket] = t
+	s.Unlock()
+}
+
+//移除
+func (s *SocketMap) Remove(socket net.Conn) {
+	s.Lock()
+	delete(s.m, socket)
+	s.Unlock()
+}
+
 type SocketList struct {
+	sync.Mutex
 	first *SocketElement
 	last  *SocketElement
 	pos   *SocketElement
@@ -54,7 +102,6 @@ func (s *SocketList) Get() *SocketElement {
 
 func (s *SocketList) Append(t *SocketElement) {
 	if s.first == nil {
-
 		s.first = t
 		s.last = t
 	} else {
@@ -112,5 +159,6 @@ type SocketInfo struct {
 	SendBytes    int       //发送数据
 	ReceiveBytes int       //接收数据
 	CreateTime   time.Time //创建时间
-	Socket       net.Conn  //套接字
+	HostSocket   net.Conn  //套接字
+	Connect      bool
 }
