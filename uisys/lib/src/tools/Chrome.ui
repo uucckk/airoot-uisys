@@ -142,8 +142,16 @@
 	var _url from "url";
 	var _title from "title";
 	function init(){
-		ipt.innerText = _url;
 		title.innerText = _title;
-		win.url = _url;
+		url = _url;
+	}
+	
+	set url(value){
+		ipt.innerText = value;
+		win.url = value;
+	}
+	
+	set inputUrl(value){
+		ipt.innerText = value;
 	}
 </script>

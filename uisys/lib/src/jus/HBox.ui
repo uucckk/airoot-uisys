@@ -66,7 +66,6 @@
 			}
 			$this.css("left",hSum);
 			hSum += $this.outerWidth(true) + gap;
-		
 		});
 		
 		

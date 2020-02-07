@@ -39,24 +39,25 @@ type UI struct {
 	jsPath              string            //js模块的绝对路径
 	cssPath             string            //css模块路径
 	SYSTEM_PATH         string            //系统路径
-	CLASS_PATH          string
-	root                string //工程路径
-	parent              *UI
-	domain              string
-	className           string
-	relativePath        string  //相对路径
-	node                *HTML   //此HTML节点
-	innerContent        []*HTML //此HTML节点的子元素Child
-	contentToList       []*HTML //节点为变量的储存列表
-	contentTo           string  //内容信息变量添加到
-	paramValue          *Attr
-	innerValue          string //内部代码转string
-	innerModule         string //内部模块
-	html                *HTML
-	extendsScriptBuffer string
-	scriptBuffer        bytes.Buffer
-	styleBuffer         bytes.Buffer
-	cssBuffer           bytes.Buffer //全局css属性
+	CLASS_PATH          string            //
+	root                string            //工程路径
+	parent              *UI               //
+	scanLevel           int               //递归层级
+	domain              string            //
+	className           string            //
+	relativePath        string            //相对路径
+	node                *HTML             //此HTML节点
+	innerContent        []*HTML           //此HTML节点的子元素Child
+	contentToList       []*HTML           //节点为变量的储存列表
+	contentTo           string            //内容信息变量添加到
+	paramValue          *Attr             //
+	innerValue          string            //内部代码转string
+	innerModule         string            //内部模块
+	html                *HTML             //
+	extendsScriptBuffer string            //
+	scriptBuffer        bytes.Buffer      //
+	styleBuffer         bytes.Buffer      //
+	cssBuffer           bytes.Buffer      //全局css属性
 	pkgMap              map[string]string
 	idMap               map[string]*HTMLObject
 	staticScript        map[string][]*Attr
@@ -135,6 +136,9 @@ func (j *UI) CreateFrom(root string, domain string, node *HTML, className string
 	className = Replace(className, "/", ".")
 	className = Replace(className, "\\", ".")
 	className = TrimClassName(className)
+	if j.scanLevel > 100 { //最大深度100层级
+		return errors.New(j.GetRoot().className + " : scan module over stack when on create \"" + className + "\"")
+	}
 	j.moduleMap = make(map[string]*Attr, 10)
 	j.pkgMap = make(map[string]string, 10)
 	j.idMap = make(map[string]*HTMLObject, 10)
@@ -328,6 +332,9 @@ func (j *UI) GetInitString() (string, bool) {
  */
 func (j *UI) CreateFromParent(root string, domain string, node *HTML, className string, parent *UI) error {
 	j.parent = parent
+	if parent != nil {
+		j.scanLevel = parent.scanLevel + 1
+	}
 	return j.CreateFrom(root, domain, node, className)
 
 }
@@ -620,6 +627,7 @@ func (j *UI) scanHTML(child []*HTML) {
 			}
 		}
 		if Index(tagName, ".") != -1 {
+
 			arr = strings.Split(tagName, ":")
 			if len(arr) > 1 {
 				tagName = arr[1]
@@ -649,9 +657,9 @@ func (j *UI) scanHTML(child []*HTML) {
 					tFunc.SetConstructor(&Attr{tagName, p.GetConstructerParameter()}).setExtend(p.GetAttr("id") == j.domain)
 
 					tHTML = tFunc.ReadHTML()
-					clsTmp := tHTML.GetAttr("class")
+					//clsTmp := tHTML.GetAttr("class")
 					tHTML.CopyFrom(p)
-					tHTML.SetAttr("class", clsTmp+" "+tHTML.GetAttr("class"))
+					//tHTML.SetAttr("class", clsTmp+" &"+tHTML.GetAttr("class"))
 					if len(arr) > 1 {
 						tHTML.SetTagName(arr[0])
 					}
@@ -726,7 +734,7 @@ func (j *UI) cssComponent(child []*HTML) {
 					tmp = " " + j.cssTag[strings.ToLower(tagName)]
 				}
 
-				p.SetAttr("class", p.GetAttr("class")+tmp)
+				p.SetAttr("class", p.GetAttr("class")+" "+tmp)
 
 			}
 		}
@@ -739,7 +747,7 @@ func (j *UI) cssComponent(child []*HTML) {
 func (j *UI) styleFormat() string {
 	j.style.AddDomain("." + j.domain)
 	j.style.ReplaceSelecter("body", "."+j.domain)
-	j.cssTag = j.style.GetComponentClass()
+	j.cssTag = j.style.GetComponentClass(false)
 	j.cssComponent([]*HTML{j.html})
 	return ScriptInitD(j.style.ToString(1), j.domain)
 
@@ -751,6 +759,8 @@ func (j *UI) styleFormat() string {
 func (j *UI) cssFormat() string {
 	j.css.AddDomain(".-" + Replace(j.className, ".", "-"))
 	j.css.ReplaceSelecter("body", ".-"+Replace(j.className, ".", "-"))
+	j.cssTag = j.css.GetComponentClass(true)
+	j.cssComponent([]*HTML{j.html})
 	return ScriptInitD(j.css.ToString(0), j.domain)
 }
 
@@ -1160,7 +1170,6 @@ func (j *UI) testHTML() *HTML {
 
 func (j *UI) ReadHTML() *HTML {
 	if j.scriptFile {
-
 		tHTML := &HTML{}
 		//
 		if j.parent == nil {
@@ -1318,13 +1327,10 @@ func (j *UI) ReadHTML() *HTML {
 	j.html.SetAttr("id", j.domain)
 	j.html.SetAttr("isroot", "true")
 	headCss := ""
-	if Index(j.html.TagName(), ".") == -1 {
-		headCss = Replace(j.className, ".", "-")
-	} else {
-		headCss = Replace(j.html.TagName(), ".", "-")
-	}
+	headCss = Replace(j.className, ".", "-")
 	headCss = "-" + headCss + " " + j.domain
 	j.scanHTML([]*HTML{j.html})
+
 	if j.contentTo != "" {
 		j.scriptBuffer.WriteString("if(_MODULE_INNER_[__DOMAIN__]){____." + j.contentTo + "=_MODULE_INNER_[__DOMAIN__];}")
 	}
@@ -1473,8 +1479,8 @@ func (j *UI) componentInitCode(value *Attr) string {
 		if v.Value == "this" && v.Domain == "class" {
 			v.Value = value.Name
 		}
-		if v.Value == "parent" {
-			v.Value = j.domain
+		if v.Value == "@this" {
+			v.Value = "__OBJECT__['" + j.domain + "']"
 		}
 		sb.WriteString(v.Value)
 	}
@@ -1482,9 +1488,8 @@ func (j *UI) componentInitCode(value *Attr) string {
 	return sb.String()
 }
 
-/**
- * 获取模块地图
- */
+///获取模块地图
+///md5码表，区分是否有不同模块
 func (j *UI) GetModuleMap() map[string]*Attr {
 	if j.parent != nil {
 		return j.parent.GetModuleMap()

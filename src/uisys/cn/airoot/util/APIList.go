@@ -2,6 +2,7 @@
 package util
 
 import (
+	"bytes"
 	"strings"
 	. "uisys"
 	. "uisys/str"
@@ -52,8 +53,8 @@ func (a *Note) ReadFromString(note string) {
 
 	//01整理
 	sb = sb[0:0]
-	tsb := ""
-	cmt := ""
+	tsb := bytes.NewBufferString("")
+	cmt := bytes.NewBufferString("")
 	position = 0
 	tag := ""
 	name := ""
@@ -71,10 +72,10 @@ func (a *Note) ReadFromString(note string) {
 					position--
 					break
 				}
-				tsb += tag
+				tsb.WriteString(tag)
 			}
-			value = tsb
-			tsb = ""
+			value = tsb.String()
+			tsb.Reset()
 			a.hm[name] = value
 		} else if "@author" == tag {
 			value = a.lst[position]
@@ -89,11 +90,11 @@ func (a *Note) ReadFromString(note string) {
 			position++
 			a.am["return"] = value
 		} else {
-			cmt += tag + "\n"
+			cmt.WriteString(tag + "\n")
 
 		}
 	}
-	a._note = strings.TrimSpace(cmt)
+	a._note = strings.TrimSpace(cmt.String())
 }
 
 func (a *Note) GetNote() string {
@@ -240,48 +241,47 @@ func (a *APIlist) appendAttr(f *Function) {
 }
 
 func (a *APIlist) init(name string) {
-	tsb := ""
-	sb := a.style
-	sb += "<div style='border-bottom:solid 1px #000000;font-size:26px;font-weight:bold;padding:10px;'>" + a.className + "</div>" //name
-	sb += "<div class='address'>" + name + "</div>"
-	sb += "<div style='padding:10px;padding-bottom:20px;'>"
+	tsb := bytes.NewBufferString("")
+	sb := bytes.NewBufferString(a.style)
+	sb.WriteString("<div style='border-bottom:solid 1px #000000;font-size:26px;font-weight:bold;padding:10px;'>" + a.className + "</div>") //name
+	sb.WriteString("<div class='address'>" + name + "</div>")
+	sb.WriteString("<div style='padding:10px;padding-bottom:20px;'>")
 	if a.html != nil {
 		child := a.html.Filter("!")
 		for _, v := range child {
-			tsb += v.Text()
+			tsb.WriteString(v.Text())
 		}
-		tsb = strings.Replace(tsb, "\n", "<br/>", -1)
-		sb += tsb
+		sb.WriteString(strings.Replace(tsb.String(), "\n", "<br/>", -1))
 	}
-	sb += "</div>"
+	sb.WriteString("</div>")
 	//
-	sb += "<div style='padding-left:10px;padding-right:10px'>"
+	sb.WriteString("<div style='padding-left:10px;padding-right:10px'>")
 	js := a.script
 
 	attr := js.GetFromOther()
 	if len(attr) > 0 {
-		sb += "<b style='padding-bottom:5px;display:block;'>HTML属性</b>"
+		sb.WriteString("<b style='padding-bottom:5px;display:block;'>HTML属性</b>")
 	}
-	sb += "<table>"
+	sb.WriteString("<table>")
 	for _, v := range attr {
-		sb += ("<tr><td>")
-		sb += "<a href='javascript:void(0);'>" + Replace(Replace(v.Name, "\"", ""), "'", "") + "</a><br/>"
-		sb += v.Value
-		sb += "</td></tr>"
+		sb.WriteString("<tr><td>")
+		sb.WriteString("<a href='javascript:void(0);'>" + Replace(Replace(v.Name, "\"", ""), "'", "") + "</a><br/>")
+		sb.WriteString(v.Value)
+		sb.WriteString("</td></tr>")
 	}
-	sb += "</table><br/>"
+	sb.WriteString("</table><br/>")
 	svc := js.GetVar(true, true)
 	if len(svc) > 0 {
-		sb += "<b style='padding-bottom:5px;display:block;'>静态属性</b>"
+		sb.WriteString("<b style='padding-bottom:5px;display:block;'>静态属性</b>")
 	}
-	sb += "<table>"
+	sb.WriteString("<table>")
 	for _, v := range svc {
-		sb += ("<tr><td>")
-		sb += IfStr(v.IsStatic, "static ", "") + "<a href='javascript:void(0);'>" + v.Name + "</a>" + IfStr(v.VarType != "", " : <a href='javascript:void(0);' style='color:#888888'>"+v.VarType+"</a>", "") + "<br/>"
-		sb += v.Note
-		sb += "</td></tr>"
+		sb.WriteString("<tr><td>")
+		sb.WriteString(IfStr(v.IsStatic, "static ", "") + "<a href='javascript:void(0);'>" + v.Name + "</a>" + IfStr(v.VarType != "", " : <a href='javascript:void(0);' style='color:#888888'>"+v.VarType+"</a>", "") + "<br/>")
+		sb.WriteString(v.Note)
+		sb.WriteString("</td></tr>")
 	}
-	sb += "</table><br/>"
+	sb.WriteString("</table><br/>")
 
 	svc = js.GetVar(true, false)
 	fc := js.GetFunctionAndStatic(true, false)
@@ -291,52 +291,52 @@ func (a *APIlist) init(name string) {
 		}
 	}
 	if len(svc) > 0 || len(a.attr) > 0 {
-		sb += "<b style='padding-bottom:5px;display:block;'>公共属性</b>"
+		sb.WriteString("<b style='padding-bottom:5px;display:block;'>公共属性</b>")
 	}
-	sb += ("<table>")
+	sb.WriteString("<table>")
 	for _, v := range svc {
-		sb += ("<tr><td>")
-		sb += IfStr(v.IsStatic, "static ", "") + "<a href='javascript:void(0);'>" + v.Name + "</a>" + IfStr(v.VarType != "", " : <a href='javascript:void(0);' style='color:#888888'>"+v.VarType+"</a>", "") + "<br/>"
-		sb += v.Note
-		sb += "</td></tr>"
+		sb.WriteString("<tr><td>")
+		sb.WriteString(IfStr(v.IsStatic, "static ", "") + "<a href='javascript:void(0);'>" + v.Name + "</a>" + IfStr(v.VarType != "", " : <a href='javascript:void(0);' style='color:#888888'>"+v.VarType+"</a>", "") + "<br/>")
+		sb.WriteString(v.Note)
+		sb.WriteString("</td></tr>")
 	}
 
 	for _, f := range a.attr {
 		note := &Note{}
 		note.ReadFromString(f.Description)
-		sb += "<tr><td>"
-		sb += ("<span>")
-		sb += IfStr(f.IsStatic, "static ", "")
+		sb.WriteString("<tr><td>")
+		sb.WriteString("<span>")
+		sb.WriteString(IfStr(f.IsStatic, "static ", ""))
 		ut := ""
 		if f.Setter && !f.Getter {
 			ut = "<b style='color:#cc0000'>[只写]</b>"
-			sb += "<a href='javascript:void(0);' style='font-size:14px;'>" + f.Name + "</a> : <b style='color:#888888;'>" + f.Param[0].VarType + "</b>"
+			sb.WriteString("<a href='javascript:void(0);' style='font-size:14px;'>" + f.Name + "</a> : <b style='color:#888888;'>" + f.Param[0].VarType + "</b>")
 		} else if f.Getter && !f.Setter {
 			ut = "<b style='color:#00cc00'>[只读]</b>"
-			sb += "<a href='javascript:void(0);' style='font-size:14px;'>" + f.Name + "</a>" + IfStr(f.FunctionType != "", " : <b style='color:#888888;'>"+f.FunctionType+"</b>", "")
+			sb.WriteString("<a href='javascript:void(0);' style='font-size:14px;'>" + f.Name + "</a>" + IfStr(f.FunctionType != "", " : <b style='color:#888888;'>"+f.FunctionType+"</b>", ""))
 		} else {
-			sb += "<a href='javascript:void(0);' style='font-size:14px;'>" + f.Name + "</a>" + IfStr(f.FunctionType != "", " : <b style='color:#888888;'>"+f.FunctionType+"</b>", "")
+			sb.WriteString("<a href='javascript:void(0);' style='font-size:14px;'>" + f.Name + "</a>" + IfStr(f.FunctionType != "", " : <b style='color:#888888;'>"+f.FunctionType+"</b>", ""))
 		}
 
-		sb += "</span>\r\n"
+		sb.WriteString("</span>\r\n")
 		sub := IfStr(ut == "", "", ut+" ") + Replace(note.GetNote(), "\n", "<br/>")
 		if len(sub) > 0 {
-			sb += "<div style='padding:10px 0px;padding-bottom:0px;font-size:13px;'>"
-			sb += sub
-			sb += "</div>"
+			sb.WriteString("<div style='padding:10px 0px;padding-bottom:0px;font-size:13px;'>")
+			sb.WriteString(sub)
+			sb.WriteString("</div>")
 		}
-		sb += "</td></tr>"
+		sb.WriteString("</td></tr>")
 	}
 
-	sb += ("</table>")
-	sb += ("<br/>")
+	sb.WriteString("</table>")
+	sb.WriteString("<br/>")
 
 	fc = js.GetFunctionAndStatic(true, true)
 
 	if len(fc) > 0 {
-		sb += "<b style='padding-bottom:5px;display:block;'>静态方法</b>"
+		sb.WriteString("<b style='padding-bottom:5px;display:block;'>静态方法</b>")
 	}
-	sb += "<table>"
+	sb.WriteString("<table>")
 
 	for _, f := range fc {
 		if f.IsSet || f.IsGet {
@@ -344,93 +344,91 @@ func (a *APIlist) init(name string) {
 		}
 		note := &Note{}
 		note.ReadFromString(f.Note)
-		sb += "<tr><td>"
-		sb += ("<span>")
-		sb += IfStr(f.IsStatic, "static ", "")
-
-		sb += "<a href='javascript:void(0);' style='font-size:14px;'>" + f.Name + "</a> " + "(" + paramToString(f.Param) + ")" + IfStr(f.FunctionType != "", " : <b style='color:#888888;'>"+f.FunctionType+"</b>", "")
-
-		sb += "</span>\r\n"
-		sb += "<div style='padding:10px;padding-bottom:0px;font-size:13px;'>"
-		sb += Replace(note.GetNote(), "\n", "<br/>")
-		sb += "</div>"
-		sb += "<ul>\r\n"
+		sb.WriteString("<tr><td>")
+		sb.WriteString("<span>")
+		sb.WriteString(IfStr(f.IsStatic, "static ", ""))
+		sb.WriteString("<a href='javascript:void(0);' style='font-size:14px;'>" + f.Name + "</a> " + "(" + paramToString(f.Param) + ")" + IfStr(f.FunctionType != "", " : <b style='color:#888888;'>"+f.FunctionType+"</b>", ""))
+		sb.WriteString("</span>\r\n")
+		sb.WriteString("<div style='padding:10px;padding-bottom:0px;font-size:13px;'>")
+		sb.WriteString(Replace(note.GetNote(), "\n", "<br/>"))
+		sb.WriteString("</div>")
+		sb.WriteString("<ul>\r\n")
 		param := f.Param
 		for _, s := range param {
-			sb += "<li><span style='font-weight:bold'>" + s.Name + "</span> " + note.GetParamNote(s.Name) + "</li>"
+			sb.WriteString("<li><span style='font-weight:bold'>" + s.Name + "</span> " + note.GetParamNote(s.Name) + "</li>")
 		}
-		sb += "<li><span style='font-weight:bold;color:#992200'>返回值</span> " + note.GetAttr("return") + "</li>"
-		sb += "</ul>"
-		sb += "</td></tr>"
+		sb.WriteString("<li><span style='font-weight:bold;color:#992200'>返回值</span> " + note.GetAttr("return") + "</li>")
+		sb.WriteString("</ul>")
+		sb.WriteString("</td></tr>")
 	}
-	sb += "</table><br/>"
+	sb.WriteString("</table><br/>")
 
 	cc := js.GetConstructor()
 	if cc != nil {
-		sb += "<b style='padding-bottom:5px;display:block;'>构造方法</b>"
-		sb += "<table>"
+		sb.WriteString("<b style='padding-bottom:5px;display:block;'>构造方法</b>")
+		sb.WriteString("<table>")
 		note := &Note{}
 		note.ReadFromString(cc.Note)
-		sb += "<tr><td>"
-		sb += ("<span>")
-		sb += IfStr(cc.IsStatic, "static ", "")
+		sb.WriteString("<tr><td>")
+		sb.WriteString("<span>")
+		sb.WriteString(IfStr(cc.IsStatic, "static ", ""))
 		if cc.IsSet {
-			sb += "<b>set</b> <a href='javascript:void(0);' style='font-size:14px;'>" + cc.Name + "</a> <b>" + cc.Param[0].VarType + "</b>"
+			sb.WriteString("<b>set</b> <a href='javascript:void(0);' style='font-size:14px;'>" + cc.Name + "</a> <b>" + cc.Param[0].VarType + "</b>")
 		} else if cc.IsGet {
-			sb += "<b>get</b> <a href='javascript:void(0);' style='font-size:14px;'>" + cc.Name + "</a>" + IfStr(cc.FunctionType != "", " <b style='color:#888888;'>"+cc.FunctionType+"</b>", "")
+			sb.WriteString("<b>get</b> <a href='javascript:void(0);' style='font-size:14px;'>" + cc.Name + "</a>" + IfStr(cc.FunctionType != "", " <b style='color:#888888;'>"+cc.FunctionType+"</b>", ""))
 		} else {
-			sb += "<a href='javascript:void(0);' style='font-size:14px;'>" + cc.Name + "</a> " + "(" + paramToString(cc.Param) + ")" + IfStr(cc.FunctionType != "", " : <b style='color:#888888;'>"+cc.FunctionType+"</b>", "")
+			sb.WriteString("<a href='javascript:void(0);' style='font-size:14px;'>" + cc.Name + "</a> " + "(" + paramToString(cc.Param) + ")" + IfStr(cc.FunctionType != "", " : <b style='color:#888888;'>"+cc.FunctionType+"</b>", ""))
 		}
 
-		sb += "</span>\r\n"
-		sb += "<div style='padding:10px;padding-bottom:0px;font-size:13px;'>"
-		sb += Replace(note.GetNote(), "\n", "<br/>")
-		sb += "</div>"
-		sb += "<ul>\r\n"
+		sb.WriteString("</span>\r\n")
+		sb.WriteString("<div style='padding:10px;padding-bottom:0px;font-size:13px;'>")
+		sb.WriteString(Replace(note.GetNote(), "\n", "<br/>"))
+		sb.WriteString("</div>")
+		sb.WriteString("<ul>\r\n")
 		param := cc.Param
 		for _, s := range param {
-			sb += "<li><span style='font-weight:bold'>" + s.Name + "</span> " + note.GetParamNote(s.Name) + "</li>"
+			sb.WriteString("<li><span style='font-weight:bold'>" + s.Name + "</span> " + note.GetParamNote(s.Name) + "</li>")
 		}
-		sb += "</ul>"
-		sb += "</td></tr>"
-		sb += "</table><br/>"
+		sb.WriteString("</ul>")
+		sb.WriteString("</td></tr>")
+		sb.WriteString("</table><br/>")
 	}
 
 	fc = js.GetFunctionAndStatic(true, false)
 
 	if len(fc) > 0 {
-		sb += "<b style='padding-bottom:5px;display:block;'>公共方法</b>"
+		sb.WriteString("<b style='padding-bottom:5px;display:block;'>公共方法</b>")
 	}
-	sb += "<table>"
+	sb.WriteString("<table>")
 	for _, f := range fc {
 		if f.IsGet || f.IsSet {
 			continue
 		}
 		note := &Note{}
 		note.ReadFromString(f.Note)
-		sb += "<tr><td>"
-		sb += ("<span>")
-		sb += IfStr(f.IsStatic, "static ", "")
-		sb += "<a href='javascript:void(0);' style='font-size:14px;'>" + f.Name + "</a> " + "(" + paramToString(f.Param) + ")" + IfStr(f.FunctionType != "", " : <b style='color:#888888;'>"+f.FunctionType+"</b>", "")
-		sb += "</span>\r\n"
-		sb += "<div style='padding:10px;padding-bottom:0px;font-size:13px;'>"
-		sb += Replace(note.GetNote(), "\n", "<br/>")
-		sb += "</div>"
-		sb += "<ul>\r\n"
+		sb.WriteString("<tr><td>")
+		sb.WriteString("<span>")
+		sb.WriteString(IfStr(f.IsStatic, "static ", ""))
+		sb.WriteString("<a href='javascript:void(0);' style='font-size:14px;'>" + f.Name + "</a> " + "(" + paramToString(f.Param) + ")" + IfStr(f.FunctionType != "", " : <b style='color:#888888;'>"+f.FunctionType+"</b>", ""))
+		sb.WriteString("</span>\r\n")
+		sb.WriteString("<div style='padding:10px;padding-bottom:0px;font-size:13px;'>")
+		sb.WriteString(Replace(note.GetNote(), "\n", "<br/>"))
+		sb.WriteString("</div>")
+		sb.WriteString("<ul>\r\n")
 		param := f.Param
 		for _, s := range param {
-			sb += "<li><span style='font-weight:bold'>" + s.Name + "</span> " + note.GetParamNote(s.Name) + "</li>"
+			sb.WriteString("<li><span style='font-weight:bold'>" + s.Name + "</span> " + note.GetParamNote(s.Name) + "</li>")
 		}
-		sb += "<li><span style='font-weight:bold;color:#992200'>返回值</span> " + note.GetAttr("return") + "</li>"
-		sb += "</ul>"
-		sb += "</td></tr>"
+		sb.WriteString("<li><span style='font-weight:bold;color:#992200'>返回值</span> " + note.GetAttr("return") + "</li>")
+		sb.WriteString("</ul>")
+		sb.WriteString("</td></tr>")
 	}
-	sb += "</table><br/>"
-	sb += "<b style='padding-bottom:5px;display:block;'>HTML DOM</b>"
-	sb += "<table><tr><td>" + a.html.ToTextString() + "</td></tr>"
-	sb += "</table></div>"
+	sb.WriteString("</table><br/>")
+	sb.WriteString("<b style='padding-bottom:5px;display:block;'>HTML DOM</b>")
+	sb.WriteString("<table><tr><td>" + a.html.ToTextString() + "</td></tr>")
+	sb.WriteString("</table></div>")
 
-	a.sb = sb
+	a.sb = sb.String()
 }
 
 /**

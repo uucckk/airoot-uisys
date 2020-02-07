@@ -4,6 +4,7 @@
 <module>
 	<@content />
 	<script>
+		import @root/js/jquery.min.js;
 		/**
 		 * DisplayObject 
 		 */

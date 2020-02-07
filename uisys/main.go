@@ -26,7 +26,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-var version string = "AIroot UISYS v1"
+var version string = "AIroot UISYS v1 beta"
 var lang map[string]string
 
 var zhCN = make(map[string]string, 0)
@@ -1173,8 +1173,8 @@ func httpPost() {
 		fmt.Println(err)
 	}
 	mess := string(body)
-	if strings.TrimSpace(mess) != version {
-		DevPrintln(14, "Download Latest Version: http://www.airoot.cn/")
+	if v := strings.TrimSpace(mess); v != version {
+		DevPrintln(14, "Download Latest Version \""+v+"\" at http://www.airoot.cn/")
 	}
 }
 

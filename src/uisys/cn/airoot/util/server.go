@@ -900,16 +900,18 @@ func (u *UIServer) classList() string {
 
 	//项目设置
 	str.Reset()
-	ts := ""
+	ts := bytes.NewBufferString("")
 	for _, v := range u.GetData() {
 		str.WriteString(`<tr>
 				<td nowrap>` + v[0] + `</td>`)
 
 		for _, n := range v[1:] {
-			ts += `<span class='value'>` + n + `</span>`
+			ts.WriteString(`<span class='value'>` + n + `</span>`)
 		}
-		str.WriteString(`<td>` + ts + `</td></tr>`)
-		ts = ""
+		str.WriteString("<td>")
+		str.Write(ts.Bytes())
+		str.WriteString("</td></tr>")
+		ts.Reset()
 	}
 	format = strings.Replace(format, "{@code2}", str.String(), -1)
 	return format
@@ -955,11 +957,11 @@ func readCommentForHTML(f string) string {
 	html.ReadFromString(d)
 	list := html.Filter("!")
 
-	sb := ""
+	sb := bytes.NewBufferString("")
 	for _, v := range list {
-		sb += v.Text()
+		sb.WriteString(v.Text())
 	}
-	return sb
+	return sb.String()
 
 }
 

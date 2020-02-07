@@ -692,10 +692,8 @@ func ScriptInitD(value string, domain string) string {
 			i++
 			ch = code[i]
 			if ch == '$' {
-				//sb += string(ch)
 				sb.WriteRune(ch)
 			} else {
-				//sb += "\\" + string(ch)
 				sb.WriteString("\\" + string(ch))
 			}
 			continue
@@ -705,18 +703,13 @@ func ScriptInitD(value string, domain string) string {
 			i++
 			ch = code[i]
 			if (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_' || ch == '$' {
-				//sb += domain
 				sb.WriteString(domain)
 			} else {
-				//sb += "$"
 				sb.WriteRune('$')
 			}
-			//sb += string(ch)
 			sb.WriteRune(ch)
 			continue
 		}
-
-		//sb += string(ch)
 		sb.WriteRune(ch)
 	}
 

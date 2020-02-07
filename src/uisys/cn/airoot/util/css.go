@@ -284,7 +284,7 @@ func (c *CSS) RemoveSelecter(attr string) {
  * 获取需要被转移控件Class
  * @return
  */
-func (c *CSS) GetComponentClass() map[string]string {
+func (c *CSS) GetComponentClass(isPub bool) map[string]string {
 	hm := make(map[string]string)
 	var ce *ClassElement = nil
 	var ch rune
@@ -297,7 +297,11 @@ func (c *CSS) GetComponentClass() map[string]string {
 
 					if c.jus.GetPackageMap()[strings.ToLower(ce.Value)] != "" {
 						hm[strings.ToLower(ce.Value)] = c.jus.GetDomain() + "-" + ce.Value
-						ce.Value = "." + c.jus.GetDomain() + "-" + ce.Value
+						if isPub {
+							ce.Value = "." + "-" + ce.Value
+						} else {
+							ce.Value = "." + c.jus.GetDomain() + "-" + ce.Value
+						}
 
 					}
 				}
