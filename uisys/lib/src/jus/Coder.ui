@@ -304,7 +304,6 @@
 		var worker = new Worker(@lib + "format/html.js");
 		worker.addEventListener("message",function(e){
 			area.innerHTML = e.data.data;
-			console.log("value",value,">>",e.data.count);
 			for(var i:int = 0;i<e.data.count;i++){
 				num.appendChild(createNewNum(count++));
 			}

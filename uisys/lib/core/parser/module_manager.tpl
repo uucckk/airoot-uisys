@@ -369,7 +369,6 @@ var __FORMAT__ = function(__DATA__,__APPDOMAIN__,module){
 					var head = document.createElement("div");
 					head.innerText = v.value;
 					document.head.appendChild(head);
-					console.log("head",v.value);
 				break;
 				case "O" ://Error
 					____ERROR____(v.value.substring(1));
@@ -1109,7 +1108,6 @@ function gcLibEvt(){
 			//说明已经消失
 			for(var k = __MODULE_COUNTER__.length - 1;k>=0;k--){
 				if(__MODULE_COUNTER__[k].module == c){
-					console.log("DELETE_0",l,c,__MODULE_COUNTER__[k]);
 					delete __MODULE_COUNTER__.splice(k,1);
 				}
 			}
@@ -1125,7 +1123,6 @@ function gcLibEvt(){
 					continue f;
 				}
 			}
-			console.log("DELETE_1",l,c);
 			delete __MODULE_METHOD__[l][c];
 		}
 	}
