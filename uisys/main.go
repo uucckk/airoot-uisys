@@ -5,6 +5,7 @@ import (
 	"bufio"
 	"fmt"
 	"io/ioutil"
+	"runtime/debug"
 	. "uisys/tool"
 
 	//_ "image/jpeg"
@@ -26,7 +27,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-var version string = "AIroot UISYS v1 beta"
+var version string = "AIroot UISYS v1"
 var lang map[string]string
 
 var zhCN = make(map[string]string, 0)
@@ -585,7 +586,7 @@ func command(cmd *Cmd) (result bool, resultValue string) {
 			result = true
 			resultValue = fmt.Sprintln(err)
 			DevPrintln(4, "\r\n"+resultValue)
-			panic(err)
+			debug.PrintStack()
 		}
 	}()
 	str := ""
@@ -717,60 +718,61 @@ func command(cmd *Cmd) (result bool, resultValue string) {
 			}
 			return true, str
 		case "nat": //添加请求测试服务
-			if len(cmds) > 1 {
-				if cmds[1] == "-add" {
-					if len(cmds) > 4 {
-						testHandle[cmds[2]] = &TestServer{Name: cmds[2], Time: time.Now().Unix()}
-						if testHandle[cmds[2]].Start(cmds[3], cmds[4]) {
-							str = DevPrintln(2, lang["服务正在启动"], cmds[2], testHandle[cmds[2]].FromIPAddress()+"-->"+testHandle[cmds[2]].ToIPAddress()) //添加成功
-						}
-					} else {
-						testHandle[cmds[2]] = &TestServer{Name: cmds[2], Time: time.Now().Unix()}
-						if testHandle[cmds[2]].Start(cmds[3], "") {
-							str = DevPrintln(2, lang["Test运行在"], cmds[2], testHandle[cmds[2]].FromIPAddress()+"-->"+testHandle[cmds[2]].ToIPAddress()) //添加成功
-						}
+			if cmd.Attr["add"] != nil {
+				if len(cmds) > 2 {
+					testHandle[cmd.Attr["add"].Value] = &TestServer{Name: cmd.Attr["add"].Value, Time: time.Now().Unix()}
+					if testHandle[cmd.Attr["add"].Value].Start(cmds[1], cmds[2]) {
+						str = DevPrintln(2, lang["服务正在启动"], cmd.Attr["add"].Value, testHandle[cmd.Attr["add"].Value].FromIPAddress()+"-->"+testHandle[cmd.Attr["add"].Value].ToIPAddress()) //添加成功
 					}
-
-				} else if cmds[1] == "-remove" {
-					if testHandle[cmds[2]] != nil {
-						testHandle[cmds[2]].Stop()
-						delete(testHandle, cmds[2])
+				} else {
+					testHandle[cmd.Attr["add"].Value] = &TestServer{Name: cmd.Attr["add"].Value, Time: time.Now().Unix()}
+					if testHandle[cmd.Attr["add"].Value].Start(cmds[1], "") {
+						str = DevPrintln(2, lang["Test运行在"], cmd.Attr["add"].Value, testHandle[cmd.Attr["add"].Value].FromIPAddress()+"-->"+testHandle[cmd.Attr["add"].Value].ToIPAddress()) //添加成功
 					}
-				} else if cmds[1] == "-restart" {
-					if testHandle[cmds[2]] != nil {
-						testHandle[cmds[2]].Restart()
-					}
-				} else if cmds[1] == "-stop" {
-					if testHandle[cmds[2]] != nil {
-						testHandle[cmds[2]].Stop()
-					}
-				} else if cmds[1] == "-log" {
-					if testHandle[cmds[2]] != nil {
-						var size = 1024 * 1024 * 1024
-						var err error
-						if len(cmds) > 4 {
-							size, err = strconv.Atoi(cmds[4])
-							if err != nil {
-								str += DevPrintln(337, "文件大小输入有误") //添加成功
-							}
-						}
-						testHandle[cmds[2]].SetLog(cmds[3], size)
-					}
-				} else if cmds[1] == "-h" {
-					str += "<table class='list'>"
-					str += "<tr><th>Name</th><th>From IP Address</th><th>To IP Address</th><th>Status</th><th>Connect Time</th><th>Connect Count</th><th>Log Path</th><th>Log Size</th></tr>"
-					for _, v := range testHandle {
-						str += "<tr>"
-						if v.Running() { //Connect.
-							str += "<td>" + v.Name + "</td><td>" + v.FromIPAddress() + "</td><td>" + v.ToIPAddress() + "</td><td>Running.</td><td>" + time.Unix(v.Time, 0).Format("2006-01-02 15:04:05") + "</td><td>" + v.ConnectStatus() + "</td><td>" + v.GetLogPath() + "</td><td>" + v.LogStatus() + "</td>"
-						} else {
-							str += "<td>" + v.Name + "</td><td>" + v.FromIPAddress() + "</td><td>" + v.ToIPAddress() + "</td><td>Stopping.</td><td>" + time.Unix(v.Time, 0).Format("2006-01-02 15:04:05") + "</td><td>" + v.ConnectStatus() + "</td><td>" + v.GetLogPath() + "</td><td>" + v.LogStatus() + "</td>"
-						}
-						str += "</tr>"
-					}
-					str += "</table>"
 				}
-
+				return true, str
+			} else if cmd.Attr["remove"] != nil {
+				if testHandle[cmd.Attr["remove"].Value] != nil {
+					testHandle[cmd.Attr["remove"].Value].Stop()
+					delete(testHandle, cmd.Attr["remove"].Value)
+				}
+				return true, str
+			} else if cmd.Attr["start"] != nil {
+				if testHandle[cmd.Attr["start"].Value] != nil {
+					testHandle[cmd.Attr["start"].Value].Restart()
+				}
+				return true, str
+			} else if cmd.Attr["stop"] != nil {
+				if testHandle[cmd.Attr["stop"].Value] != nil {
+					testHandle[cmd.Attr["stop"].Value].Stop()
+				}
+				return true, str
+			} else if cmd.Attr["log"] != nil {
+				if testHandle[cmd.Attr["log"].Value] != nil {
+					var size = 1024 * 1024 * 1024
+					var err error
+					if cmd.Attr["size"] != nil {
+						size, err = strconv.Atoi(cmd.Attr["size"].Value)
+						if err != nil {
+							str += DevPrintln(337, "文件大小输入有误") //添加成功
+						}
+					}
+					testHandle[cmd.Attr["log"].Value].SetLog(cmds[1], size)
+				}
+				return true, str
+			} else if cmd.Attr["h"] != nil {
+				str += "<table class='list'>"
+				str += "<tr><th>Name</th><th>From IP Address</th><th>To IP Address</th><th>Status</th><th>Connect Time</th><th>Connect Count</th><th>Log Path</th><th>Log Size</th></tr>"
+				for _, v := range testHandle {
+					str += "<tr>"
+					if v.Running() { //Connect.
+						str += "<td>" + v.Name + "</td><td>" + v.FromIPAddress() + "</td><td>" + v.ToIPAddress() + "</td><td>Running.</td><td>" + time.Unix(v.Time, 0).Format("2006-01-02 15:04:05") + "</td><td>" + v.ConnectStatus() + "</td><td>" + v.GetLogPath() + "</td><td>" + v.LogStatus() + "</td>"
+					} else {
+						str += "<td>" + v.Name + "</td><td>" + v.FromIPAddress() + "</td><td>" + v.ToIPAddress() + "</td><td>Stopping.</td><td>" + time.Unix(v.Time, 0).Format("2006-01-02 15:04:05") + "</td><td>" + v.ConnectStatus() + "</td><td>" + v.GetLogPath() + "</td><td>" + v.LogStatus() + "</td>"
+					}
+					str += "</tr>"
+				}
+				str += "</table>"
 			} else { //显示nat列表
 
 				for key, value := range testHandle {

@@ -7,13 +7,17 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"strings"
+	"sync"
 	"time"
 )
 
 type TestServer struct {
+	sync.RWMutex
 	Time       int64
 	useCount   int
-	loadSize   int
+	downSize   int
+	upSize     int
 	totalSize  int
 	Name       string
 	listen     net.Listener
@@ -22,8 +26,7 @@ type TestServer struct {
 	FromClient net.Conn
 	ToClient   net.Conn
 	log        string
-	logFrom    *os.File
-	logTo      *os.File
+	count      int
 }
 
 /**
@@ -98,6 +101,23 @@ func (t *TestServer) Restart() bool {
  *
  */
 func (t *TestServer) Client(socket net.Conn, dest string) {
+	os.MkdirAll(t.log, 777)
+	var logDown *os.File
+	var logUp *os.File
+	var err error
+	ip := socket.RemoteAddr().String()
+	vip := strings.ReplaceAll(ip, ":", "-P")
+	if t.log != "" {
+		date := time.Now().Format("2006-01-02_150405") + "_" + vip + "_" + strconv.Itoa(t.getCount())
+		logDown, err = os.Create(t.log + "/" + date + "_" + "down.log")
+		if err != nil {
+			fmt.Println(err)
+		}
+		logUp, err = os.Create(t.log + "/" + date + "_" + "up.log")
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
 	t.useCount += 2
 	count := 1024
 	if dest != "" {
@@ -107,47 +127,60 @@ func (t *TestServer) Client(socket net.Conn, dest string) {
 			t.ToClient = conn
 			go func() {
 				data := make([]byte, count)
-				for {
-					fmt.Println("start...")
+				flag := true
+				for flag {
 					n, err := conn.Read(data)
 					if err != nil {
 						break
 					}
 					if t.log != "" {
-						if t.loadSize+n > t.totalSize {
-							n = t.totalSize - t.loadSize
+						if t.downSize+n > t.totalSize {
+							n = t.totalSize - t.downSize
+							flag = false
 						}
-						t.loadSize += n
+						t.downSize += n
 						if n > 0 {
-							t.logFrom.Write(data[0:n])
+							logDown.Write(data[0:n])
 						}
 					}
 					socket.Write(data[0:n])
 				}
-				fmt.Println(t.From + ">" + t.To + ": [" + t.To + "] is release")
+				if flag {
+					fmt.Println(t.From + ">" + t.To + " @IP:" + ip + " is release")
+				} else {
+					fmt.Println("The downSize more than totalSize and auto release")
+				}
+				logDown.Close()
 				t.useCount--
 				socket.Close()
 			}()
 
 			go func() {
 				data := make([]byte, count)
-				for {
+				flag := true
+				for flag {
 					n, err := socket.Read(data)
 					if err != nil {
 						break
 					}
 					if t.log != "" {
-						if t.loadSize+n > t.totalSize {
-							n = t.totalSize - t.loadSize
+						if t.upSize+n > t.totalSize {
+							n = t.totalSize - t.upSize
+							flag = false
 						}
-						t.loadSize += n
+						t.upSize += n
 						if n > 0 {
-							t.logFrom.Write(data[0:n])
+							logUp.Write(data[0:n])
 						}
 					}
 					conn.Write(data[0:n])
 				}
-				fmt.Println(t.From + ">" + t.To + ": [" + t.From + "] is release")
+				if flag {
+					fmt.Println(t.From + ">" + t.To + " @IP:" + ip + " is release")
+				} else {
+					fmt.Println("The upSize more than totalSize and auto release")
+				}
+				logUp.Close()
 				t.useCount--
 				conn.Close()
 			}()
@@ -175,22 +208,7 @@ func (t *TestServer) Client(socket net.Conn, dest string) {
 
 func (t *TestServer) SetLog(path string, size int) {
 	t.log = path
-	os.MkdirAll(path, 777)
-	var err error
-	date := time.Now().Format("2006-01-02_150405")
-	if t.logFrom == nil {
-		t.logFrom, err = os.Create(path + "/" + date + "_" + "from.log")
-		if err != nil {
-			fmt.Println(err)
-		}
-	}
-
-	if t.logTo == nil {
-		t.logTo, err = os.Create(path + "/" + date + "_" + "to.log")
-		if err != nil {
-			fmt.Println(err)
-		}
-	}
+	t.totalSize = size
 
 }
 
@@ -202,14 +220,13 @@ func (t *TestServer) Stop() {
 		t.listen.Close()
 	}
 
-	if t.logFrom != nil {
-		t.logFrom.Close()
-		t.logFrom = nil
-	}
-	if t.logTo != nil {
-		t.logTo.Close()
-		t.logTo = nil
-	}
+}
+
+func (t *TestServer) getCount() int {
+	t.Lock()
+	t.count++
+	t.Unlock()
+	return t.count
 }
 
 func (t *TestServer) GetLogPath() string {
@@ -224,7 +241,7 @@ func (t *TestServer) LogStatus() string {
 	if t.log == "" {
 		return ""
 	} else {
-		return strconv.Itoa(t.loadSize) + "/" + strconv.Itoa(t.totalSize)
+		return strconv.Itoa(t.downSize) + "/" + strconv.Itoa(t.totalSize) + " | " + strconv.Itoa(t.upSize) + "/" + strconv.Itoa(t.totalSize)
 	}
 
 }
