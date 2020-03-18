@@ -116,33 +116,33 @@
 			});
 			
 			//点击鼠标
-			#vBarBackground.on("mousedown",function(e){
+			$(#vBarBackground).on("mousedown",function(e){
 				vDownFlag = true;
 				ty = e.pageY - _self.offset().top;
-				#content.css("user-select","none");
-				#vBar.css("background-color","#4eb8f3");
-				var per = (e.pageY - _self.offset().top - vScrollHeight/2)/(_self.height() - #vBar.height());
+				$(#content).css("user-select","none");
+				$(#vBar).css("background-color","#4eb8f3");
+				var per = (e.pageY - _self.offset().top - vScrollHeight/2)/(_self.height() - $(#vBar).height());
 				setVPercent(per);
 			});
 			
 			//点击鼠标
-			#hBarBackground.on("mousedown",function(e){
+			$(#hBarBackground).on("mousedown",function(e){
 				hDownFlag = true;
 				ty = e.pageX - _self.offset().left;
-				#content.css("user-select","none");
-				#hBar.css("background-color","#4eb8f3");
-				var per = (e.pageX - _self.offset().left - hScrollWidth/2)/(_self.width() - #vBar.width());
+				$(#content).css("user-select","none");
+				$(#hBar).css("background-color","#4eb8f3");
+				var per = (e.pageX - _self.offset().left - hScrollWidth/2)/(_self.width() - $(#vBar).width());
 				setHPercent(per);
 			});
 			
 			
 			$(window).on("mousemove",function(e){
 				if(vDownFlag){
-					var per = (e.pageY - _self.offset().top - vScrollHeight/2)/(_self.height() - #vBar.height());
+					var per = (e.pageY - _self.offset().top - vScrollHeight/2)/(_self.height() - $(#vBar).height());
 					setVPercent(per);
 				}
 				else if(hDownFlag){
-					var per = (e.pageX - _self.offset().left - hScrollWidth/2)/(_self.width() - #hBar.width());
+					var per = (e.pageX - _self.offset().left - hScrollWidth/2)/(_self.width() - $(#hBar).width());
 					setHPercent(per);
 				}
 				
@@ -152,9 +152,9 @@
 			$(window).on("mouseup",function(e){
 				vDownFlag = false;
 				hDownFlag = false;
-				#content.css("user-select","text");
-				#vBar.css("background-color","#c7d0d5");
-				#hBar.css("background-color","#c7d0d5");
+				$(#content).css("user-select","text");
+				$(#vBar).css("background-color","#c7d0d5");
+				$(#hBar).css("background-color","#c7d0d5");
 			})
 			initVBar();
 			tid = setTimeout(scanEvt,100);
@@ -167,21 +167,21 @@
 					initVBar();
 					tHeight = ct.scrollHeight;
 				}else{
-					#vBar.hide();
+					$(#vBar).hide();
 				}
 				if(ct.scrollHeight <= _self.height()){
-					#vBar.hide();
+					$(#vBar).hide();
 				}else{
-					#vBar.show();
+					$(#vBar).show();
 				}
 				if(ct.scrollWidth != tWidth){
 					initVBar();
 					tWidth = ct.scrollWidth;
 				}
 				if(ct.scrollWidth <= _self.width()){
-					#hBar.hide();
+					$(#vBar).hide();
 				}else{
-					#hBar.show();
+					$(#vBar).show();
 				}
 				tid = setTimeout(scanEvt,100);
 			}catch(e){
@@ -193,18 +193,18 @@
 		
 		private function initVBar(){
 			tHeight = ct.scrollHeight;
-			vScrollHeight = _self.height() * #content.height()/ct.scrollHeight;
+			vScrollHeight = _self.height() * $(#content).height()/ct.scrollHeight;
 			if(vScrollHeight < minVScrollHeight){
 				vScrollHeight = 36;
 			}
-			#vBar.height(vScrollHeight);
+			$(#vBar).height(vScrollHeight);
 			
 			tWidth = ct.scrollWidth;
-			hScrollWidth = _self.width() * #content.width()/ct.scrollWidth;
+			hScrollWidth = _self.width() * $(#content).width()/ct.scrollWidth;
 			if(hScrollWidth < minHScrollWidth){
 				hScrollWidth = 36;
 			}
-			#hBar.width(hScrollWidth);
+			$(#hBar).width(hScrollWidth);
 		}
 		
 		public function get hBarWidth():int{
@@ -241,22 +241,22 @@
 		
 		private function vPercent():void{
 			var per = ct.scrollTop/(ct.scrollHeight - _self.height());
-			#vBar.css("top",per * (_self.height() - #vBar.height()));
+			$(#vBar).css("top",per * (_self.height() - $(#vBar).height()));
 		}
 		
 		private function hPercent():void{
 			var per = ct.scrollLeft/(ct.scrollWidth - _self.width());
-			#hBar.css("left",per * (_self.width() - #hBar.width()));
+			$(#hBar).css("left",per * (_self.width() - $(#hBar).width()));
 		}
 		
 		private function setVPercent(value:Number):void{
-			ct.scrollTop = (ct.scrollHeight - #content.height())*value;
+			ct.scrollTop = (ct.scrollHeight - $(#content).height())*value;
 
 		}
 		
 		
 		private function setHPercent(value:Number):void{
-			ct.scrollLeft = (ct.scrollWidth - #content.width())*value;
+			ct.scrollLeft = (ct.scrollWidth - $(#content).width())*value;
 		}
 		
 		/**
@@ -270,16 +270,16 @@
 		 * 将滚动条移动到底端
 		 */
 		public function moveVEnd():void{
-			ct.scrollTop = ct.scrollHeight - #content.height();
+			ct.scrollTop = ct.scrollHeight - $(#content).height();
 		}
 		
 		
 		public function set fixed(value:Boolean):void{
 			_fixed = value;
 			if(_fixed){
-				#vBarBackground.hide();
+				$(#vBarBackground).hide();
 			}else{
-				#vBarBackground.show();
+				$(#vBarBackground).show();
 			}
 			
 			

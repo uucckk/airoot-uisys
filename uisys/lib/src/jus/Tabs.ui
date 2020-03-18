@@ -12,6 +12,7 @@
 		}
 		#labHeaderContent{
 			position:relative;
+			height:100%;
 			width:10000px;
 		}
 		
@@ -31,10 +32,8 @@
 		
 		#tabs{
 			overflow:hidden;
-			/*background-color:#234567;*/
 			line-height:32px;
 			height:36px;
-			
 		}
 		
 		
@@ -59,8 +58,8 @@
 			cursor:default;
 			color:#818ba6;
 			font-weight:bold;
-			
-
+			cursor:pointer;
+			background-color:#eeeeee;
 		}
 		#tabs  ul li .closeBtn{
 			display:block;
@@ -72,6 +71,7 @@
 			right:1px;
 			background: url(@lib('tabspage_icon.png')) no-repeat;
 			
+			
 		}
 		
 		#tabs ul li .closeBtn:hover{
@@ -80,6 +80,7 @@
 		
 		#tabs ul li.selected{
 			background-color:#fefefe;
+			border:1px solid #dddddd;
 			color:#3685ea;
 		}
 		
@@ -101,8 +102,6 @@
 		
 		
 	</style>
-	<div height="3" style="background-color:#3785ea;">
-	</div>
 	<hbox id="tabs"  width="100%" height="36">
 		<div id="leftBtn" height="100%" width="26" >L</div>
 		<div id="labContent" width="100%" height="100%">

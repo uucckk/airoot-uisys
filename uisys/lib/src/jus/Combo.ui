@@ -37,11 +37,11 @@
 	<div id="content">
 		<@content>
 			<list dataLabel="@label" dataField="@value">
-					<xml>
-						<li label="浏览试图" value="0" />
-						<li label="项目试图" value="1" />
-					</xml>
-				</list>
+				<xml>
+					<li label="浏览试图" value="0" />
+					<li label="项目试图" value="1" />
+				</xml>
+			</list>
 		</@content>
 		
 	</div>
@@ -53,7 +53,7 @@
 	public var onChange:Function = null;
 	
 	function init(){
-		content = #content;
+		content = $(#content);
 		content.css({"position":"absolute","top":0});
 		content.hide();
 		
@@ -65,8 +65,8 @@
 			
 			if(disId){
 				disId.onClick = setData;
-				#txt.attr("name",_self.attr("name"));
-				#label.text(disId.selectedLabel);
+				$(#txt).attr("name",_self.attr("name"));
+				$(#label).text(disId.selectedLabel);
 			}
 			
 		}
@@ -108,8 +108,8 @@
 
 
 	private function setData(e:Event){
-		#label.text(e.target.label);
-		#txt.attr("value",e.target.value);
+		$(#label).text(e.target.label);
+		$(#txt).attr("value",e.target.value);
 		hideList();
 		if(onChange){
 			onChange(e);

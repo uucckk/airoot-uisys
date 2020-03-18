@@ -1,5 +1,5 @@
 <!--
-	@status			debug
+	@status			running
 	@author			sunxy
 	@type			JUS 控件
 	@description	垂直可变化布局
@@ -13,30 +13,12 @@
 		background-color:#ffffff;
 		font-size:13px;
 	}
-	ul{
-		margin:0px;
-		padding:0px;
-	}
-	ul li{
-		border-bottom:1px solid #eeeeee;
-		padding:1px 10px 1px 10px;
-		list-style:none;
-		cursor:pointer;
-	}
-	
-	ul li.over{
-		color:#ffffff;
-		background-color:#ffaa00;
-	}
-	
-	
 </style>
 <jus.Box dataLabel="" dataField="">
-	<ul id="content">
-		<@component/>
-	</ul>
+	<@component/>
 </jus.Box>
 <script>
+	import @root/js/jquery.min.js;
 	var dataLabel from "dataLabel";
 	var dataField from "dataField";
 	var _self = $(dom);
@@ -56,16 +38,15 @@
 	
 	public set dataProvider(value){
 		_data = value;
-		console.log(">>>>>",_data);
 		initList();
 	}
 	
 	private function initList(){
-		$(#content).empty();
+		$(dom).empty();
 		var p = null;
 		for(var i = 0;i<_data.length;i++){
 			p = _data[i];
-			#content.appendChild(context.module(p));
+			dom.appendChild(context.module(p));
 		}
 	}
 </script>

@@ -73,13 +73,15 @@ type UI struct {
 	componentCode       []*Attr          //控件默认代码
 	scriptElement       map[string]*Attr //需要导入的头文件，类似与import
 	scriptElementBuffer []*ScriptElement
-	componentParams     []string         //所有编译时初始化集合，只有顶级的元素可以接受
-	count               int              //自动化数量
-	moduleMap           map[string]*Attr //模块地图
-	runList             []*RunElem       //run列表，用于记录模块的执行顺序，非常重要的一个字段
-	IsImport            string           //是否为导入类
-	headBuffer          bytes.Buffer     //html Head标签
-	pub                 string           //发布模板，没有模板就是空
+	componentParams     []string                       //所有编译时初始化集合，只有顶级的元素可以接受
+	count               int                            //自动化数量
+	moduleMap           map[string]*Attr               //模块地图
+	runList             []*RunElem                     //run列表，用于记录模块的执行顺序，非常重要的一个字段
+	IsImport            string                         //是否为导入类
+	headBuffer          bytes.Buffer                   //html Head标签
+	pub                 string                         //发布模板，没有模板就是空
+	defineMap           map[string](map[string]string) //自定义模块类映射
+	defineClassMap      map[string]string              //自定义模块对应实体
 }
 
 /**
@@ -89,14 +91,19 @@ type UI struct {
  * @param file			读取文件路径
  * @throws IOException
  */
-func (j *UI) CreateFromString(root string, domain string, node *HTML, code string, className string, parent *UI) error {
+func (j *UI) CreateFromString(root string, domain string, node *HTML, code string, className string, parent *UI, defLib *UI) error {
 	j.parent = parent
-	j.moduleMap = make(map[string]*Attr, 10)
+
 	j.pkgMap = make(map[string]string, 10)
 	j.idMap = make(map[string]*HTMLObject, 10)
 	j.root = filepath.Clean(root)
 	j.className = className
 	j.contentToList = make([]*HTML, 0)
+	if j.parent == nil {
+		j.moduleMap = make(map[string]*Attr, 10)
+		j.defineMap = make(map[string](map[string]string))
+		j.defineClassMap = make(map[string]string)
+	}
 	if node != nil {
 		j.node = node
 		j.innerContent = node.Child()
@@ -121,6 +128,11 @@ func (j *UI) CreateFromString(root string, domain string, node *HTML, code strin
 		j.domain = domain
 	}
 
+	if defLib != nil {
+		j.GetRoot().defineMap = defLib.GetRoot().defineMap
+		j.GetRoot().defineClassMap = defLib.GetRoot().defineClassMap
+	}
+
 	return nil
 }
 
@@ -139,12 +151,17 @@ func (j *UI) CreateFrom(root string, domain string, node *HTML, className string
 	if j.scanLevel > 100 { //最大深度100层级
 		return errors.New(j.GetRoot().className + " : scan module over stack when on create \"" + className + "\"")
 	}
-	j.moduleMap = make(map[string]*Attr, 10)
+
 	j.pkgMap = make(map[string]string, 10)
 	j.idMap = make(map[string]*HTMLObject, 10)
 	j.root = root
 	j.className = className
 	j.contentToList = make([]*HTML, 0)
+	if j.parent == nil {
+		j.moduleMap = make(map[string]*Attr, 10)
+		j.defineMap = make(map[string](map[string]string))
+		j.defineClassMap = make(map[string]string)
+	}
 	if node != nil {
 		j.node = node
 		j.innerContent = node.Child()
@@ -440,7 +457,7 @@ func (j *UI) AddStaticScript(className string, funcName string, value string) {
 }
 
 /**
- * 添加静态函数表达式
+ * 添加静态代码
  * @param className
  * @param func
  */
@@ -551,13 +568,12 @@ func (j *UI) overHTML(node []*HTML) {
 			j.clearMark(child.Child())
 			cp = ListToHTMLString(child.Child())
 		}
-
 		md5Ctx := md5.New()
 		md5Ctx.Write([]byte(cp))
 		cipherStr := md5Ctx.Sum(nil)
 		bs := hex.EncodeToString(cipherStr)
 		ft := &UI{SERVER: j.SERVER, SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH}
-		ft.CreateFromString(j.root, "", nil, cp, bs, nil)
+		ft.CreateFromString(j.root, "", nil, cp, bs, nil, j)
 		j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, &ScriptElement{"I", bs, "H", ft.ToFormatString()})
 		j.innerModule = bs
 		for _, h := range pList {
@@ -626,8 +642,8 @@ func (j *UI) scanHTML(child []*HTML) {
 				j.PushImportScript(&Attr{attrName, attrName})
 			}
 		}
-		if Index(tagName, ".") != -1 {
 
+		if Index(tagName, ".") != -1 {
 			arr = strings.Split(tagName, ":")
 			if len(arr) > 1 {
 				tagName = arr[1]
@@ -637,7 +653,13 @@ func (j *UI) scanHTML(child []*HTML) {
 				pub = j.SERVER.IsPublic
 			}
 			var tFunc *UI = &UI{SERVER: j.SERVER, IsPublic: pub, SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH, IsImport: j.IsImport, Debug: j.Debug}
-			if err := tFunc.CreateFromParent(j.root, p.GetAttr("id"), p, tagName, j); err == nil {
+			var err error
+			if Index(tagName, ".$") == 0 {
+				err = tFunc.CreateFromString(j.root, p.GetAttr("id"), p, j.GetRoot().defineClassMap[tagName], tagName, j, nil)
+			} else {
+				err = tFunc.CreateFromParent(j.root, p.GetAttr("id"), p, tagName, j)
+			}
+			if err == nil {
 				if tFunc.IsScript() {
 					tFunc.SetConstructor(&Attr{tagName, p.GetConstructerParameter()}).setExtend(p.GetAttr("id") == j.domain)
 					// if p.GetConstructerCode() != "" {
@@ -655,7 +677,6 @@ func (j *UI) scanHTML(child []*HTML) {
 						j.componentCode = append(j.componentCode, &Attr{p.GetAttr("id"), p.GetConstructerCode()})
 					}
 					tFunc.SetConstructor(&Attr{tagName, p.GetConstructerParameter()}).setExtend(p.GetAttr("id") == j.domain)
-
 					tHTML = tFunc.ReadHTML()
 					//clsTmp := tHTML.GetAttr("class")
 					tHTML.CopyFrom(p)
@@ -781,10 +802,8 @@ func (j *UI) loadSetting() {
 
 func (j *UI) importHTML() {
 	sets := j.html.GetElementsByTagName("@import")
-	attrsMap := make(map[string]string, 10)
-	attrsMap["value"] = ""
-	html := &HTML{tagData: attrsMap}
-	sets = append(sets, html)
+	sets = append(sets, &HTML{tagData: map[string]string{"value": ""}})
+	sets = append(sets, &HTML{tagData: map[string]string{"value": ".$" + j.className}})
 
 	p := 0
 	value := ""
@@ -795,58 +814,67 @@ func (j *UI) importHTML() {
 
 	for i := 0; i < len(sets); i++ {
 		value = sets[i].GetAttr("value")
-		if Index(value, ".") == 0 { //说明是获取自己本地路径
-			value = Substring(j.dirPath, StringLen(j.root), -1) + value
-			value = filepath.Clean(value)
-			value = Replace(value, "\\", ".")
-			value = Replace(value, "/", ".")
-		}
-		value = strings.TrimLeft(value, ".")
-		value = strings.Replace(value, ";", "", -1)
-		value = strings.Replace(value, " ", "", -1)
-		p = LastIndex(value, ".")
-		if p != -1 {
-			path = Substring(value, 0, p)
-			if CharAt(value, p+1) != "*" {
-				fileName = Substring(value, p+1, -1) + ".ui"
+		if Index(value, ".$") == 0 { //说明是获取模块内部自定义类的类
+			m := j.GetRoot().defineMap[value]
+			if m != nil {
+				for k, v := range m {
+					j.pkgMap[k] = v
+				}
 			}
-		}
+		} else {
+			if Index(value, ".") == 0 { //说明是获取自己本地路径
+				value = Substring(j.dirPath, StringLen(j.root), -1) + value
+				value = filepath.Clean(value)
+				value = Replace(value, "\\", ".")
+				value = Replace(value, "/", ".")
+			}
+			value = strings.TrimLeft(value, ".")
+			value = strings.Replace(value, ";", "", -1)
+			value = strings.Replace(value, " ", "", -1)
+			p = LastIndex(value, ".")
+			if p != -1 {
+				path = Substring(value, 0, p)
+				if CharAt(value, p+1) != "*" {
+					fileName = Substring(value, p+1, -1) + ".ui"
+				}
+			}
 
-		fl := j.CLASS_PATH + "/" + strings.Replace(path, ".", "/", -1)
-		var lst []os.FileInfo
-		var err error
-		if Exist(fl) {
-			lst, err = ioutil.ReadDir(fl)
-			if err == nil {
-				for _, f := range lst {
-					if !f.IsDir() && (fileName == "" || fileName == f.Name()) {
-						cls = filepath.Ext(f.Name())
-						if cls == ".ui" || cls == ".es" {
-							key = Substring(f.Name(), 0, LastIndex(f.Name(), "."))
-							j.pkgMap[strings.ToLower(key)] = path + "." + key
+			fl := j.CLASS_PATH + "/" + strings.Replace(path, ".", "/", -1)
+			var lst []os.FileInfo
+			var err error
+			if Exist(fl) {
+				lst, err = ioutil.ReadDir(fl)
+				if err == nil {
+					for _, f := range lst {
+						if !f.IsDir() && (fileName == "" || fileName == f.Name()) {
+							cls = filepath.Ext(f.Name())
+							if cls == ".ui" || cls == ".es" {
+								key = Substring(f.Name(), 0, LastIndex(f.Name(), "."))
+								j.pkgMap[strings.ToLower(key)] = path + "." + key
+							}
 						}
 					}
+				} else {
+					fmt.Println(err)
 				}
-			} else {
-				fmt.Println(err)
 			}
-		}
 
-		fl = j.root + "/" + strings.Replace(path, ".", "/", -1)
-		if Exist(fl) {
-			lst, err = ioutil.ReadDir(fl)
-			if err == nil {
-				for _, f := range lst {
-					if !f.IsDir() && (fileName == "" || fileName == f.Name()) {
-						cls = filepath.Ext(f.Name())
-						if cls == ".ui" || cls == ".es" {
-							key = Substring(f.Name(), 0, LastIndex(f.Name(), "."))
-							j.pkgMap[strings.ToLower(key)] = path + "." + key
+			fl = j.root + "/" + strings.Replace(path, ".", "/", -1)
+			if Exist(fl) {
+				lst, err = ioutil.ReadDir(fl)
+				if err == nil {
+					for _, f := range lst {
+						if !f.IsDir() && (fileName == "" || fileName == f.Name()) {
+							cls = filepath.Ext(f.Name())
+							if cls == ".ui" || cls == ".es" {
+								key = Substring(f.Name(), 0, LastIndex(f.Name(), "."))
+								j.pkgMap[strings.ToLower(key)] = path + "." + key
+							}
 						}
 					}
+				} else {
+					fmt.Println(err)
 				}
-			} else {
-				fmt.Println(err)
 			}
 		}
 
@@ -854,6 +882,21 @@ func (j *UI) importHTML() {
 		fileName = ""
 	}
 	j.html.RemoveChildByTagName("@import")
+}
+
+//自定义HTML模块
+func (j *UI) defineHTML() {
+	sets := j.html.GetElementsByTagName("@define")
+	var name string
+	for _, v := range sets {
+		name = ".$" + j.className + "." + v.GetAttr("name")
+		if j.GetRoot().defineMap[".$"+j.className] == nil {
+			j.GetRoot().defineMap[".$"+j.className] = make(map[string]string)
+		}
+		j.GetRoot().defineMap[".$"+j.className][v.GetAttr("name")] = name
+		j.GetRoot().defineClassMap[name] = "<@import value='.$" + j.className + "'/>\r\n" + v.GetInnerHTML()
+	}
+	j.html.RemoveChildByTagName("@define")
 }
 
 /**
@@ -891,7 +934,6 @@ func (j *UI) packageHTML(child []*HTML) {
 	var arr []string
 	for _, p := range child {
 		tagName = strings.ToLower(p.TagName())
-
 		arr = strings.Split(tagName, ":")
 		if len(arr) > 1 {
 			tagName = arr[0]
@@ -899,9 +941,13 @@ func (j *UI) packageHTML(child []*HTML) {
 		}
 
 		//替换Module TagName 变为真是的tagName
-		if j.pkgMap[tagName] != "" {
-			tagName = j.pkgMap[tagName]
-			p.SetTagName(tagName)
+
+		if s := j.pkgMap[tagName]; s != "" {
+			tagName = s
+			p.SetTagName(s)
+		} else if s := j.pkgMap[p.TagName()]; s != "" {
+			tagName = s
+			p.SetTagName(s)
 		}
 
 		if extName != "" && j.pkgMap[extName] != "" {
@@ -1296,6 +1342,7 @@ func (j *UI) ReadHTML() *HTML {
 	j.loadSetting()
 	j.useHTML(j.html)
 	j.rootHTML()
+	j.defineHTML()
 	j.importHTML()
 	j.initObj(j.html)
 	htmls := j.html.GetUnTextChild()
@@ -1418,17 +1465,14 @@ func (j *UI) ReadHTML() *HTML {
 			for _, attr := range value {
 				st.WriteString("__POS_VALUE__")
 				st.WriteString(attr.Value)
-				//st.WriteString("__ADD_STATIC_METHOD__('" + name + "','" + attr.Name + "',__POS_VALUE__" + ",__APPDOMAIN__);")
 				j.ToFormatLine("S", name, attr.Name+" "+st.String(), sb)
 				st.Reset()
-				//sb.WriteString("__WINDOW__[\f]['" + name + "'].__STATIC__();\r\n")
 			}
 		}
 		j.staticScript = j.GetStaticMap()
 		for name, value := range j.staticScript {
 			for _, attr := range value {
 				st.WriteString("__POS_VALUE__" + attr.Value + ";\r\n")
-				//st.WriteString("__ADD_STATIC_METHOD__('" + name + "','" + attr.Name + "',__POS_VALUE__" + ",\f);")
 				j.ToFormatLine("S", name, attr.Name+" "+st.String(), sb)
 				st.Reset()
 			}
@@ -1448,7 +1492,6 @@ func (j *UI) ReadHTML() *HTML {
 				//sb.WriteString("\r\n")
 			}
 		}
-
 		if sb.Len() > 0 {
 			node := &HTML{}
 			node.AppendNode("script", sb.String())

@@ -1,0 +1,639 @@
+<jus.VBox width="100%" height="100%">
+	<style>
+		body{
+			overflow:hidden;
+			color:#15282c;
+			font-size:13px;
+			transform:translateZ(100px);
+		}
+		
+		#grid{
+			position:relative;
+		}
+		
+		
+		.$row{
+			display:flex;
+			position:absolute;
+			border-top:none;
+			height:26px;
+			min-width:100%;
+			box-sizing:border-box;
+			line-height:26px;
+		}
+		
+		.$row>div{
+			flex-shrink:0;
+		}
+		
+
+
+		.resize-th{
+			white-space:nowrap;
+		}
+		
+
+		
+		
+	</style>
+	<jus.scroller id="content" height="100%">
+		<div id="grid">
+		
+		</div>
+	</jus.scroller>
+
+	<script>
+		import @root/js/jquery.min.js;
+		var _self = $(dom);
+		//page modify
+		private var _data:Object = null;
+		private var count:int = 0;
+		
+		private var _rowHeight = 27;
+		private var contentWidth:int = 0;
+		private var data = [];
+		
+		
+		private var dgContent:JQuery = null;
+		private var gridContent:JQuery = null;
+		
+		
+		private var rowLst:Object = {};
+		private var startRow:int = 0;
+		private var endRow:int = 0;
+		
+		private var rollIndex:int = -1;
+		private var selectedIndex:int = -1;
+		
+		private var TID:int = -1;
+		private var scrollWidth = 0;
+			
+		private var renderMode:int = 1;
+		
+		private var _labelField:String = null;//默认显示标签
+		private var _filter:Function = null;
+		/**
+		 * 行变更
+		 */
+		public var onChange:Function = null;
+		public var onClick:Function = null;//确定点击事件
+		public var onDblClick:Function = null;//双击事件
+		public var onMouseOver:Function = null;//当鼠标移入
+		public var onMouseOut:Function = null;//当鼠标移出事件
+		
+		
+		private var isChange:Boolean = false;
+		
+		
+		
+		
+		function init(){
+			if(_self.attr("dataLabel")){
+				_labelField = _self.attr("dataLabel");
+			}
+			dgContent = $(#content);
+			gridContent = $(#grid);
+			_self.on("mousemove",".$row",function(e){
+				var tp = $(e.currentTarget);
+				var i = tp.attr("row");
+				if(rollIndex != -1 && rowLst[rollIndex] && rollIndex != selectedIndex){
+					rowLst[rollIndex].css("background-color",rollIndex % 2 == 0 ? "#fefefe" : "#f5f5f5");
+					
+				}
+				if(i != selectedIndex && rowLst[i]){
+					rowLst[i].css("background-color","#e0ffe0");
+				}
+				
+				rollIndex = i;
+
+			});
+			
+			_self.on("mouseover",".$row",function(e){
+				var tp = $(e.currentTarget);
+				var i = tp.attr("row");
+				if(rollIndex != -1 && rowLst[rollIndex] && rollIndex != selectedIndex){
+					rowLst[rollIndex].css("background-color",rollIndex % 2 == 0 ? "#fefefe" : "#f5f5f5");
+					
+				}
+				if(i != selectedIndex && rowLst[i]){
+					rowLst[i].css("background-color","#e0ffe0");
+				}
+				
+				rollIndex = i;
+				if(onMouseOver){
+					onMouseOver(data[i].__INDEX__,data[i],e);
+				}
+
+			});
+			
+			_self.on("mouseout",".$row",function(e){
+				var tp = $(e.currentTarget);
+				var i = tp.attr("row");
+				if(rollIndex != -1 && rowLst[rollIndex] && rollIndex != selectedIndex){
+					rowLst[rollIndex].css("background-color",rollIndex % 2 == 0 ? "#fefefe" : "#f5f5f5");
+					
+				}
+				if(i != selectedIndex && rowLst[i]){
+					rowLst[i].css("background-color","#e0ffe0");
+				}
+				
+				rollIndex = i;
+				if(onMouseOut){
+					onMouseOut(data[i].__INDEX__,data[i],e);
+				}
+
+			});
+			
+			_self.on("click",".$row",function(e){
+				var tp = $(e.currentTarget);
+				var i = tp.attr("row");
+				if(selectedIndex != -1 && rowLst[selectedIndex]){
+					rowLst[selectedIndex].css("background-color",selectedIndex % 2 == 0 ? "#fefefe" : "#f5f5f5").css("color","#000000");;
+					
+				}
+				tp.css("background-color","#5791e8").css("color","#ffffff");
+				
+				selectedIndex = i;
+				if(onClick){
+					onClick(data[i].__INDEX__,data[i],e);
+				}
+			});
+			
+			_self.on("dblclick",".$row",function(e){
+				var tp = $(e.currentTarget);
+				var i = tp.attr("row");
+				if(selectedIndex != -1 && rowLst[selectedIndex]){
+					rowLst[selectedIndex].css("background-color",selectedIndex % 2 == 0 ? "#fefefe" : "#f5f5f5").css("color","#000000");;
+				}
+				tp.css("background-color","#5791e8").css("color","#ffffff");
+				
+				selectedIndex = i;
+				if(onDblClick){
+					onDblClick(data[i].__INDEX__,data[i]);
+				}
+			});
+			
+			
+			content.onScroll = function(e){
+				
+				if(isChange){
+					refreshRowLst();
+				}
+				var top = content.scrollTop;
+				var height = content.scrollHeight;
+				requestAnimationFrame(function(){
+					initRowList(Math.floor(top/_rowHeight),parseInt(dgContent.height()/_rowHeight) + 1);
+				});
+				
+				
+
+			};
+			
+		}
+		
+
+		
+		
+		
+		/**
+		 * 设置显示信息
+		 */
+		public function set labelField(value:String):void{
+			_labelField = value;
+		}
+		
+		public function set fixed(value:String):void{
+			content.fixed = true;
+		}
+		
+		
+		/**
+		 * 获取被选中的值
+		 */
+		public function get selectedItem():Object{
+			return data[selectedIndex];
+		}
+		
+		
+		private function initDataGrid(){
+			var contentHeight = dgContent.height();
+			var sumHeight = 0;
+			gridContent.height(data.length*_rowHeight);
+			clearTimeout(TID);
+			startRow = endRow = 0;
+			gcRow(true);
+			TID = setTimeout(resizeEvt,0);
+			
+		}
+		
+		
+		/**
+		 * 初始化行
+		 */
+		private var TD:DIV = $("<div/>");
+		function initRowList(start:int,len:int){
+			if(start == startRow && len == endRow){
+				return;
+			}
+			
+			len = start + len + 1;
+			var cp = null;
+			var pTd = null;
+			var p = null;
+			for(var i:int = start;i<len && i<data.length;i++){
+				var obj = createRow(i);
+				var row = obj.row;
+				p = data[i];
+				if(!obj.init){
+					row.attr("index",p.__INDEX__);
+					row.append((_filter ? _filter(p[_labelField] + "",p,p.__INDEX__) : "<div>" + p[_labelField] + "</div>") + "&nbsp;");
+					row.css("padding-left",p.__LEVEL__ * 27);
+					
+					gridContent.append(row);
+					rowLst[i] = row;
+					if(i == selectedIndex){
+						row.css("background-color","#d0ffe0");
+					}
+				}
+				//row.width(contentWidth - content.barWidth - p.__LEVEL__ * 27);
+			}
+			startRow = start;
+			endRow = len;
+			if(renderMode == 1){
+				gcRow();
+			}
+		}
+		
+		
+		function gcRow(all:Boolean):void{
+			
+			for(var row in rowLst){
+				if(all || row<startRow || row>endRow){
+					rowLst[row].remove();
+					delete rowLst[row];
+				}
+			}
+		
+		}
+		
+		function clearRow(startRow):void{
+			
+			for(var row in rowLst){
+				if(row>startRow){
+					rowLst[row].remove();
+					delete rowLst[row];
+				}
+			}
+		
+		}
+		
+		
+		/**
+		 * 获得一行
+		 */
+		var rowTmp = $("<div class='$row'></div>");
+		function createRow(i:int):ROW{
+			if(rowLst[i]){
+				return {row:rowLst[i],init:true};
+			}
+			var row = rowTmp.clone();
+			row.attr("row",i);
+			row.css("top",i*_rowHeight);
+			row.css("background-color",i%2 == 0 ? "#fefefe" : "#f5f5f5");
+			//row.width(contentWidth);
+			return {row:row,init:false};
+		}
+		
+		
+		
+		
+	
+		public function set dataProvider(value:Array){
+			removeLabel();
+			data = value;
+			initArray(data,0);
+			
+			initDataGrid();
+		}
+		
+		private function initArray(data:Array,level:int,parent:int = 0){
+			var len = data.length;
+			for(var i:int = 0;i<len;i++){
+				data[i].__LEVEL__ = level;
+				data[i].__INDEX__ = count ++;
+				data[i].__PARENT__ = parent;
+			}
+		}
+		
+		
+		public function addChildAt(index:int,child:Array){
+			var tIndex = index;
+			//先找到元素所在行
+			var note = null;
+			var p = null;
+			for(var i:int = 0;i<data.length;i++){
+				p = data[i];
+				if(p.__INDEX__ == index){
+					if(p.__EXPEND__ == false){
+						return;
+					}
+					note = p;
+					index = i;
+					break;
+				}
+			}
+		
+			//现获取展开行
+			
+			//获取展开行的级别
+			var level = note.__LEVEL__;
+			//初始化现在传进来的数组
+			initArray(child,level + 1,tIndex);
+			var endA = data.slice(index + 1,data.length);
+			data.length = index + 1;
+			data = data.concat(child,endA);
+			gridContent.height(data.length*_rowHeight);
+			
+			
+
+			clearRow(index);
+			TID = setTimeout(resizeEvt,0);
+		}
+		
+		/**
+		 * 将数据添加到指定节点上
+		 * @param index		节点索引
+		 * @param child		子节点数据
+		 */
+		public function appendChildAt(index:int,child:Array):void{
+			var tIndex = index;
+			//先找到元素所在行
+			var note = null;
+			var p = null;
+			for(var i:int = 0;i<data.length;i++){
+				p = data[i];
+				if(p.__INDEX__ == index){
+					if(p.__EXPEND__ == false){
+						return;
+					}
+					note = p;
+					index = i;
+					break;
+				}
+			}
+		
+			//获取展开行的级别
+			i++;
+			var level = note.__LEVEL__;
+			var end = 0;
+			while(i<data.length){	
+				if(data[i].__LEVEL__ > level){
+					end ++;
+				}else{
+					break;
+				}
+				i++;
+			}
+			//初始化现在传进来的数组
+			initArray(child,level + 1,tIndex);
+			var endA = data.slice(i,data.length);
+			data.length = i;
+			data = data.concat(child,endA);
+			gridContent.height(data.length*_rowHeight);
+			
+			
+
+			clearRow(index);
+			TID = setTimeout(resizeEvt,0);
+		}
+		
+		
+		public function clearChildAt(index:int){
+			//先找到元素所在行
+			var note = null;
+			var p = null;
+			for(var i:int = 0;i<data.length;i++){
+				p = data[i];
+				if(p.__INDEX__ == index){
+					note = p;
+					index = i;
+					break;
+				}
+			}
+			i++;
+			var level = note.__LEVEL__;
+			var end = 0;
+			while(i<data.length){
+				
+				if(data[i].__LEVEL__ > level){
+					end ++;
+				}else{
+					break;
+				}
+				i++;
+			}
+			
+			
+			data.splice(index + 1,end);
+			gridContent.height(data.length*_rowHeight);
+			clearRow(index);
+			TID = setTimeout(resizeEvt,0);
+		
+		}
+		
+		
+		
+		/**
+		 * 获取指定索引的数据
+		 */
+		public function getData(index:int):Object{
+			var p = null;
+			for(var i:int = 0;i<data.length;i++){
+				p = data[i];
+				if(p.__INDEX__ == index){
+					return {index:index,data:p};
+				}
+			}
+			return null;
+		}
+		
+		public function get list():Array{
+			return data;
+		}
+		
+		
+		/**
+		 * 鼠标模拟点击事件
+		 */
+		public function clickListAt(index:int){
+			if(onClick){
+				onClick(data[index].__INDEX__,data[index]);
+			}
+			
+		}
+		
+		/**
+		 * 设置过滤器
+		 */
+		public function set filter(value:Function):void{
+			_filter = value;
+		}
+		
+		/**
+		 * 重新布局树位置
+		 */
+		private function refreshRowLst():void{
+			if(labelTmp){
+				labelTmp.remove();
+			}
+			for(var i in rowLst){
+				rowLst[i].css("top",i*_rowHeight + "px").css("left","0px");
+			}
+			isChange = false;
+		}
+		
+		
+		/**
+		 * 将指定行后下移动
+		 */
+		public function moveFromIndex(index:int,dx:int,dy:int):void{
+			
+			refreshRowLst();
+			isChange = true;
+			
+			var pos:int = -1;
+			if(index == -1){
+				pos = startRow - 1;
+			}else{
+				for(var i:int = 0;i<data.length;i++){
+					p = data[i];
+					if(p.__INDEX__ == index){
+						pos = i;
+						break;
+					}
+				}
+			
+			}
+			
+			var p = null;
+			for(var i = pos + 1;i<endRow;i++){
+				if(p = rowLst[i]){
+					p.css("top",parseInt(p.css("top")) + dy + "px");
+					p.css("left",parseInt(p.css("left")) + dx + "px");
+				}else{
+					break;
+				}
+			}
+		}
+		
+		private function moveFromIndex2(index:int,dx:int,dy:int):void{
+			
+			var p = null;
+			for(var i = startRow;i<endRow;i++){
+				if(p = rowLst[i]){
+					p.css("top",parseInt(p.css("top")) + dy + "px");
+					p.css("left",parseInt(p.css("left")) + dx + "px");
+				}else{
+					break;
+				}
+			}
+			if(p = labelTmp){
+				p.css("top",parseInt(p.css("top")) + dy + "px");
+				p.css("left",parseInt(p.css("left")) + dx + "px");
+			}
+		}
+		
+		
+		
+		private var labelTmp = null;
+		/**
+		 * 给指定节点添加Label
+		 */
+		public function addLabel(index:int,obj:HTML){
+			if(labelTmp){
+				labelTmp.remove();
+			}
+			var pos:int = -1;
+			for(var i:int = 0;i<data.length;i++){
+				p = data[i];
+				if(p.__INDEX__ == index){
+					pos = i;
+					break;
+				}
+			}
+			obj.css("position","absolute");
+			obj.css("top",(pos + 1)*_rowHeight).css("padding-left",p.__LEVEL__ * 27 + 20);
+			obj.width(contentWidth - scrollWidth - p.__LEVEL__ * 27 - 20 - content.hBarWidth);
+			#grid.addChild(obj);
+			//gridContent.height(data.length*_rowHeight + obj.outerHeight(true));
+			moveFromIndex(index,0,obj.outerHeight(true));
+			labelTmp = obj;
+			if(parseInt(labelTmp.css("top")) + labelTmp.outerHeight(true)>_self.height()){
+				moveFromIndex2(-1,0,-obj.outerHeight(true));
+			}
+			
+			
+		}
+		
+		
+		/**
+		 * 给指定节点添加Label
+		 */
+		public function addLabelD(index:int,obj:HTML){
+			if(labelTmp){
+				labelTmp.remove();
+			}
+			var pos:int = -1;
+			for(var i:int = 0;i<data.length;i++){
+				p = data[i];
+				if(p.__INDEX__ == index){
+					pos = i;
+					break;
+				}
+			}
+			obj.css("position","absolute");
+			obj.css("top",(pos + 1)*_rowHeight);
+			obj.width(contentWidth - scrollWidth - p.__LEVEL__ * 27);
+			#grid.addChild(obj);
+			gridContent.height(data.length*_rowHeight + obj.outerHeight(true));
+			moveFromIndex(index,0,obj.outerHeight(true));
+			labelTmp = obj;
+			if(parseInt(labelTmp.css("top")) + labelTmp.outerHeight(true)>_self.height()){
+				moveFromIndex2(-1,0,-obj.outerHeight(true));
+			}
+		}
+		
+		public function removeLabel():void{
+			if(labelTmp){
+				gridContent.height(gridContent.height() - labelTmp.outerHeight(true));
+				labelTmp.remove();
+			}
+		}
+		
+		
+		
+		
+		/**
+		 * 刷新整个试图
+		 */
+		public function refresh():void{
+			gcRow(true);
+			TID = setTimeout(resizeEvt,0)
+		}
+		
+		function resizeEvt():void{
+			var top = content.scrollTop;
+			var height = content.scrollHeight;
+			contentWidth = _self.width();
+			initRowList(Math.floor(top/_rowHeight),parseInt(dgContent.height()/_rowHeight) + 1);
+		}
+		
+		public function trigger(e):void{
+			super.trigger(e);
+			clearTimeout(TID);
+			TID = setTimeout(resizeEvt,0);
+		}
+		
+		
+	</script>
+</jus.VBox>

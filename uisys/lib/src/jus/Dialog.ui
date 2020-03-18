@@ -57,11 +57,12 @@
 		</div>
 	</div>
 
-	<contain id="content" class="dialogContent layoutBox unitBox">
+	<Box id="content" class="dialogContent layoutBox unitBox">
 		<@content/>
-	</contain>
+	</Box>
 
 	<script>
+		import @root/js/jus-win.js;
 		var _self = $(dom);
 		var value = null;
 		public function init(title:String = "弹出框",width:int = 700,height:int = 400){
@@ -129,14 +130,19 @@
 				if(listener){
 					listener(e);
 				}
-				content.trigger(0);
+				if(content.trigger){
+					content.trigger(0);
+				}
+				
 			});
 		}
 		
 		
 		public function addChild(obj:Object):void{
 			$(#content).addChild(obj);
-			content.trigger();
+			if(content.trigger){
+				content.trigger(0);
+			}
 			
 		}
 

@@ -7,6 +7,7 @@
 	<@content />
 </div>
 <script>
+	import @root/js/jquery.min.js;
 	var _self = $(dom);
 	
 	function load(url){

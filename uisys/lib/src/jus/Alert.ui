@@ -1,9 +1,17 @@
 <@import value="jus.*" />
-<@import value="root.button.*" />
-<@import value="root.*" />
 <vbox width="100%" height="100%">
 	<dragpanel width="570" height="34" id="myvbox">
 		<style>
+			@keyframes showAlert {
+				from{transform:translateY(-200px);}
+				to{transform:translateY(400px);}
+			}
+
+			@keyframes hideAlert {
+				from{transform:translateY(400px);}
+				to{transform:translateY(-200px);}
+			}
+
 			body{
 				width:100%;
 				height:100%;
@@ -74,7 +82,7 @@
 			
 			</div>
 			<position bottom="0" width="100%" height="60" style="background-color:#eff4f8">
-				<button("#3785ea") left="136" top="26" width="88" height="35" onclick="@this.sure()" id="sure">确定</button>
+				<div style="background-color:#3785ea;line-height:36px" left="136" top="26" width="88" height="35" onclick="@this.sure()" id="sure">确定</div>
 			</position>
 		</position>
 	</dragpanel>
@@ -85,19 +93,17 @@
 			_self.click(function(){
 				return false;
 			});
-			#report.text(report);
-			#posi.css("left",window.innerWidth/2-#posi.width()/2);
-			#posi.addClass("$show");
-			$("body").addChild(_self);
+			$(#report).text(report);
+			$(#posi).css("left",window.innerWidth/2-$(#posi).width()/2);
+			$(#posi).addClass("$show");
+			document.body.appendChild(dom);
 		}
 		public function set message(value){
-			#report.text(value);
+			$(#report).text(value);
 		}
 		public function sure():void{
-			#posi.addClass("$hide");
+			$(#posi).addClass("$hide");
 			setTimeout(function(){_self.remove()},500);
-			__ALERT_FLAG__ = null;
-			
 		}
 	</script>
 </vbox>

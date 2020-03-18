@@ -744,7 +744,6 @@ func (s *Script) pushGSetter(i int, tag *Tag) {
 		p = &GSetter{}
 		s.gsMap[tag.Value] = p
 	}
-
 	if i == 0 { //getter
 		tag.Value = "get_" + tag.Value
 		p.Getter = tag

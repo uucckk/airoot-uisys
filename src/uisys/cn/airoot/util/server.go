@@ -1101,7 +1101,7 @@ func (u *UIServer) apiEvt(req *http.Request) string {
 		jus := &UI{SERVER: u, SYSTEM_PATH: u.SysPath, CLASS_PATH: u.SysPath + "/"}
 		className := Substring(req.RequestURI, 0, LastIndex(req.RequestURI, "."))
 		className = Replace(className, "/", ".")
-		if err := jus.CreateFromString(u.RootPath+"/", "", nil, req.FormValue("value"), className, nil); err == nil {
+		if err := jus.CreateFromString(u.RootPath+"/", "", nil, req.FormValue("value"), className, nil, nil); err == nil {
 			return jus.ToFormatString()
 		} else {
 			fmt.Println(err)

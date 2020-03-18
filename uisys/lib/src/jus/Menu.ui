@@ -4,9 +4,11 @@
 	@type			JUS 控件
 	@description	
 -->
-<module label="name" child="child">
+<module label="name" child="child" height="32">
 	<style>
 		body{
+			display:flex;
+			align-items: center;
 			overflow:hidden;
 			background-color:#ffffff;
 			font-size:13px;
@@ -15,7 +17,6 @@
 			margin:0px;
 			padding:0px;
 			list-style:none;
-			background-color:#ffffff;
 		}
 		ul li{
 			float:left;
@@ -101,7 +102,7 @@
 			for(var i:int = 0;i<list.length;i++){
 				p = list[i];
 				t = li.clone();
-				t.html(_filter ? _filter(p) : "<a href='#'>" + p[label] + "</a>");
+				t.html(_filter ? _filter(p) : "<a href='#'>" + p[label] + (p[child] ? "+" : "") + "</a>");
 				tmp = initMenu(p[child],level + 1);
 				if(tmp){
 					t.append(tmp);

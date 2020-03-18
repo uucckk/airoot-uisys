@@ -178,7 +178,6 @@ func CreateProjectDir(path string) (string, bool) {
 	os.MkdirAll(path+"/.serv", 0777)     //配置文件项
 	os.MkdirAll(path+"/.serv/use", 0777) //格式化命令
 	os.MkdirAll(path+"/.serv/pub", 0777) //发布配置
-
 	s, _ := filepath.Abs("lib/js")
 	Copy(s, path+"/lib/js", "")
 	s, _ = filepath.Abs("lib/core/icon/")
@@ -212,7 +211,6 @@ func CreateProjectDir(path string) (string, bool) {
 	DevPrintln(2, lang["建立项目"], abs)
 	tName := GetName()
 	commandEvt("add " + tName + " " + abs)
-	//DevPrintln(240, lang["项目挂载在"], tName)
 	_Count_++
 	return fmt.Sprintf(lang["项目挂载在"], tName), true
 }

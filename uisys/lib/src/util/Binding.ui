@@ -9,9 +9,11 @@
 </div>
 <script>
 	import util.DOMBinding;
-	private var bind = null;
-	function init(){
-		bind = new DOMBinding(dom);
+	private var bind = new DOMBinding(dom);
+	function init(value){
+		if(value){
+			data = value;
+		}
 	}
 	
 	//设置与返回数据对象
@@ -21,6 +23,7 @@
 	
 	set data(value:Object){
 		bind.dataContext = value;
+		
 	}
 	
 	//数据显示过滤器

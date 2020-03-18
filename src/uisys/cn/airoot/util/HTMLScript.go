@@ -275,10 +275,10 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _global string, _this string, _
 			cipherStr := md5Ctx.Sum(nil)
 			bs := hex.EncodeToString(cipherStr)
 			ft := &UI{SYSTEM_PATH: s.ui.SYSTEM_PATH, CLASS_PATH: s.ui.CLASS_PATH}
-			for _, v := range s.ui.pkgMap {
-				t.Value = "<@import value='" + v + "'/>" + t.Value
-			}
-			ft.CreateFromString(s.root, "", nil, t.Value, bs, nil)
+			// for _, v := range s.ui.pkgMap {
+			// 	t.Value = "<@import value='" + v + "'/>" + t.Value
+			// }
+			ft.CreateFromString(s.root, "", nil, t.Value, bs, nil, nil)
 			tl = append(tl, &Tag{Value: "getModule(\"" + bs + "\",__APPDOMAIN__)", TagType: 0})
 			//s.ui.ToFormatLine("I", bs, "H"+ft.ToFormatString(), sb)
 			s.ui.GetRoot().scriptElementBuffer = append(s.ui.GetRoot().scriptElementBuffer, &ScriptElement{"I", bs, "H", ft.ToFormatString()})
@@ -477,12 +477,25 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _global string, _this string, _
 	for p < len(tl) {
 		t = tl[p]
 		p++
-		if t.Domain == "" && t.TagType == 0 && !t.IsAttr {
+		if t.Domain == "" && t.TagType == 0 && !t.IsAttr && !t.IsObjectAttr { //当通过import引入的类，然后使用其属性的化，应该是其静态变量
 			he := GetSingle(s.hMap, t.Value)
 			if he != nil {
 				tlt = append(tlt, &Tag{Value: "__WINDOW__[__APPDOMAIN__]['" + he.Value + "']", TagType: 0})
 				continue
 			}
+			value := s.ui.GetPackageMap()[t.Value]
+			if value != "" {
+				md5Ctx := md5.New()
+				md5Ctx.Write([]byte(value))
+				cipherStr := md5Ctx.Sum(nil)
+				bs := hex.EncodeToString(cipherStr)
+				ft := &UI{SYSTEM_PATH: s.ui.SYSTEM_PATH, CLASS_PATH: s.ui.CLASS_PATH}
+				ft.CreateFromString(s.root, "", nil, value, bs, nil, nil)
+				s.ui.GetRoot().scriptElementBuffer = append(s.ui.GetRoot().scriptElementBuffer, &ScriptElement{"I", bs, "H", ft.ToFormatString()})
+				tlt = append(tlt, &Tag{Value: "__WINDOW__[__APPDOMAIN__]['" + bs + "']", TagType: 0})
+				continue
+			}
+
 		}
 		if !t.IsSet && !t.IsGet && "class" == t.Domain && (t.IsVar || t.IsFunction) {
 			if t.IsFunction {
@@ -833,8 +846,8 @@ func (s *HTMLScript) FormatString(script string) string {
 	return s.initScript(s.mjs)
 }
 
-func (s *HTMLScript) loadClass(path string) string {
-	className := strings.TrimSpace(Substring(path, 0, Index(path, "(")))
+func (s *HTMLScript) loadClass(className string) string {
+	className = strings.TrimSpace(className)
 	if className[0] == '?' {
 		return ""
 	}
@@ -842,12 +855,26 @@ func (s *HTMLScript) loadClass(path string) string {
 	if Index(className, ".") == -1 {
 		he := GetSingle(s.hMap, className)
 		if he == nil {
-			tmpName = ""
+			value := s.ui.GetRoot().defineMap[".$"+s.ui.className][className]
+			value = s.ui.GetRoot().defineClassMap[value]
+			if value == "" {
+				tmpName = ""
+			} else {
+				md5Ctx := md5.New()
+				md5Ctx.Write([]byte(value))
+				cipherStr := md5Ctx.Sum(nil)
+				bs := hex.EncodeToString(cipherStr)
+				ft := &UI{SYSTEM_PATH: s.ui.SYSTEM_PATH, CLASS_PATH: s.ui.CLASS_PATH}
+				ft.CreateFromString(s.root, "", nil, value, bs, nil, s.ui)
+				s.ui.GetRoot().scriptElementBuffer = append(s.ui.GetRoot().scriptElementBuffer, &ScriptElement{"I", bs, "H", ft.ToFormatString()})
+				tmpName = bs
+			}
+
 		} else {
 			tmpName = he.Value
 		}
 	} else {
-		s.ui.PushImportScript(&Attr{className, ""})
+		s.ui.PushImportScript(&Attr{className, className})
 		tmpName = className
 	}
 	return IfStr(tmpName != "", "getModule('"+tmpName+"',__APPDOMAIN__)", "")

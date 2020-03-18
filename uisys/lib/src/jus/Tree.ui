@@ -1,372 +1,168 @@
-<!-- 
-	Tree组件
-	@author sunxy
-	@version 0.0
-	@type	JUS 控件
- -->
-<@import value="jus.*" />
-<vbox height="100%">
-	<style id="style">
-		body{
-			font-size:13px;
-			user-select:none;
+<@import value="jus.* />
+<BaseTree>
+	<style>
+		.icon{
+			width:26px;
+			height:26px;
+			background:url(img/Common/treeico_key-unit.png) no-repeat;
+			background-position:center 2px;
 		}
-		ul{
-			margin:0px;
-			padding:0px;
-			list-style:none;
+		
+		.user{
+			width:26px;
+			height:26px;
+			padding-left:2px;
+			background-repeat:no-repeat;
+			background-position:3px 2px;
 			
 		}
 		
-		ul li{
-			margin:0px;
-			padding:0px;
-			line-height:24px;
-			overflow:hidden;
-			margin-left:10px;
-			cursor:pointer;
-		}
 		
-		.elem .label{
-			padding-left:4px;
-		}
-		
-		.elem .label:hover{
-			padding-left:4px;
-			color:#0022aa;
-			font-size:15px;
-			background-color:#fefefe;
-		}
-		
-		.elem .dir{
-			float:left;
-			padding-left:10px;
-			padding-right:15px;
-			height:22px;
-			line-height:22px;
-			background:url(img/Common/treeico_key-unit.png) no-repeat;
-		}
-		
-		
-		.elem .dirc{
-			float:left;
+		.expend{
+			height:26px;
 			padding-left:5px;
 			padding-right:10px;
-			height:22px;
-			line-height:22px;
-			background: url(@lib('tree_icons.png')) no-repeat -2px 1px;
+			line-height:26px;
+			background: url(img/component/tree/tree_icons.png) no-repeat -2px 3px;
 		}
-		.elem .dirc.expend{
-			background: url(@lib('tree_icons.png')) no-repeat -18px -1px;
+		
+		.expend.display{
+			background: url(img/component/tree/tree_icons.png) no-repeat -18px 3px;
 		}
-		.closeNode{
-			overflow:hidden;
+		
+		.label{
+			cursor:pointer;
+			
+		}
+		.countLabel{
+			cursor:pointer;
+			color:#0000aa;
+			width:100%;
+			flex-shrink:1;
+		}
+		
+		
+		.number{
+			cursor:pointer;
+			text-align:right;
+			border-left:1px solid #eeeeee;
+			padding:0px 10px 0px 5px;
+		}
+		.quan{
+			width:26px;
+			height:26px;
+			background: url(img/Login/loading.gif) no-repeat 10px 6px;
+		}
+		.quan.display{
+			background: none;
+			//background: url(img/Login/loading.gif) no-repeat 10px 6px;
+		}
+		
+		.node{
+			width:100%;
+			flex-shrink:1;
 		}
 	</style>
-	<div id="content">
-		<@value />
-	</div>
 	<script>
 		var _self = $(dom);
-		private var dataLabel:String = null;
-		private var dataField:String = null;
-		private var count:int = 0;
-		private var _filter:Function = null;
-		private var data:XML = null;
-		
-		/**
-		 * 展开记录
-		 */
-		private var expendFlag:Object = {};
-
-		/*
-		 *数据存储数组
-		 */
-		private var posArr:Object = {};
-
-		/**
-		 * 当点击时候
-		 */
-		public var onClick = null;
-		public var onDblClick = null;
-		/**
-		 * 当展开的时候
-		 */
-		public var onExpend = null;
-		
-		function init(value){
-			
-			dataLabel = _self.attr("dataLabel");
-			dataField = _self.attr("dataField");
-			_self.on("click","div.label",mouseEvt);
-			_self.on("click","div.dirc",expendEvt);
-			_self.on("dblclick","div.label",onDbEvt);
-		}
-
-
-		/**
-		 * 将数据整理成Tree
-		 * @param child		XMLList
-		 * @param level		级别默认为0
-		 */
-		public function initTree(child:JSON,level:int = 0):String{
-			if(!child){
-				return;
-			}
-			var content = document.createElement("ul");
-			if(level>0){
-				//content.setAttribute("class","closeNode");
-				//content.setAttribute("style","height:0px");
-			}
-			var p:Object = null;
-			var pf:JSON = null;
-			var i:int = 0;
-			function itr(){
-				if(i>=child.length || i>500){
-					return;
-				}
-				
-				
-				p = child[i++];
-				count ++;
-				posArr["data" + count] = p;
-				pf = _filter ? _filter(p[dataLabel],p,count) : {};
-				var li = document.createElement("li");
-				li.setAttribute("class","elem");
-				li.setAttribute("id","$t" + count);
-				li.setAttribute("__count__", count);
-				li.setAttribute("dataValue",p[dataField]);
-				var div = document.createElement("div");
-				var span = document.createElement("div");
-				if(pf.isContent){
-					span.setAttribute("class",'dirc');
-					span.setAttribute("count",count);
-					//span.setAttribute("onclick","@this.expend(" + count + ")");
-					div.appendChild(span);
-				}
-				
-				span = document.createElement("div");
-				span.setAttribute("class",'dir');
-				if(pf.icon){
-					for(var o in pf.icon){
-						span.setAttribute(o,pf.icon[o]);
-					}
-					
-				}
-				
-				//span.setAttribute("onclick","@this.expend(" + count + ")");
-				div.appendChild(span);
-				span = document.createElement("div");
-				span.setAttribute("class",'label');
-				span.setAttribute("count",count);
-				$(span).append(pf.label ? pf.label : p[dataLabel]);
-				div.appendChild(span);
-				li.appendChild(div);
-				content.appendChild(li);
-				requestAnimationFrame(itr);
-				
-			}
-			requestAnimationFrame(itr);
-			return content;
-		}
-		
-		private function expendEvt(e):void{
-			
-			var $this = $(e.currentTarget);
-			var index = parseInt($this.attr("count"));
-			expend(index);
-		}
-
-		
-		private function mouseEvt(e):void{
-			var $this = $(e.currentTarget);
-			var index = parseInt($this.attr("count"));
-			if(onClick){
-				onClick(
-					{target:
-						{
-							index:index,
-							data:posArr["data" + index],
-							remove:function(){$this.remove();}
+		public var onExpend:Function = null;//展开
+		public var onCollapse:Function = null;//收起
+		function init(){
+			_self.on("click","div.expend",function(e){
+				super.refreshRowLst();
+				var obj = super.getData(e.currentTarget.getAttribute("index"));
+				var index = obj.index;
+				var data = obj.data;
+				if(data){
+					if($(e.currentTarget).hasClass("display")){
+						data.__EXPEND__ = false;
+						if(onCollapse){
+							onCollapse(index,data);
+						}
+						super.clearChildAt(index);
+					}else{
+						data.__EXPEND__ = true;
+						if(onExpend){
+							onExpend(index,data);
 						}
 					}
-				);
-			}
-		}
-
-		private function onDbEvt(e):void{
-			var $this = $(e.currentTarget);
-			var index = parseInt($this.attr("count"));
-			if(onDblClick){
-				
-				onDblClick({target:
-						{
-							index:index,
-							data:posArr["data" + index],
-							remove:function(){$this.remove();}
-						}
-				});
-			}
-			expend(index);
+				}
+				$(e.currentTarget).toggleClass("display");
+				return false;
+			});
+			
+			
+			FrameEvent("@this","root.tree",function(e){
+				console.log("police:"+e);
+				console.log($("[index="+e+"] .quan"));
+				//$($("[index="+e+"]")[0].children[4]).removeClass("display");
+				try{
+					$($("[index="+e+"] .quan")[0]).removeClass("display");
+					$($("[index="+e+"] .quan")[1]).removeClass("display");
+				}catch(e){
+					console.log(e);
+				}
+			});
+			FrameEvent("@this","root.trees",function(e){
+				console.log("police:"+e);
+				console.log($("[index="+e+"]")[0].children[4]);
+				//$($("[index="+e+"]")[0].children[4]).addClass("display");
+				try{
+					$($("[index="+e+"] .quan")[0]).addClass("display");
+					$($("[index="+e+"] .quan")[1]).addClass("display");
+				}catch(e){
+					console.log(e);
+				}
+			});
 		}
 		
-		/**
-		 * 设置过滤器
-		 */
-		public function set filter(value){
-			this._filter = value;
-			var result = initTree(data);
-			$(#content).html(result);
-		}
-
-
-		/**
-		 * 展开指定节点的ID
-		 * @param expend		节点的ID
-		 */
-		private function expend(count:int,refresh:Boolean = false;):void{
-			var expend = null;
-			var elem = $("#$t" + count);
-			var tmp = elem.find(">ul");
-			var pos:int = 0;
-			var expend = null;
-			if(tmp.length == 0){
-				elem.append("<ul/>");
-				tmp = elem.find(">ul");
-			}
-
-
-			if(tmp.height() == 0 || refresh){
-				expendFlag["note_" + count] = {value:count,expend:true};
-				if(!refresh){
-					if(!onExpend){
-						tmp.css("height","");
-						pos = tmp.height();
-						tmp.height(0);
-						elem.find(">div>.dirc").addClass("expend");
-						tmp.animate({height:pos},function(){
-							tmp.css("height","");
-						});
-					}
-				}
-				
-				
-			}else{
-				expendFlag["note_" + count] = false;
-				elem.find(">div>.dirc").removeClass("expend");
-				tmp.animate({height:0})
-				return;
-				
-			}
+		
+		public function expend(index:int):void{
 			if(onExpend){
-				expend = onExpend({target:{child:tmp.children("li"),data:posArr["data" + elem.attr("__count__")]}});
-				if(expend != null){
-					tmp.find("li").remove();
-					var li = $("<li/>");
-					li.append(expend);
-					tmp.append(li);
-				}
-			}
-
-			if(expend){
-				console.log("expend",expend.attr("id"));
-				var obj:Object = @global[expend.attr("id")];
-				obj.onComplete = function(){
-					tmp.css("height","");
-					elem.find(">div>.dirc").addClass("expend");
-
-				}
-			}
-			
-			
-			
-		}
-		
-		/**
-		 * 根据序列获取数据
-		 */
-		public function getData(value):Object{
-			return posArr["data" + value];
-		}
-		
-		
-
-		/**
-		 * 将节点的内容生成XML内容
-		 */
-		private function toXML(obj):String{
-			var xml = "";
-			
-			obj.each(function(){
-				var $this = $(this);
-				if($this.is("li")){
-					xml += "<node>";
-					xml += "<label>" + $this.find(">div>.label").text() + "</label>";
-					xml += "<value>" + $this.attr("dataValue") + "</value>";
-					xml += toXML($this.children());
-					xml += "</node>";
-				}else if($this.is("ul")){
-					xml += toXML($this.children());
+				if(super.data.length>0){
+					var d = null;
+					if(!index){
+						d = super.data[0];
+					}else{
+						d = super.getData(index).data;
+					}
+					d.__EXPEND__ = true;
+					onExpend(d.__INDEX__,d);
 				}
 				
-				
-			});
-			return xml;
-		}
-
-
-		/**
-		 * 将当前可见数据转换为XML字符串
-		 */
-		public function toXMLString():String{
-			return "<response>" + toXML(#content.children()) + "</response>";
-		}
-
-
-
-		/**
-		 * 数据源
-		 * 默认为XML数据
-		 */
-		public function set dataProvider(value:XML):void{
-			count = 0;
-			expendFlag = null;
-			expendFlag = {};
-			var result = initTree(value);
-			$(#content).html(result);
-			
-		}
-
-
-		/**
-		 * 刷新指定节点
-		 */
-		public function refresh(count:int):void{
-			var elem = $("#$t" + count);
-			var tmp = elem.find(">ul");
-			
-			if(tmp.length == 0){
-				elem.append("<ul/>");
-				tmp = elem.find(">ul");
 			}
-			elem.find(">div>.dirc").removeClass("expend");
-			tmp.animate({height:0},function(){
-				expend(count);
-			});
-			
 		}
 		
+		
+		public function set onClick(value:Function):void{
+			super.onClick = value;
+		}
+		
+		public function set onDblClick(value:Function):void{
+			super.onDblClick = value;
+		}
+		
+		public function set onMouseOut(value:Function):void{
+			super.onMouseOut = value;
+		}
+		
+		public function set onMouseOver(value:Function):void{
+			super.onMouseOver = value;
+		}
 		
 		public function refreshAll():void{
+			super.removeLabel();
+			var data = super.data;
 			var p = null;
-			for(var obj in expendFlag){
-				p = expendFlag[obj];
-				expend(p.value,true);
+			for(var i:int = 0;i<data.length;i++){
+				p = data[i];
+				if(p.__EXPEND__){
+					onExpend(p.__INDEX__,p);
+					super.clearChildAt(p.__INDEX__);
+				}
 			}
 		}
 		
 		
-
-		
 	</script>
-</vbox>
+</BaseTree>
