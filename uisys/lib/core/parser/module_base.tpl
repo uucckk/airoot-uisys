@@ -79,11 +79,6 @@ var asjs = new function(){
 	 * uuid 
 	 */
 	this.uuid = function(len, radix) { 
-		//
-	    // Loose interpretation of the specification DCE 1.1: Remote Procedure Call
-	    // since JavaScript doesn't allow access to internal systems, the last 48 bits
-	    // of the node section is made up using a series of random numbers (6 octets long).
-	    // 
 	    var dg = new Date(1582, 10, 15, 0, 0, 0, 0);
 	    var dc = new Date();
 	    var t = dc.getTime() - dg.getTime();
@@ -92,17 +87,28 @@ var asjs = new function(){
 	    var thv = getIntegerBits(t,48,59) + '1'; // version 1, security version is 2
 	    var csar = getIntegerBits(rand(4095),0,7);
 	    var csl = getIntegerBits(rand(4095),0,7);
-	
-	    // since detection of anything about the machine/browser is far to buggy,
-	    // include some more random numbers here
-	    // if NIC or an IP can be obtained reliably, that should be put in
-	    // here instead.
 	    var n = getIntegerBits(rand(8191),0,7) +
 	            getIntegerBits(rand(8191),8,15) +
 	            getIntegerBits(rand(8191),0,7) +
 	            getIntegerBits(rand(8191),8,15) +
 	            getIntegerBits(rand(8191),0,15); // this last number is two octets long
 	    return tl + tm  + thv  + csar + csl + n;
+	};
+	
+	
+	var getIntegerBits = function(val,start,end){
+	 var base16 = returnBase(val,16);
+	 var quadArray = new Array();
+	 var quadString = '';
+	 var i = 0;
+	 for(i=0;i<base16.length;i++){
+	     quadArray.push(base16.substring(i,i+1));   
+	 }
+	 for(i=Math.floor(start/4);i<=Math.floor(end/4);i++){
+	     if(!quadArray[i] || quadArray[i] == '') quadString += '0';
+	     else quadString += quadArray[i];
+	 }
+	 return quadString;
 	};
 	
 

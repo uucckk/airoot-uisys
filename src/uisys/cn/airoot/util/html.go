@@ -576,15 +576,23 @@ func (h *HTML) RemoveChildByTagName(tagName string) {
  * @return
  */
 func (h *HTML) ReplaceWith(html *HTML) *HTML {
+	t := &HTML{}
+	t.ReadFromString(html.ToString())
+	l := t.Child()
+	if len(l) == 0 {
+		return html
+	}
+	t = l[0]
 	if h.parent != nil {
 		for i, v := range h.parent.list {
 			if v == h {
-				h.parent.list[i] = html
+				h.parent.list[i] = t
+				t.parent = h.parent
 				break
 			}
 		}
 	}
-	return html
+	return t
 }
 
 /**

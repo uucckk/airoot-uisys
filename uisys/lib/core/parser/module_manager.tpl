@@ -591,7 +591,7 @@ function __InitModule__(__APPDOMAIN__,moduleName,uuid,value,target,append){
 }
 
 function __UUID__(){
-	return "J" + (new Date().getTime()) + (_INSTANCE_COUNT_ ++);
+	return "J" + (_INSTANCE_COUNT_ ++);
 }
 
 
@@ -951,7 +951,7 @@ var __PUSH_COMMAND__ = function(domain,name,cmd,obj){
 	__OBJECT__[name][cmd] = obj;
 	__MODULE_COMMAND_LIST__[domain].push(obj);
 }
-var $JGID = function(id){ return document.getElementById(id);};
+var D_ = function(id){ return document.getElementById(id);};
 /**
  * 注册属性，当垃圾回收器回收的是会主动回收此类对象
  */

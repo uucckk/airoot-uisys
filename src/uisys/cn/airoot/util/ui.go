@@ -47,7 +47,6 @@ type UI struct {
 	className           string            //
 	relativePath        string            //相对路径
 	node                *HTML             //此HTML节点
-	innerContent        []*HTML           //此HTML节点的子元素Child
 	contentToList       []*HTML           //节点为变量的储存列表
 	contentTo           string            //内容信息变量添加到
 	paramValue          *Attr             //
@@ -74,7 +73,7 @@ type UI struct {
 	scriptElement       map[string]*Attr //需要导入的头文件，类似与import
 	scriptElementBuffer []*ScriptElement
 	componentParams     []string                       //所有编译时初始化集合，只有顶级的元素可以接受
-	count               int                            //自动化数量
+	Count               int                            //自动化数量
 	moduleMap           map[string]*Attr               //模块地图
 	runList             []*RunElem                     //run列表，用于记录模块的执行顺序，非常重要的一个字段
 	IsImport            string                         //是否为导入类
@@ -82,6 +81,8 @@ type UI struct {
 	pub                 string                         //发布模板，没有模板就是空
 	defineMap           map[string](map[string]string) //自定义模块类映射
 	defineClassMap      map[string]string              //自定义模块对应实体
+	overStyle           string                         //覆盖的style
+	overCss             string                         //覆盖公共样式
 }
 
 /**
@@ -104,13 +105,10 @@ func (j *UI) CreateFromString(root string, domain string, node *HTML, code strin
 		j.defineMap = make(map[string](map[string]string))
 		j.defineClassMap = make(map[string]string)
 	}
-	if node != nil {
-		j.node = node
-		j.innerContent = node.Child()
-	} else {
-		j.innerContent = nil
+	j.node = node
+	if node == nil {
+		j.node = &HTML{}
 	}
-
 	if className == "" {
 		return errors.New("ui.go -> className is empty.")
 	}
@@ -162,11 +160,9 @@ func (j *UI) CreateFrom(root string, domain string, node *HTML, className string
 		j.defineMap = make(map[string](map[string]string))
 		j.defineClassMap = make(map[string]string)
 	}
-	if node != nil {
-		j.node = node
-		j.innerContent = node.Child()
-	} else {
-		j.innerContent = nil
+	j.node = node
+	if node == nil {
+		j.node = &HTML{}
 	}
 
 	if className == "" {
@@ -282,7 +278,7 @@ func (j *UI) PushImportScript(value *Attr) {
 		if j.SERVER != nil {
 			pub = j.SERVER.IsPublic
 		}
-		ft := &UI{SERVER: j.SERVER, IsPublic: pub, SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH}
+		ft := &UI{SERVER: j.SERVER, IsPublic: pub, SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH, Count: 1}
 		if err := ft.CreateFromParent(j.root, "", nil, strings.TrimSpace(value.Value), j); err == nil { //for example: import jus.Dialog;
 			ft.IsImport = value.Value
 			if ft.IsScript() {
@@ -488,34 +484,8 @@ func (j *UI) AddStyleCode(className string, value string) {
 
 }
 
-func (j *UI) overHTML(node []*HTML) {
-	child := &HTML{}
-	child.InsertList(node, 0)
-	overList := child.Filter("@override")
-	var lst []*HTML = nil
-	var t *HTML = nil
-	var p *HTML = nil
-
-	//Override
-	if len(overList) != 0 {
-		for k := 0; k < len(overList); k++ {
-			lst = overList[k].Child()
-			for i := 0; i < len(lst); i++ {
-				p = lst[i]
-				if "script" == p.TagName() && p.GetAttr("type") == "" {
-					j.extendsScriptBuffer += ListToHTMLString(p.Child())
-					continue
-				}
-				t = j.html.GetElementById(Replace(p.GetAttr("id"), "\b", j.domain))
-				if t != nil {
-					t.ReplaceWith(p)
-				}
-			}
-		}
-	}
-
-	child.RemoveChildByTagName("@override")
-
+func (j *UI) overHTML() {
+	child := j.node
 	//----开始替换----
 	pList := j.html.GetElementsByTagName("@content")
 	if len(pList) > 0 {
@@ -903,6 +873,39 @@ func (j *UI) defineHTML() {
  * 获取注释信息
  */
 func (j *UI) rootHTML() {
+	overList := j.node.Filter("@override")
+	var lst []*HTML = nil
+	var t *HTML = nil
+	var p *HTML = nil
+
+	//Override
+	if len(overList) != 0 {
+		for k := 0; k < len(overList); k++ {
+			lst = overList[k].Child()
+			for i := 0; i < len(lst); i++ {
+				p = lst[i]
+				if "script" == p.TagName() && p.GetAttr("type") == "" {
+					j.extendsScriptBuffer += ListToHTMLString(p.Child())
+					continue
+				}
+				if "style" == p.TagName() && p.GetAttr("id") == "" {
+					j.overStyle += p.Text()
+					continue
+				}
+				if "css" == p.TagName() && p.GetAttr("id") == "" {
+					j.overCss += p.Text()
+					continue
+				}
+				t = j.html.GetElementById(p.GetAttr("id"))
+				if t != nil {
+					t.ReplaceWith(p)
+				}
+			}
+		}
+	}
+
+	j.node.RemoveChildByTagName("@override")
+	//以下是对最外层的数据处理，不包含内层
 	child := j.html.Filter("!")
 	for _, v := range child {
 		v.Remove()
@@ -912,6 +915,7 @@ func (j *UI) rootHTML() {
 		j.headBuffer.Write(ListToHTMLStringBytes(v.Child()))
 		v.Remove()
 	}
+
 	child = j.html.Filter("style")
 	for _, v := range child {
 		j.styleBuffer.Write(ListToHTMLStringBytes(v.Child()))
@@ -922,7 +926,6 @@ func (j *UI) rootHTML() {
 		j.cssBuffer.Write(ListToHTMLStringBytes(v.Child()))
 		v.Remove()
 	}
-
 }
 
 /**
@@ -1175,6 +1178,9 @@ func (j *UI) initObj(html *HTML) {
 				p.SetAttr("domain", j.domain)
 			}
 		}
+		if p.TagName() == "@override" {
+			continue
+		}
 		if p.GetAttr("id") == "" {
 			p.SetAttr("id", p.GetAttr("domain")+j.getName())
 		} else {
@@ -1240,25 +1246,25 @@ func (j *UI) ReadHTML() *HTML {
 		tst := bytes.NewBufferString("")
 
 		//解析节点属性值
-		if j.node != nil {
-			for _, va := range j.node.Attrs() {
-				tst.WriteString("$$.")
-				tst.WriteString(va.Name)
-				tst.WriteString("=\"")
-				if Index(va.Value, "\b") == -1 {
-					tst.WriteString(Escape(va.Value))
-				} else {
-					tst.WriteString(va.Value)
-				}
-				tst.WriteString("\";\r\n")
+		for _, va := range j.node.Attrs() {
+			tst.WriteString("$$.")
+			tst.WriteString(va.Name)
+			tst.WriteString("=\"")
+			if Index(va.Value, "\b") == -1 {
+				tst.WriteString(Escape(va.Value))
+			} else {
+				tst.WriteString(va.Value)
 			}
-			tst.WriteString("__OBJECT__.")
-			tst.WriteString(j.node.GetAttr("id"))
-			tst.WriteString("= $$;\r\n")
+			tst.WriteString("\";\r\n")
 		}
+		tst.WriteString("__OBJECT__.")
+		tst.WriteString(j.node.GetAttr("id"))
+		tst.WriteString("= $$;\r\n")
 
 		//解析内部设置值
-		for _, v := range j.innerContent {
+		innerList := j.node.Child()
+
+		for _, v := range innerList {
 			for _, v2 := range v.Child() {
 				if v2.IsText() {
 					if strings.TrimSpace(v2.Text()) != "" {
@@ -1362,10 +1368,11 @@ func (j *UI) ReadHTML() *HTML {
 		j.html.Append(css)
 	}
 
-	j.overHTML(j.innerContent)
+	j.overHTML()
 	j.packageHTML([]*HTML{j.html})
 	j.componentId([]*HTML{j.html})
 	j.domainHTML([]*HTML{j.html})
+	j.styleBuffer.WriteString(j.overStyle)
 	if j.styleBuffer.Len() > 0 {
 		j.style = &CSS{Root: &Attr{"#" + j.html.GetAttr("src_id"), j.html.TagName()}, Class: j.html.GetAttr("class"), jus: j, CurrentPath: IfStr(j.IsSysLib, "index.src/", "./") + j.relativePath + ".lib"}
 		j.style.ReadFromString(j.scanMedia(j.styleBuffer.String()))
@@ -1382,10 +1389,6 @@ func (j *UI) ReadHTML() *HTML {
 		j.scriptBuffer.WriteString("if(_MODULE_INNER_[__DOMAIN__]){____." + j.contentTo + "=_MODULE_INNER_[__DOMAIN__];}")
 	}
 	j.html.SetAttr("class", headCss+" "+j.html.GetAttr("class"))
-	// if Index(j.html.GetAttr("class"), j.domain) == -1 {
-	// 	fmt.Println(">>>")
-	// 	j.html.SetAttr("class", IfStr(j.html.GetAttr("class") != "", j.html.GetAttr("class")+" ", "")+j.domain)
-	// }
 
 	if j.style != nil {
 		style := &HTML{}
@@ -1427,6 +1430,7 @@ func (j *UI) ReadHTML() *HTML {
 			j.html.Append(node)
 		}
 	}
+	j.cssBuffer.WriteString(j.overCss)
 	if j.cssBuffer.Len() > 0 {
 		j.css = &CSS{Root: &Attr{"#" + j.html.GetAttr("src_id"), j.html.TagName()}, Class: j.html.GetAttr("class"), jus: j, CurrentPath: IfStr(j.IsSysLib, "index.src/", "./") + j.relativePath + ".lib"}
 		j.css.ReadFromString(j.scanMedia(j.cssBuffer.String()))
@@ -1559,11 +1563,11 @@ func (j *UI) AddRun(attr *RunElem) {
 }
 
 func (j *UI) getName() string {
-	if j.parent != nil {
+	if j.parent != nil && j.Count == 0 {
 		return j.parent.getName()
 	}
-	j.count++
-	return "a" + strconv.Itoa(j.count)
+	j.Count++
+	return "u" + strconv.Itoa(j.Count)
 }
 
 /**

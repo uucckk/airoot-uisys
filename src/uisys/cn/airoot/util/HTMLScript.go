@@ -148,41 +148,41 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _global string, _this string, _
 		t = lst[p]
 		p++
 		//02.01处理静态数据
-		if t.IsKeyWord && "static" == t.Value {
-			for p < len(lst) {
-				t = lst[p]
-				p++
-				if t.TagType >= 0 {
-					break
-				}
-			}
+		// if t.IsKeyWord && "static" == t.Value {
+		// 	for p < len(lst) {
+		// 		t = lst[p]
+		// 		p++
+		// 		if t.TagType >= 0 {
+		// 			break
+		// 		}
+		// 	}
 
-			if t.TagType == 3 {
-				tmp.Reset()
-				p--
-				for p < len(lst) {
-					f = lst[p]
-					p++
-					if f.TagType < -1 {
-						continue
-					}
-					tmp.WriteString(f.Value)
-					if t.TagType == 3 && "{" == f.Value {
-						level++
-					} else if f.TagType == 3 && "}" == f.Value {
-						level--
-						if level == 0 {
-							break
-						}
-					}
-				}
-				s.ui.AddStaticCode(s.ui.className, "__STATIC__", " = function()"+tmp.String()+";")
-				continue
-			}
+		// 	if t.TagType == 3 {
+		// 		tmp.Reset()
+		// 		p--
+		// 		for p < len(lst) {
+		// 			f = lst[p]
+		// 			p++
+		// 			if f.TagType < -1 {
+		// 				continue
+		// 			}
+		// 			tmp.WriteString(f.Value)
+		// 			if t.TagType == 3 && "{" == f.Value {
+		// 				level++
+		// 			} else if f.TagType == 3 && "}" == f.Value {
+		// 				level--
+		// 				if level == 0 {
+		// 					break
+		// 				}
+		// 			}
+		// 		}
+		// 		s.ui.AddStaticCode(s.ui.className, "__STATIC__", " = function()"+tmp.String()+";")
+		// 		continue
+		// 	}
 
-			tl = append(tl, t)
-			continue
-		}
+		// 	tl = append(tl, t)
+		// 	continue
+		// }
 
 		//02.02整理内部作用域
 		/**
@@ -261,9 +261,9 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _global string, _this string, _
 
 			if hObj != nil {
 				param.Value = "__NAME__ + '" + param.Value //hObj.Name
-				tl = append(tl, &Tag{Value: "$JGID(" + param.Value + "')", TagType: 0})
+				tl = append(tl, &Tag{Value: "D_(" + param.Value + "')", TagType: 0})
 			} else {
-				tl = append(tl, &Tag{Value: "$JGID('" + param.Value + "')", TagType: 0})
+				tl = append(tl, &Tag{Value: "D_('" + param.Value + "')", TagType: 0})
 			}
 
 			continue
@@ -483,16 +483,17 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _global string, _this string, _
 				tlt = append(tlt, &Tag{Value: "__WINDOW__[__APPDOMAIN__]['" + he.Value + "']", TagType: 0})
 				continue
 			}
-			value := s.ui.GetPackageMap()[t.Value]
+			name := s.ui.GetRoot().defineMap[".$"+s.ui.className][t.Value]
+			value := s.ui.GetRoot().defineClassMap[name]
 			if value != "" {
 				md5Ctx := md5.New()
 				md5Ctx.Write([]byte(value))
 				cipherStr := md5Ctx.Sum(nil)
 				bs := hex.EncodeToString(cipherStr)
 				ft := &UI{SYSTEM_PATH: s.ui.SYSTEM_PATH, CLASS_PATH: s.ui.CLASS_PATH}
-				ft.CreateFromString(s.root, "", nil, value, bs, nil, nil)
+				ft.CreateFromString(s.root, "", nil, value, name, nil, nil)
 				s.ui.GetRoot().scriptElementBuffer = append(s.ui.GetRoot().scriptElementBuffer, &ScriptElement{"I", bs, "H", ft.ToFormatString()})
-				tlt = append(tlt, &Tag{Value: "__WINDOW__[__APPDOMAIN__]['" + bs + "']", TagType: 0})
+				tlt = append(tlt, &Tag{Value: "__WINDOW__[__APPDOMAIN__]['" + name + "']", TagType: 0})
 				continue
 			}
 
@@ -648,6 +649,7 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _global string, _this string, _
 				}
 			}
 			if s.ui != nil {
+				tlt = append(tlt, &Tag{Value: _this + "." + t.Value + "= __WINDOW__[__APPDOMAIN__]['" + s.ui.className + "']." + t.Value})
 				s.ui.AddStaticScript(s.ui.className, t.Value, tmp.String())
 			}
 			continue
@@ -855,9 +857,9 @@ func (s *HTMLScript) loadClass(className string) string {
 	if Index(className, ".") == -1 {
 		he := GetSingle(s.hMap, className)
 		if he == nil {
-			value := s.ui.GetRoot().defineMap[".$"+s.ui.className][className]
-			value = s.ui.GetRoot().defineClassMap[value]
-			if value == "" {
+			name := s.ui.GetRoot().defineMap[".$"+s.ui.className][className]
+			value := s.ui.GetRoot().defineClassMap[name]
+			if name == "" {
 				tmpName = ""
 			} else {
 				md5Ctx := md5.New()
@@ -865,9 +867,9 @@ func (s *HTMLScript) loadClass(className string) string {
 				cipherStr := md5Ctx.Sum(nil)
 				bs := hex.EncodeToString(cipherStr)
 				ft := &UI{SYSTEM_PATH: s.ui.SYSTEM_PATH, CLASS_PATH: s.ui.CLASS_PATH}
-				ft.CreateFromString(s.root, "", nil, value, bs, nil, s.ui)
+				ft.CreateFromString(s.root, "", nil, value, name, nil, s.ui)
 				s.ui.GetRoot().scriptElementBuffer = append(s.ui.GetRoot().scriptElementBuffer, &ScriptElement{"I", bs, "H", ft.ToFormatString()})
-				tmpName = bs
+				tmpName = name
 			}
 
 		} else {
