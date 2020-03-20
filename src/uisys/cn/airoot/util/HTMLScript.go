@@ -258,10 +258,14 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _global string, _this string, _
 			if s.ui != nil {
 				hObj = s.ui.GetDefine(param.Value)
 			}
-
 			if hObj != nil {
-				param.Value = "__NAME__ + '" + param.Value //hObj.Name
-				tl = append(tl, &Tag{Value: "D_(" + param.Value + "')", TagType: 0})
+
+				if hObj.HTMLObjectType == -1 {
+					tl = append(tl, &Tag{Value: "dom", TagType: 0})
+				} else {
+					param.Value = "__NAME__ + '" + param.Value //hObj.Name
+					tl = append(tl, &Tag{Value: "D_(" + param.Value + "')", TagType: 0})
+				}
 			} else {
 				tl = append(tl, &Tag{Value: "D_('" + param.Value + "')", TagType: 0})
 			}

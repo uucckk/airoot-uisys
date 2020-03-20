@@ -6,6 +6,7 @@
 *.dylib
 *.rc
 *.syso
+/uisys/*.bat
 /superico.ico
 
 # Test binary, build with `go test -c`
