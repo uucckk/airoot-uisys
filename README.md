@@ -32,4 +32,21 @@
   }
 </script>
 ~~~
+> mybe ...
+~~~html
+<!-- define a module -->
+<@define name="MyBox">
+  <div>Hello Baby!</div>
+</@define>
 
+<!-- you code here. -->
+<div id="ct"></div>
+<script>
+  function init(){
+    var box = new MyBox();
+    #ct.appendChild(box);
+  }
+</script>
+~~~
+## How to run it?
+> 你需要使用uisys,[](download here)
