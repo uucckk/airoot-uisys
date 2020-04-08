@@ -59,4 +59,5 @@
 pub D:\test\ :90
 ~~~
 > OK, open Chrome / Firefox and type http://localhost:90/index.ui
-> you can se "Hello Baby!" in your broswer.
+
+> you can se **"Hello Baby!"** in your broswer.
