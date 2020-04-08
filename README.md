@@ -52,7 +52,7 @@
 </script>
 ~~~
 ## How to run it?
-> 1. You need to use uisys, [https://github.com/uuckk/airoot-uisys/releases] (download here)
+> 1. You need to use uisys, [https://github.com/uucckk/airoot-uisys/releases](download)
 > 2. Then save the above file to D:\test\index.ui
 > 3. Finally, run uisys.exe, and enter the following command in the terminal:
 ~~~linux
