@@ -1,6 +1,6 @@
 # AIroot UISYS
 [www.airoot.cn](http://www.airoot.cn/)
-> A powerful webui tool, so we call it uisys!
+> A powerful web ui tool, so we call it uisys!
 
 ## For example
 ~~~html
