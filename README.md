@@ -1,6 +1,7 @@
 # AIroot UISYS
+[www.airoot.cn](http://www.airoot.cn/)
 > A powerful webui tool, so we call it uisys!
-[http://www.airoot.cn/](http://www.airoot.cn/)
+
 ## For example
 ~~~html
 <@pub/>
@@ -52,7 +53,7 @@
 </script>
 ~~~
 ## How to run it?
-> 1. You need to use uisys, [https://github.com/uucckk/airoot-uisys/releases](download)
+> 1. You need to use uisys, [download](https://github.com/uucckk/airoot-uisys/releases)
 > 2. Then save the above file to D:\test\index.ui
 > 3. Finally, run uisys.exe, and enter the following command in the terminal:
 ~~~linux
