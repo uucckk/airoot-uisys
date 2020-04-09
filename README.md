@@ -64,6 +64,7 @@ pub D:\test\ :90
 </script>
 ~~~
 > If you want the **MyBox** module to be a file, you can save it, for example:
+
 > Create the file **MyBox.ui**, and the code is as follows:
 ~~~html
 <!-- module MyBox code in D:\test\MyBox.ui -->
@@ -72,12 +73,38 @@ pub D:\test\ :90
 > Then create the file **Index.ui** with the following code:
 ~~~html
 <!-- module Index code in D:\test\Index.ui -->
+<@pub/>
 <div>
   <MyBox/>
   <MyBox/>
 </div>
 ~~~
-> open the browser to see the results，
+> open the browser to see the results,
 > You can still see double "**Hello Baby!**" words.
 
+## use package
+> If you want to put files in a folder, you can do this:
 
+> For example, take the ** D:\test\MyBox.ui **  move to **D:\test\mymod\mybox.ui**.
+
+> Then **Index. UI** import **MyBox.UI** should be changed to the following code:
+~~~html
+<!-- module Index code in D:\test\Index.ui -->
+<@pub/>
+<div>
+  <mymod.MyBox/>
+  <mymod.MyBox/>
+</div>
+~~~
+> Or it can be imported globally：
+~~~html
+<!-- module Index code in D:\test\Index.ui -->
+<@pub/>
+<@import value="mymod.MyBox" />
+<div>
+  <MyBox/>
+  <MyBox/>
+</div>
+~~~
+> open the browser to see the results,
+> You can still see double "**Hello Baby!**" words.
