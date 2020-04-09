@@ -63,4 +63,21 @@ pub D:\test\ :90
   }
 </script>
 ~~~
+> If you want the **MyBox** module to be a file, you can save it, for example:
+> Create the file **MyBox.ui**, and the code is as follows:
+~~~html
+<!-- module MyBox code in D:\test\MyBox.ui -->
+<div>Hello Baby!</div>
+~~~
+> Then create the file **Index.ui** with the following code:
+~~~html
+<!-- module Index code in D:\test\Index.ui -->
+<div>
+  <MyBox/>
+  <MyBox/>
+</div>
+~~~
+> open the browser to see the results，
+> You can still see double "**Hello Baby!**" words.
+
 
