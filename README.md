@@ -87,7 +87,7 @@ pub D:\test\ :90
 
 > For example, take the **D:\test\MyBox.ui**  move to **D:\test\mymod\mybox.ui**.
 
-> Then **Index. UI** import **MyBox.UI** should be changed to the following code:
+> Then **Index.ui** import **MyBox.ui** should be changed to the following code:
 ~~~html
 <!-- module Index code in D:\test\Index.ui -->
 <@pub/>
