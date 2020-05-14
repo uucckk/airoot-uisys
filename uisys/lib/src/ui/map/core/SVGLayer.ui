@@ -1,0 +1,214 @@
+<!--svg-->
+<@import value="ui.*" />
+<layout x="0" y="0" width="100%" height="100%">
+	<svg id="svg" version="1.1" viewbox="0 0 2000 1000">
+		
+	</svg>
+	<script>
+		import ui.map.MapTool;
+		var _self = $(dom);
+		private var _svgX:int = 0;
+		private var _svgY:int = 0;
+		private var map:MapView = null;
+		
+		private var arr:Circle = null;
+		
+		//组件显示列表
+		private var lst:Object = {};
+		private var level:int = 0;
+		
+		public function init(obj:MapView):void{
+			this.map = obj;
+			//arr = MapTool.GetCircle(0,80,1113190);			
+		}
+		
+		public function set viewX(value:Number):void{
+			_svgX = value;
+		}
+		
+		public function set viewY(value:Number):void{
+			_svgY = value;
+		}
+		
+		
+		public function get viewX():Number{
+			return _svgX;
+		}
+		
+		
+		public function get viewY():Number{
+			return _svgY;
+		}
+		
+		public function move(dx:int,dy:int){
+			console.log("move",dx,dy);
+			_svgX += dx;
+			_svgY += dy;
+			trigger();
+			
+		}
+		
+		
+		
+		public function addLine(lst:Array){
+			var line:String = "";
+			if(lst.length>4){
+				line += "M" + map.toViewPortX(lst[0]) + " " + map.toViewPortY(lst[1]) + " L ";
+				for(var i:int = 2;i<lst.length;i+=2){
+					line += map.toViewPortX(lst[i]) + " " + map.toViewPortY(lst[i + 1]) + " ";
+				}
+			}
+			var path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+			var p = $(path);
+			p.attr("fill-rule","evenodd");
+			p.attr("fill","none");
+			p.attr("stroke","#707070");
+			p.attr("stroke-width","8");
+			p.attr("stroke-linecap","round");
+			p.attr("stroke-linejoin","round");
+			p.attr("d",line);
+			svg.appendChild(path);
+			path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+			var p = $(path);
+			p.attr("fill-rule","evenodd");
+			p.attr("fill","none");
+			p.attr("stroke","#5298ff");
+			p.attr("stroke-width","6");
+			p.attr("stroke-linecap","round");
+			p.attr("stroke-linejoin","round");
+			p.attr("d",line);
+			svg.appendChild(path);
+		}
+		
+		
+		public function addRect(lst:Array){
+			//<polygon points="220,10 300,210 170,250 123,234" style="fill:#ff0000;stroke:purple;stroke-width:1" />
+			var line:String = "";
+			if(lst.length>4){
+				for(var i:int = 0;i<lst.length;i+=2){
+					line += map.toViewPortX(lst[i]) + " " + map.toViewPortY(lst[i + 1]) + " ";
+				}
+			}
+			var polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+			var p = $(polygon);
+			p.attr("fill-rule","evenodd");
+			p.attr("fill","rgba(222,222,0,0.8)");
+			p.attr("stroke","#5298ff");
+			p.attr("stroke-width","2");
+			p.attr("stroke-linecap","round");
+			p.attr("stroke-linejoin","round");
+			p.attr("points",line);
+			svg.appendChild(polygon);
+		}
+		
+		
+		public function addCircle(lng:int,lat:int,r:int,value:Object){
+			var circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+			var p = $(circle);
+			p.attr("cx",map.toViewPortX(lng));
+			p.attr("cy",map.toViewPortY(lat));
+			p.attr("r",r);
+			p.attr("fill","rgba(255,0,0,0.2)");
+			svg.appendChild(circle);
+		}
+		/**
+		 * 增加数据
+		 */
+		public function addChild(name:String,child:SVGObject):void{
+			if(name && child){
+				initSvgObject(child);
+				if(lst[name]){
+					if(lst[name] != child){
+						svg.removeChild(lst[name]);
+					}else{
+						return;
+					}
+					
+				}
+				
+				lst[name] = child;
+				svg.appendChild(child);
+			}	
+		}
+		
+		
+		public function getChild(name:String):void{
+			if(name){
+				return lst[name];
+			}
+			return null;
+		}
+		
+		
+		/**
+		 * 初始化SVG信息
+		 */
+		public function initSvgObject(svg:Object){
+			switch(svg.tagName){
+				case "circle" :
+					if(!svg.getAttribute("level")){
+						svg.setAttribute("level",map.level);
+					}
+					svg.setAttribute("cx",map.toViewPortX(svg.getAttribute("lng")) + _svgX);
+					svg.setAttribute("cy",map.toViewPortY(svg.getAttribute("lat")) + _svgY);
+					svg.setAttribute("r",svg.getAttribute("radius") * Math.pow(2,map.level - svg.getAttribute("level")));
+					
+					break;
+				case "path" :
+					var lst = svg.getAttribute("path").split(" ");
+					var line = ""; 
+					line += "M" + (map.toViewPortX(lst[0]) + _svgX) + " " + (map.toViewPortY(lst[1]) + _svgY) + " L ";
+					for(var i:int = 2;i<lst.length;i+=2){
+						line += (map.toViewPortX(lst[i]) + _svgX) + " " + (map.toViewPortY(lst[i + 1]) + _svgY) + " ";
+					}
+					svg.setAttribute("d",line);
+					break;
+				case "polygon" :
+					var lst = svg.getAttribute("path").split(" ");
+					var line = "";
+					var arr = null;
+					for(var i:int = 0;i<lst.length;i++){
+						arr = lst[i].split(",");
+						line += (map.toViewPortX(arr[0]) + _svgX) + "," + (map.toViewPortY(arr[1]) + _svgY) + " ";
+					}
+					svg.setAttribute("points",line);
+					break;
+				case "text" :
+				case "image" :
+					svg.setAttribute("x",map.toViewPortX(svg.getAttribute("lng")) + _svgX + parseInt(svg.getAttribute("dx")));
+					svg.setAttribute("y",map.toViewPortY(svg.getAttribute("lat")) + _svgY + parseInt(svg.getAttribute("dy")));
+					break;
+				
+			}
+			//查看子节点
+			var child = svg.childNodes;
+			var p = null;
+			for(var i:int = 0;i<child.length;i++){
+				p = child[i];
+				initSvgObject(p);
+			}
+		}
+		
+		/**
+		 * 移除数据
+		 */
+		public function removeChild(name:String):void{
+			if(lst[name]){
+				svg.removeChild(lst[name]);
+				delete lst[name];
+			}
+			
+		}
+		
+		public function render(){
+			_svgX = 0;
+			_svgY = 0;
+			initSvgObject(svg);
+			svg.setAttribute("viewBox",_svgX + " " + _svgY + " " + _self.width() + " " + _self.height());
+		}
+		
+		public function trigger(event):void{
+			svg.setAttribute("viewBox",_svgX + " " + _svgY + " " + _self.width() + " " + _self.height());
+		}
+	</script>
+</layout>

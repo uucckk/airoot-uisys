@@ -1,0 +1,109 @@
+<@import value="ui.*" />
+<vbox width="100%" height="100%">
+	<dragpanel width="570" height="34" id="myvbox">
+		<style>
+			@keyframes showAlert {
+				from{transform:translateY(-200px);}
+				to{transform:translateY(400px);}
+			}
+
+			@keyframes hideAlert {
+				from{transform:translateY(400px);}
+				to{transform:translateY(-200px);}
+			}
+
+			body{
+				width:100%;
+				height:100%;
+				font-size:13px;
+				overflow:hidden;
+				box-sizing:border-box;
+				position:relative;
+				top:-21px;
+				background-color:rgba(40,40,40,0.3);
+				z-index:999;
+			}
+			#posi{
+				background-color:#ffffff;
+				box-shadow:0px 2px 8px 2px rgba(0,0,0,0.2);
+				border-radius:2px 2px 8px 8px;
+				border-top:3px solid #3785ea;
+				overflow:hidden;
+			}
+			.$show{
+				animation:showAlert 0.5s forwards;
+			}
+			.$hide{
+				animation:hideAlert 0.5s forwards;
+			}
+			#alarm{
+				left:11px;
+				top:50%;
+				margin-top:-15px;
+				color:#f33131;
+				width:100px;
+				height:30px;
+				line-height:30px;
+				padding-left:38px;
+				box-sizing:border-box;
+				background:url(img/alert.png) no-repeat;
+			}
+			#report{
+				box-sizing:border-box;
+				line-height:30px;
+				text-align:center;
+				-webkit-user-select:none;
+				-moz-user-select:none;
+				-ms-user-select:none;
+				user-select:none;
+			}
+			#sure{
+				cursor: pointer;
+				border-radius:21px;
+				box-sizing:border-box;
+				margin-top:-13px;
+				background-color:#3785ea !important;
+				color:#fefefe;
+				text-align:center;
+				font-size:13px;
+				font-weight:normal;
+				position:absolute;
+				width:88px;
+				height:35px;
+				-webkit-user-select:none;
+				-moz-user-select:none;
+				-ms-user-select:none;
+				user-select:none;
+			}
+		</style>
+		<position width="360" height="170" id="posi">
+			<div left="0" top="0" width="343" height="32" style="padding-left:17px;line-height:32px;font-size:16px;border-bottom:1px solid #b7c4cf">提示</div>
+			<div left="30" right="30" top="52" height="50" id="report">
+			
+			</div>
+			<position bottom="0" width="100%" height="60" style="background-color:#eff4f8">
+				<div style="background-color:#3785ea;line-height:36px" left="136" top="26" width="88" height="35" onclick="@this.sure()" id="sure">确定</div>
+			</position>
+		</position>
+	</dragpanel>
+	<script>
+		var _self = $(dom);
+		function init(report){
+			_self.css("height",window.innerHeight);
+			_self.click(function(){
+				return false;
+			});
+			$(#report).text(report);
+			$(#posi).css("left",window.innerWidth/2-$(#posi).width()/2);
+			$(#posi).addClass("$show");
+			document.body.appendChild(dom);
+		}
+		public function set message(value){
+			$(#report).text(value);
+		}
+		public function sure():void{
+			$(#posi).addClass("$hide");
+			setTimeout(function(){_self.remove()},500);
+		}
+	</script>
+</vbox>

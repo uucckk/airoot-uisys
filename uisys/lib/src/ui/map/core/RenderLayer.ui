@@ -1,0 +1,297 @@
+<!-- 
+	图标渲染图层
+	本次图形渲染采用ZRender
+	@author sunxy
+-->
+<@import value="ui.*" />
+<layout x="0" y="0" width="100%" height="100%">
+	<style>
+		body{
+			position:relative;
+			pointer-events:none;
+		}
+	</style>
+	<canvas id="cvs" style="position:absolute;" />
+	<script>
+		var _self = $(dom);
+		private var ctx:Context = null;
+		private var flag:String = "";
+		private var data:Object = {};//绘制数据
+		private var map:MapView = null;
+		private var rect:Rectangle = null;
+		private var dvs:Dom = null;
+		
+		private var posX:int = 0;
+		private var posY:int = 0;
+		
+		public function init(parent:Object){
+			this.map = parent;
+			rect = map.mapRect;
+			ctx = #cvs[0].getContext("2d");
+			dvs = #cvs;
+			
+		}
+		
+		//添加大量对象数据
+		public function pushData(name:String,list:Array):void{
+			var p = data[name];
+			if(!p){
+				p = data[name] = {data:[],filter:null};
+			}
+			p.data = p.data.concat(list);
+			render();
+		}
+		
+		
+		//添加大量对象数据
+		public function setData(name:String,list:Array):void{
+			var p = data[name];
+			if(!p){
+				p = data[name] = {data:[],filter:null};
+			}
+			p.data.length = 0;
+			p.data = p.data.concat(list);
+			render();
+		}
+		
+		/**
+		 * 设置渲染图层
+		 */
+		public function setLayer(name:String,index:int):void{
+			var p = data[name];
+			if(!p){
+				p = data[name] = {data:[],filter:null};
+			}
+			p.index = index;
+			render();
+		}
+		
+		/**
+		 * 添加大量数据
+		 */
+		public function removeData(name:String):void{
+			var p = data[name];
+			if(!p){
+				return;
+			}
+			p.data.length = 0;
+			if(p.object){
+				p.object = null;
+			}
+			render();
+		}
+		
+		/**
+		 * 滤渲染器
+		 */
+		public function filter(name:String,value:String):void{
+			var p = data[name];
+			if(!p){
+				p = data[name] = {data:[],filter:null};
+			}
+			p.filter = value;
+		}
+		
+		
+		/**
+		 * 设置图层可见
+		 */
+		public function setDataVisible(name:String,flag:Boolean):void{
+			var p = data[name];
+			if(!p){
+				p = data[name] = {data:[],filter:null};
+			}
+			p.hidden = flag;
+			render();
+		}
+		
+		/**
+		 * 设置图层可见
+		 */
+		public function getDataVisible(name:String):Boolean{
+			var p = data[name];
+			if(p){
+				if(p.hidden != null){
+					return p.hidden;
+				}else{
+					return true;
+				}
+			}
+			return false;
+		}
+		
+
+		
+		/**
+		 * 添加数据{精度,纬度,类型}
+		 */
+		public function setObject(name:String,value:Object):void{
+			var p = data[name];
+			if(!p){
+				p = data[name] = {object:null,filter:null};
+			}
+			p.object = value;
+			render();
+		}
+		
+		public function clear():void{
+			posX = 0;
+			posY = 0;
+			ctx.clearRect(0,0,cvs.width,cvs.height);
+			dvs.css({left:0,top:0});
+		}
+		
+		
+		/**
+		 * 刷新视图
+		 */
+		public function render(name:String):void{
+			requestAnimationFrame(function(){
+				#cvs.hide();
+				clear();
+				var p = null;
+				var data:Array = null;
+				var d:Object = null;
+				var filter:Function = null;
+				//增加indexArray
+				var indexArr:Array = [];
+				var pi = null;
+				var maxIndex:int = 0;
+				for(var key in ____.data){
+					p = ____.data[key];
+					if(!p.index){
+						p.index = 0;
+					}
+					maxIndex = 0;
+					for(var i:int = 0;i<indexArr.length;i++){
+						pi = indexArr[i];
+						if(p.index>pi.index){
+							maxIndex = i + 1;
+						}
+					}
+					indexArr.splice(maxIndex ,0,p);
+				}
+				for(var key in indexArr){
+					p = indexArr[key];
+					data = p.object || p.data;
+					filter = p.filter;
+					if(!filter || p.hidden === false){
+						continue;
+					}
+					for(var i in data){
+						d = data[i];
+						d.x = map.toViewPortX(d.longitude);
+						d.y = map.toViewPortY(d.latitude);
+					}
+					filter(ctx,data);
+				}
+				#cvs.show();
+			});
+		}
+		
+		
+		
+		/**
+		 * 移动
+		 */
+		public function move(dx:int,dy:int):void{
+			posX += dx;
+			posY += dy;
+			dvs.css({left:posX,top:posY});
+		}
+		
+		private function drawText(text:String,obj:Object):void{
+			ctx.fillStyle = '#ffffff';
+			ctx.textAlign = 'center';
+			ctx.fillText(text,map.toViewPortX(obj.longitude),map.toViewPortY(obj.latitude));
+		}
+		
+		/**
+		 * 绘画地势统计元素
+		 */
+		public function drawObject(obj:Object){
+			var x = map.toViewPortX(obj.longitude);
+			var y = map.toViewPortY(obj.latitude);
+			ctx.save();
+			//文字
+			ctx.font = "16px Microsoft JhengHei";
+			
+			ctx.textAlign = 'center';
+			ctx.textBaseline = "middle";
+			var fontRect = ctx.measureText(obj.orgName);
+			//背景
+			ctx.beginPath();
+			ctx.arc(x, y, fontRect.width/2 + 5, 0, 2 * Math.PI, false);
+			ctx.fillStyle = '#ffaa00';
+			ctx.fill();
+			ctx.lineWidth = 2;
+			ctx.strokeStyle = '#ffff00';
+			ctx.stroke();
+			ctx.fillStyle = '#ffffff';
+			ctx.fillText(obj.orgName,x,y);
+			
+			ctx.font = "13px Microsoft JhengHei";
+			ctx.fillText(obj.text,x,y + 20);
+			ctx.restore();
+			
+		}
+		
+		
+		public function drawAddress(obj:Object){
+			var x = map.toViewPortX(obj.longitude);
+			var y = map.toViewPortY(obj.latitude);
+			ctx.save();
+			//文字
+			ctx.font = "13px Microsoft JhengHei";
+			
+			ctx.textAlign = 'center';
+			ctx.textBaseline = "middle";
+			var fontRect = ctx.measureText(obj.name);
+			//背景
+			ctx.beginPath();
+			ctx.rect(x-fontRect.width/2, y-8, fontRect.width,16);
+			ctx.fillStyle = '#555555';
+			ctx.fill();
+			ctx.lineWidth = 2;
+			ctx.fillStyle = '#ffffff';
+			
+			
+			ctx.fillText(obj.text,x,y);
+			ctx.restore();
+			
+		}
+		
+		
+		/**
+		 * 这个回家写
+		 */
+		private function drawLine(name:String,data:Array){
+			for(var i:int = 0;i<data.length;i++){
+			
+			}
+		}
+		
+		
+		//求斜边长度  
+		function getBeveling(x,y)  
+		{  
+			return Math.sqrt(Math.pow(x,2)+Math.pow(y,2));  
+		} 
+		
+		
+		function drawDashLine(x1,y1,x2,y2,dashLen)  
+		{  
+			dashLen = dashLen === undefined ? 5 : dashLen;  
+			//得到斜边的总长度  
+			var beveling = getBeveling(x2-x1,y2-y1);  
+			//计算有多少个线段  
+			var num = Math.floor(beveling/dashLen);  
+			  
+			for(var i = 0 ; i < num; i++)  
+			{  
+				ctx[i%2 == 0 ? 'moveTo' : 'lineTo'](x1+(x2-x1)/num*i,y1+(y2-y1)/num*i);  
+			}  
+			ctx.stroke();  
+		}  
+	</script>
+</layout>

@@ -1,0 +1,472 @@
+<@import value="ui.*"/>
+<box width="100%" height="100%">
+  <style>
+    body{
+		overflow:hidden;
+		margin:0px;
+		padding:0px;
+		font-size:14px;
+		text-align:left;
+		font-family: Menlo,Monaco,Consolas,Andale Mono,lucida console,Courier New,monospace;
+    }
+    #content{
+      float:left;
+      position:relative;
+	  padding-left:5px;
+	  overflow:auto;
+	  white-space: nowrap;
+	  
+    }
+	#content ::selection { background:none; }
+	#content ::-moz-selection { background:none;}
+	#content ::-webkit-selection { background:none;}
+
+
+    #num{
+      user-select:none;
+      width:30px;
+      border-right:solid 1px #e0e0e0;
+      background-color:#eeeeee;
+	  color:#9999a9;
+    }
+	#num>div:nth-of-type(odd){ background:#ffffff;}
+	#num>div:nth-of-type(even){ background:#fbfbfb;}
+	
+	#num>div.overd{
+		background-color:#f0fff0;
+	}
+	
+	#num>div.selected{
+		background-color:#b6efb6;
+	}
+
+    .area{
+		margin:0px;
+		padding:0px;
+		display:block;
+    }
+	
+	.word{
+		
+	}
+	
+	.keyword{
+	
+	}
+	
+	.line{
+		overflow:hidden;
+	}
+	
+    .number{
+		float:left;
+		text-align:right;
+		width:24px;
+		padding:2px;
+		padding-top:0px;
+		padding-bottom:0px;
+    }
+	
+	#bg{
+		position:absolute;
+		pointer-events:none;
+	}
+	
+	
+	.selectBackgroundColor{
+		position:absolute;
+		width:100%;
+		background-color:rgba(0,0,0,0.1);
+	}
+	
+  </style>
+  <position width="100%" height="100%">
+      <div id="num" width="100%">
+      </div>
+	  <div id="bg" left="30" right="0" >
+		<cursor/>
+	  </div>
+      <div id="content" left="30" right="0" height="100%">
+			<@value/>
+      </div>
+  </position>
+  <script>
+	import @root/js/jquery.min.js;
+	var _self = $(dom);
+	
+	var lineHeight:int = 20;
+	var fontSize:int = 14;
+	
+    var keyWords = [
+			{name:"public",color:"#aa0000"},
+			{name:"private",color:"#aa0000"},
+			{name:"function",color:"#0000aa"},
+			{name:"func",color:"#0000aa"},
+			{name:"var",color:"#0000aa"},
+			{name:"class",color:"#aa0000"},
+			{name:"extends",color:"#00aaaa"},
+			{name:"import",color:"#0000aa"},
+			{name:"set",color:"#00aaaa"},
+			{name:"get",color:"#00aaaa"},
+			{name:"null",color:"#0000aa"}
+		];
+	var normalWord = $("<span></span>");
+	var singleWord = $("<span islock = 'true'></span>");
+
+    var range = null;
+    var client = null;
+    var startOffset = 0;
+    var endOffset = 0;
+	var startContainer = null;//选择起始容器
+	var endContainer = null;//选择结束容器
+	var startX:int = 0;
+	var startY:int = 0;
+    var position = 0;
+    var textNode = null;
+    var insertTextlength = 0;
+    var area = null;//文本域
+    var count = 1;//函数
+
+		
+	
+	function init(){
+		try{
+			$content.addEventListener("mousedown",mouseDownEvt);
+			$content.addEventListener("mousemove",mouseMoveEvt);
+			#num.addEventListener("mousewheel",mouseWheelEvt);
+			#content.addEventListener("mouseup",clickEvt);
+			range = document.createRange();
+			var newLine = createNewArea("");
+			textNode = newLine.text;
+			$content.appendChild(area = newLine.content);
+			$num.appendChild(createNewNum(count++));
+			
+			$(#content).scroll(scrollEvt);
+			
+		}catch(e){
+			console.log(e);
+		}
+		if(context.value){
+			text = context.value;
+		}
+		dom.style.lineHeight = lineHeight + "px";
+		dom.style.fontSize = fontSize + "px";
+		num.style.fontSize = (fontSize - 4) + "px";
+    }
+	
+	
+	
+	/**
+	 * 键盘按下事件
+	 */
+    function keyDownEvt(e){
+		
+    }
+	
+	
+	private var mouseDownFlag:Boolean = false;
+	/**
+	 * 鼠标按下事操作
+	 */
+	private function mouseDownEvt(e:Event):void{
+		startX = e.layerX;
+		startY = e.layerY;
+		mouseDownFlag = true;
+		clearRectSelected();
+	}
+	
+	/**
+	 * 鼠标移动事件
+	 */
+	private function mouseMoveEvt(e:Event):void{
+		followLine(e);
+		if(mouseDownFlag){
+			createRectSelected(startX,startY,e.layerX,e.layerY);
+		}
+	}
+	
+	private function mouseWheelEvt(e:Event):void{
+		if(e.wheelDelta>0){
+			if(lineHeight<36){
+				lineHeight++;
+				fontSize++;
+			}
+		}else{
+			if(lineHeight>20){
+				lineHeight--;
+				fontSize--;
+			}
+		}
+		
+		dom.style.lineHeight = lineHeight + "px";
+		dom.style.fontSize = fontSize + "px";
+		num.style.fontSize = (fontSize - 4) + "px";
+	}
+	
+	private function selectedLine(e){
+		var p = e.offsetY;
+		var ls = $(#num).find(">div");
+		ls.removeClass("selected");
+		ls.each(function(){
+			var $this = $(this);
+			if($this.position().top <= p && $this.position().top >= (p-24)){
+				$this.addClass("selected");
+			}
+		});
+	}
+	
+	
+	private function followLine(e){
+		var p = e.offsetY;
+		var ls = $(#num).find(">div");
+		ls.removeClass("overd");
+		ls.each(function(){
+			var $this = $(this);
+			if($this.not(".selected") && $this.position().top <= p && $this.position().top >= (p-24)){
+				$this.addClass("overd");
+			}
+		});
+	}
+	
+	/**
+	 * 2016-10-25 10:42 设置行选中
+	 * 
+	 */
+    private function clickEvt(e:Event){
+		selectedLine(e);
+		mouseDownFlag = false;
+		
+		
+      
+    }
+	
+
+
+    function createNewNum(value){
+      var r = document.createElement("div");
+	  r.setAttribute("class","line");
+	  var n = document.createElement("div");
+      n.setAttribute("class","number");
+      n.innerHTML = value;
+	  r.appendChild(n);
+      return r;
+    }
+
+	
+	
+	/**
+	 * 创建一个新的代码编辑域
+	 * 所有的文本Code都必须放在span里面
+	 */
+    function createNewArea(defaultValue){
+		startOffset = 0;
+		endOffset = 0;
+		textNode = null;
+		insertTextlength = 0;
+
+		var area = createElement("div");
+		area.className = "area";
+
+		var word = createElement("span");
+		word.className = "word";
+		area.appendChild(word);
+
+
+		var text = createTextNode(defaultValue ? defaultValue : "");
+		word.appendChild(text);
+
+
+		return {content:area,text:text};
+    }
+
+	/**
+	 * 创建标签
+	 */
+	function createElement(tagName:String){
+		return document.createElement(tagName);
+	}
+	
+	
+	/**
+	 * 创建文本域
+	 */
+	function createTextNode(value:String):TextNode{
+		return document.createTextNode(value);
+	}
+	
+	
+	
+	/**
+	 * 设置显示的文本内容
+	 */
+	public function set text(value:String):void{
+		value = fx(value).trim();
+		var worker = new Worker(@lib + "format/html.js");
+		worker.addEventListener("message",function(e){
+			area.innerHTML = e.data.data;
+			for(var i:int = 0;i<e.data.count;i++){
+				num.appendChild(createNewNum(count++));
+			}
+			dom.style.height = num.offsetHeight + "px";
+			content.style.height = dom.style.height;
+			bg.style.height = dom.style.height;
+		});
+		
+		
+		worker.postMessage(keyWords);
+		worker.postMessage(value);
+		
+	}
+	
+	
+	private function fx(value){
+		var arr = [value];
+		var s = "";
+		var ft = null;
+		var space = ""
+		if(arr.length>0){
+			ft = arr[0];
+			var ch = null;
+			var c = 0;
+			for(var i = 0;i<ft.length;i++){
+				ch = ft.charAt(i);
+				if(ch == '\r' || ch == '\n'){
+					c ++;
+					continue;
+				}
+				if(ch == "\t" || ch == " "){
+					space += ch
+				}else{
+					break;
+				}
+			}
+			arr = value.substring(c).split('\n');
+			for(var i = 0;i<arr.length;i++){
+				ft = arr[i];
+				if(ft.indexOf(space) == 0){
+					s += ft.substring(space.length) ;
+				}else{
+					s += ft;
+				}
+				s += "\n";
+			}
+			return s;
+		}
+		return str;
+	}
+	
+	
+	private function scrollEvt(e:Event){
+		$(#bg).css("top","-" + e.target.scrollTop + "px");
+		$(#num).css("top","-" + e.target.scrollTop + "px");
+	}
+	
+	
+	/**
+	 * 创建区域选择背景
+	 */
+	private function createRectSelected(startX:int,startY:int,endX:int,endY:int):void{
+		clearRectSelected();
+		var t:int = 0;
+		startY = startY - (startY % lineHeight);
+		endY = endY - (endY % lineHeight);
+		if(startY>endY){
+			
+		
+		
+			//01.先确定开始行;
+			var sLine = parseInt(endY/lineHeight);
+			var eLine = parseInt(startY/lineHeight);
+			var div = $("<div class='selectBackgroundColor'></div>");
+			
+			div.css({height:lineHeight + "px",top:(sLine * lineHeight) + "px",left:endX + "px"});
+			if(sLine == eLine){
+				div.css("width",(endX - startX) + "px");
+			}
+			$(#bg).append(div);
+			
+			//02.中间被选中的地方
+			if(sLine != eLine){
+				var div = $("<div class='selectBackgroundColor'></div>");
+				div.css({height:(parseInt(Math.ceil((startY - endY)/lineHeight))*lineHeight - lineHeight) + "px",top:((sLine + 1) * lineHeight) + "px",left:"0px"});
+				$(#bg).append(div);
+			}
+			
+			//03.尾行被选中的地方
+			if(sLine != eLine){
+				div = $("<div class='selectBackgroundColor'></div>");
+				div.css({height:lineHeight + "px",top:(eLine * lineHeight) + "px",width:startX + "px"});
+				$(#bg).append(div);
+			
+			}
+			
+		}else{
+
+			//01.先确定开始行;
+			var sLine = parseInt(startY/lineHeight);
+			var eLine = parseInt(endY/lineHeight);
+			var div = $("<div class='selectBackgroundColor'></div>");
+			
+			div.css({height:lineHeight + "px",top:(sLine * lineHeight) + "px",left:startX + "px"});
+			if(sLine == eLine){
+				div.css("width",(endX - startX) + "px");
+			}
+			$(#bg).append(div);
+			
+			//02.中间被选中的地方
+			if(sLine != eLine){
+				var div = $("<div class='selectBackgroundColor'></div>");
+				div.css({height:(parseInt(Math.ceil((endY - startY)/lineHeight))*lineHeight - lineHeight) + "px",top:((sLine + 1) * lineHeight) + "px",left:"0px"});
+				$(#bg).append(div);
+			}
+			
+			//03.尾行被选中的地方
+			if(sLine != eLine){
+				div = $("<div class='selectBackgroundColor'></div>");
+				div.css({height:lineHeight + "px",top:(eLine * lineHeight) + "px",width:endX + "px"});
+				$(#bg).append(div);
+			
+			}
+		
+		}
+
+	}
+	
+	/**
+	 * 清除被选择区域
+	 */
+	private function clearRectSelected():void{
+		$(#bg).find(".selectBackgroundColor").remove();
+	}
+	
+	/**
+	 * 将当前HTML文本域转换为Text文本
+	 */
+	public function toString():String{
+		var buffer:String = "";
+		var node:SPAN = area.firstChild;
+		while(node){
+			if(node.tagName == "BR"){
+				buffer += "\r\n";
+			}
+			else if(node.getAttribute("islock") == "true"){
+				if(node.getAttribute("type") == "TAB"){
+					buffer += "\t";
+				}else if(node.getAttribute("type") == "SPACE"){
+					buffer += " ";
+				}else{
+					buffer += node.innerText;
+				}
+			}
+			else{
+				buffer += node.innerText;
+			}
+			
+			node = node.nextElementSibling;
+		}
+		return buffer;
+	}
+
+   
+  </script>
+</vbox>

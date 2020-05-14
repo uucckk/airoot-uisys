@@ -1,0 +1,289 @@
+<!-- 
+	Tabs 模块是JUS平台的展现界面的分页类模块。
+	@author sunxy
+	@version 0.1
+	@type JUS 控件
+ -->
+<@import value='ui.*' />
+<vbox>
+	<style>
+		#menuLabel{
+			position:absolute;
+		}
+		#labHeaderContent{
+			position:relative;
+			height:100%;
+			width:10000px;
+		}
+		
+		#labContent{
+			overflow:hidden;
+		}
+	</style>
+	<style id="style">
+		body{
+			background-color:#fefefe;
+			font-family:sans-serif;
+			font-size:14px;
+			border:1px solid #a0adb5;
+			border-top:none;
+		}
+		
+		
+		#tabs{
+			overflow:hidden;
+			line-height:32px;
+			height:36px;
+		}
+		
+		
+		
+		#tabs ul{
+			padding:0px;
+			margin:0px;
+			list-style:none;
+		}
+		#tabs ul li{
+			float:left;
+			display:block;
+			position:relative;
+			padding-left:10px;
+			padding-right:15px;
+			height:32px;
+			line-height:32px;
+			border-bottom:none;
+			margin:2px;
+			margin-top:4px;
+			margin-bottom:0px;
+			cursor:default;
+			color:#818ba6;
+			font-weight:bold;
+			cursor:pointer;
+			background-color:#eeeeee;
+		}
+		#tabs  ul li .closeBtn{
+			display:block;
+			position:absolute;
+			overflow:hidden;
+			width:11px;
+			height:11px;
+			top:1px;
+			right:1px;
+			background: url(@lib('tabspage_icon.png')) no-repeat;
+			
+			
+		}
+		
+		#tabs ul li .closeBtn:hover{
+			background-position: 0 -50px;
+		}
+		
+		#tabs ul li.selected{
+			background-color:#fefefe;
+			border:1px solid #dddddd;
+			color:#3685ea;
+		}
+		
+		#tabs ul li a{
+			cursor:pointer;
+			width:0px;
+		}
+		
+		#leftBtn{
+			text-align:center;
+			border-right:1px solid #999999;
+		}
+		
+		
+		#rightBtn{
+			text-align:center;
+			border-left:1px solid #999999;
+		}
+		
+		
+	</style>
+	<hbox id="tabs"  width="100%" height="36">
+		<div id="leftBtn" height="100%" width="26" >L</div>
+		<div id="labContent" width="100%" height="100%">
+			<div id="labHeaderContent">
+				<ul id="menuLabel" style="margin:0px;padding-left:5px;">
+					<!-- 这里存放Tabs标签的名称 -->
+				</ul>
+			</div>
+		</div>
+		<div id="rightBtn"  height="100%"  width="26" >R</div>
+	</hbox>
+	
+	<vbox id="content" height="100%" width="100%">
+		<!-- 这里存放Tabs的实体内容 -->
+		<@content />
+	</vbox>
+	<script>
+		var _self = $(dom);
+		var count:int = 0;
+		var tagIndex = 0;
+		var preTag = -1;//记录上一个内容
+		var dragFlag:Boolean = false;
+		var dx:int = 0;
+		function init(){
+			$(#leftBtn).hide();
+			$(#rightBtn).hide();
+			$(#leftBtn).click(leftEvt);
+			$(#rightBtn).click(rightEvt);
+			$(#content).find(">div").each(function(){
+				var $this = $(this);
+				$this.attr("tabname","n" + count);
+				var li = $("<li name='n" + count + "' onclick='@this.tab(" + count + ")'><label>" + ($this.attr("label") ? $this.attr("label") :  $this.find("h1.label").html())  + "</label></li>");
+				$this.find("h1.label").remove();
+				$(#menuLabel).append(li);
+				count ++;
+			});
+
+			$(#menuLabel)
+			.bind("mousedown",function(e){
+				if($(#menuLabel).width()>$(#tabs).width()){
+					dragFlag = true;
+					dx = e.pageX;
+				}
+				
+				
+			})
+			.bind("mousemove",function(e){
+				if(dragFlag){
+					var $this = $(this);
+					$this.offset({left:$this.offset().left + e.pageX - dx});
+					dx = e.pageX;
+				}
+			})
+			.bind("mouseup",function(e){
+				dragFlag = false;
+			})
+			
+			tab(0);
+		}
+		
+		/**
+		 * 按给定所以切换标签
+		 * @param index		标签id
+		 */
+		public function tab(index){
+			tagIndex = index;
+			$(#menuLabel).find(">li").removeClass("selected");
+			var ml = $(#menuLabel).find(">li[name='n" + index + "']");
+			if(ml.length>0){
+				ml.addClass("selected");
+				$(#content).find(">div").hide();
+				$(#content).find(">div[tabname='n" + index + "']").show();
+				content.trigger();
+			}else{
+				var li = $(#menuLabel).find(">li");
+				if(li.length>0){
+					tab(li.attr("name").substring(1));
+				}
+			}
+			autoWidth();
+			tabs.trigger(0);
+			
+		}
+
+
+		/**
+		 * 添加新Tab
+		 * @param label		标签名
+		 * @param component	添加的组件引用
+		 * @param tip		鼠标放置上的标签
+		 */
+		public function addTab(label,component,tip){
+			if(tip){
+				tip = "title='" + tip + "'";
+			}
+			var html = ui._MODULE_CONTENT_ ? ui._MODULE_CONTENT_ : component;
+			html.attr("width","100%");
+			html.attr("height","100%");
+			html.attr("tabname","n" + count);
+			var li = $("<li name='n" + count + "' onclick='@this.tab(" + count + ")' " + tip + "><label>" + label + "</label></li>");
+			li.append("<a class='closeBtn' onclick='@this.closeTab(" + count + ")'>&nbsp;&nbsp;&nbsp;&nbsp;</a>");
+			$(#menuLabel).append(li);
+			$(#content).append(html);
+			preTag = tagIndex;
+			tab(count);
+			count ++
+			
+			
+		}
+		
+		
+		/**
+		 * 按指定索引关闭Tab页
+		 */
+		public function closeTab(index){
+			$(#menuLabel).find(">li[name='n" + index + "']").remove();
+			$(#content).find(">div[tabname='n" + index + "']").remove();
+			var li = $(#menuLabel).find(">li");
+			tab(preTag);
+		}
+
+		public function trigger(e):void{
+			autoWidth();
+			super.trigger(e);
+			
+		}
+
+		private function autoWidth():void{
+			if($(#menuLabel).width()>$(#tabs).width()){
+				$(#leftBtn).show();
+				$(#rightBtn).show();
+			}else{
+				$(#leftBtn).hide();
+				$(#rightBtn).hide();
+				$(#menuLabel).css("left",0);
+			}
+		}
+
+		private function leftEvt():void{
+			var li = $(#menuLabel).children("li");
+			var rightL = $(#labContent).offset().left + $(#labContent).outerWidth(true);
+			var p = null;
+			var e = null;
+			for(var i:int = 0;i<li.length;i++){
+				p = li.eq(i);
+				if(p.offset().left<rightL && (p.offset().left + p.outerWidth(true)>=rightL)){
+					e = p;
+					break;
+				}
+			}
+			if(e){
+				$(#menuLabel).animate({left:parseInt($(#menuLabel).css("left")) - 100},500);//(e.offset().left + e.outerWidth(true) - rightL)
+			}
+		}
+
+		private function rightEvt():void{
+			var li = $(#menuLabel).children("li");
+			var rightL = #labContent.offset().left;
+			var p = null;
+			var e = null;
+			for(var i:int = 0;i<li.length;i++){
+				p = li.eq(i);
+				if(p.offset().left<rightL && (p.offset().left + p.outerWidth(true)>=rightL)){
+					e = p;
+					break;
+				}
+			}
+			if(e){
+				$(#menuLabel).animate({left:parseInt($(#menuLabel).css("left")) + 100},500);//(e.offset().left + e.outerWidth(true) - rightL)
+			}
+
+		}
+		
+		
+		/**
+		 * 当标签变更时候触发
+		 */
+		public function onChange(e){
+			
+		}
+
+		
+		
+	</script>
+</vbox>

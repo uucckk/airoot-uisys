@@ -27,7 +27,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-var version string = "AIroot UISYS v1"
+var version string = "AIroot UISYS v1.1"
 var lang map[string]string
 
 var zhCN = make(map[string]string, 0)
@@ -180,7 +180,7 @@ func CreateProjectDir(path string) (string, bool) {
 	os.MkdirAll(path+"/.serv/pub", 0777) //发布配置
 	s, _ := filepath.Abs("lib/js")
 	Copy(s, path+"/lib/js", "")
-	s, _ = filepath.Abs("lib/core/icon/")
+	s, _ = filepath.Abs("lib/manager/icon/")
 	Copy(s, path+"/lib/img", "")
 	f, e := os.Create(path + "/index.html")
 	defer f.Close()
@@ -1172,10 +1172,13 @@ func httpPost() {
 	if err != nil {
 		fmt.Println(err)
 	}
-	mess := string(body)
-	if v := strings.TrimSpace(mess); v != version {
-		DevPrintln(14, "Download Latest Version \""+v+"\" at http://www.airoot.cn/")
+	if len(body) < 30 {
+		mess := string(body)
+		if v := strings.TrimSpace(mess); v != version {
+			DevPrintln(14, "Download Latest Version \""+v+"\" at airoot.cn")
+		}
 	}
+
 }
 
 /**
@@ -1185,9 +1188,9 @@ func main() {
 	lang = enCH
 	SetConsoleTitle(version)
 	fmt.Println()
-	DevPrint(11, "  "+version+" ")
-	DevPrintln(7, "http://www.airoot.cn/")
-	DevPrintln(3, "Bootup successful ")
+	DevPrintln(11, version)
+	DevPrintln(7, "# www.airoot.cn #")
+	DevPrintln(3, "Bootup successful")
 	SysStartDate = "Date " + time.Now().Format("2006-01-02 15:04:05")
 	DevPrintln(3, SysStartDate+" ")
 	fmt.Println()
@@ -1201,8 +1204,9 @@ func main() {
 	SysPath = filepath.Dir(s)
 	SysLibPath = SysPath + "/lib"
 	if len(os.Args) > 1 {
-		fmt.Println("  Sys: " + SysPath)
-		fmt.Println("  Sys Library: " + SysLibPath)
+		DevPrintln(14, "Sys: "+SysPath)
+		DevPrintln(14, "Sys Library: "+SysLibPath)
+		fmt.Println()
 	}
 
 	//默认传入参数

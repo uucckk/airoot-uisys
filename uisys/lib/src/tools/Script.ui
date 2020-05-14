@@ -1,5 +1,5 @@
 <@pub value="default"/>
-<@import value="jus.*" />
+<@import value="ui.*" />
 <desktop>
 	<vbox>
 		<style>

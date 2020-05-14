@@ -111,7 +111,7 @@
 	}
 </style>
 
-<jus.VBox title="AIroot UISYS" url="http://www.airoot.cn/">
+<ui.VBox title="AIroot UISYS" url="http://www.airoot.cn/">
 	<div id="head">
 		<div style="background-color:#dee1e6;height:36px;width:8px;border-radius:0px 0px 10px 0px;">
 		</div>
@@ -135,8 +135,8 @@
 		<div class="user" style="width:20px;height:20px;"></div>
 		<div class="more" style="width:20px;height:20px;"></div>
 	</div>
-	<jus.HTMLLoader id="win" height="100%" />
-</jus.VBox>
+	<ui.HTMLLoader id="win" height="100%" />
+</ui.VBox>
 
 <script>
 	var _url from "url";

@@ -1,0 +1,29 @@
+<!--
+	@author			sunxy
+	@type			JUS 布局框架
+	@description	面板
+-->
+<style>
+	body{
+		position:fixed;
+	}
+</style>
+<ui.vbox>
+	<@content />
+</ui.vbox>
+<script>
+	var _self = $(dom);
+	/**
+	 * 新增内容可以增加横屏纵屏幕效果
+	 */
+	function init(){
+		$("body").css("overflow","hidden");
+		var stageWidth = parseInt(_self.attr("width"));
+		var stageHeight = parseInt(_self.attr("height"));
+		var padding = _self.outerWidth(true) - _self.width();
+		_self.width(stageWidth - padding);
+		padding = _self.outerHeight(true) - _self.height();
+		_self.height(stageHeight - padding);
+		super.trigger();
+	}
+</script>

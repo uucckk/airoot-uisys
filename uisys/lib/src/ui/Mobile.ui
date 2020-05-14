@@ -1,0 +1,132 @@
+<!--
+	@author			sunxy
+	@type			JUS 布局框架
+	@description	桌面布局主框架，如果使用桌面布局首先要引入此模块
+-->
+<ui.vbox>
+	<css>
+		body{
+			position:fixed;
+			overflow:hidden;
+			transition: transform .3s;
+			transform:translateX(100%);
+
+		}
+	</css>
+	<@content />
+</ui.vbox>
+<script>
+	import @root/js/jquery.min.js;
+	static var currentM = null;
+	var prvM = null;
+	var _self = $(dom);
+	var stageWidth = 0.0;
+	var stageHeight = 0.0;
+	var win = null;
+	
+	static func back(){
+		currentM.close();
+	}
+	
+	/**
+	 * 新增内容可以增加横屏纵屏幕效果
+	 */
+	function init(){
+		setTimeout(func(){
+			if(currentM != null){
+				currentM.hidden();
+				prvM = currentM;
+				
+			}
+			currentM = @this;
+			$("body").css("overflow","hidden");
+			dom.style.transform = "translateX(0)";
+			
+		},0);
+		win = $(window);
+		win.bind("resize",resizeEvt);
+		win.trigger("resize");
+	}
+	
+	
+	
+	function resizeEvt(){
+		stageWidth = win.width();
+		stageHeight = win.height();
+		var tmp = _self.attr("width");
+		if(tmp && tmp.indexOf("%") == -1){
+			stageWidth = parseInt(tmp);
+		}
+		
+		tmp = _self.attr("min-width");
+		if(tmp){
+			tmp = parseInt(tmp);
+			if(stageWidth<tmp){
+				stageWidth = tmp;
+				$("body").css({"overflow-x":"auto"});
+				_self.css("position","absolute");
+			}else{
+				//$("body").css({"overflow":"hidden","position":"fixed"});
+			}
+		}
+		
+		var tmp = _self.attr("height");
+		if(tmp && tmp.indexOf("%") == -1){
+			stageHeight = parseInt(tmp);
+		}
+		
+		tmp = _self.attr("min-height");
+		if(tmp){
+			tmp = parseInt(tmp);
+			if(stageHeight<tmp){
+				stageHeight = tmp;
+				$("body").css({"overflow-y":"auto"});
+				_self.css("position","absolute");
+			}else{
+				//$("body").css({"overflow":"hidden","position":"fixed"});
+			}
+			
+		}
+		
+		
+		var padding = _self.outerWidth(true) - _self.width();
+		_self.width(stageWidth - padding);
+		padding = _self.outerHeight(true) - _self.height();
+		_self.height(stageHeight - padding);
+		setTimeout(function(){
+			super.trigger(_self.attr("auto") == "true" ? (stageWidth>=stageHeight ? 0 : 1) : 0);
+		},0);
+		
+	}
+	
+	function hidden(){
+		//$(dom).removeClass("$show");	
+		//$(dom).addClass("$hidden");		
+		dom.style.transform = "translateX(-100%)";
+	}
+	
+	function show(){
+		//$(dom).removeClass("$hidden");	
+		//$(dom).addClass("$show");	
+		dom.style.transform = "translateX(0)";
+	}
+	
+	function close(){
+		if(prvM && prvM.dom.parentNode != null){
+			dom.style.transform = "translateX(100%)";
+			currentM = prvM;
+			
+			setTimeout(func(){
+				$(dom).remove();
+			},200);
+			
+			
+		}
+		currentM.show();
+	}
+	
+	function finalize():void{
+		prvM = null;
+		win.unbind("resize",resizeEvt);
+	}
+</script>

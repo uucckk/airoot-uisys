@@ -1,0 +1,62 @@
+<!--
+	堆栈面板
+	@author			sunxy
+	@type			JUS 布局框架
+	@description	
+-->
+<@import value="ui.*" />
+<Box width="100%" height="100%">
+	<position id="content" width="100%" height="100%">
+		<@content />
+	</position>
+	
+	<script>
+		import ui.Loading;
+		import ui.Layout;
+		private var moduleList = {};
+		private var loader = null;
+		function init(){
+			
+		}
+		
+		/**
+		 * 加载模块
+		 * @param className	
+		 */
+		public function loadModule(className:String,params:Array,listener):void{
+			for(var m in moduleList){
+				if(m != className){
+					$(moduleList[m].dom).attr("left","10000");
+				}
+			}
+			if(moduleList[className]){
+				if(moduleList[className] == null){
+					return;
+				}
+				$(moduleList[className].dom).attr("left","0").css({"left":"0px","top":"0px"});
+				content.trigger(0);
+				return;
+			}
+			#content.appendChild(loader = new Loading());
+			$(loader.dom).css({"left":"0px","top":"0px"});
+			super.trigger(0);
+			moduleList[className] = null;
+			var layout = new Layout();
+			#content.appendChild(layout);
+			moduleList[className] = layout;
+			$(layout.dom).attr("left","0").attr("width","100%").attr("height","100%");
+			layout.dom.addModule(className,[],function(obj){
+				$(loader.dom).remove();
+				$(layout.dom).css({"left":"0px","top":"0px"});
+				try{
+					content.trigger();
+				}catch(e){
+					console.log("STACK",e);
+				}
+				if(listener){
+					listener(obj);
+				}
+			});
+		}
+	</script>
+</Box>

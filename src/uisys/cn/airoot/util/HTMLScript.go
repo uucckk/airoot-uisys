@@ -411,6 +411,14 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _global string, _this string, _
 			}
 		} else if t.IsKeyWord && "@root" == t.Value {
 			f.Value = "index.res/"
+		} else if t.IsKeyWord && "@type" == t.Value {
+			t.Value = "__type__(__APPDOMAIN__,"
+			for p < len(tl) {
+				if tl[p].TagType == 3 {
+					p++
+					break
+				}
+			}
 		} else if t.Value[0] == '@' {
 			t.Value = s.ui.SERVER.GetServerVar(t.Value)
 		} else if t.IsKeyWord && "this" == t.Value {
@@ -871,8 +879,12 @@ func (s *HTMLScript) loadClass(className string) string {
 				cipherStr := md5Ctx.Sum(nil)
 				bs := hex.EncodeToString(cipherStr)
 				ft := &UI{SYSTEM_PATH: s.ui.SYSTEM_PATH, CLASS_PATH: s.ui.CLASS_PATH}
-				ft.CreateFromString(s.root, "", nil, value, name, nil, s.ui)
-				s.ui.GetRoot().scriptElementBuffer = append(s.ui.GetRoot().scriptElementBuffer, &ScriptElement{"I", bs, "H", ft.ToFormatString()})
+				if err := ft.CreateFromString(s.root, "", nil, value, name, nil, s.ui); err == nil {
+					s.ui.GetRoot().scriptElementBuffer = append(s.ui.GetRoot().scriptElementBuffer, &ScriptElement{"I", bs, "H", ft.ToFormatString()})
+				} else {
+					s.ui.GetRoot().scriptElementBuffer = append(s.ui.GetRoot().scriptElementBuffer, &ScriptElement{"O", bs, "O", err.Error()})
+				}
+
 				tmpName = name
 			}
 

@@ -1,0 +1,12 @@
+<!--
+	时间控件
+	@author			sunxy
+	@type			JUS 控件
+	@description	
+-->
+<div>
+	<div class="topToggleBTN">
+		<input id="ipt" type="text" class='inp-date' readonly="readonly" style="padding-left:10px;overflow:hidden;">
+		<img id="img" src="@lib/ico_calendar_N.png" alt="" class="DataIcon click-btn">
+	</div>
+</div>

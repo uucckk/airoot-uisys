@@ -209,11 +209,24 @@ func (j *UI) CreateFrom(root string, domain string, node *HTML, className string
 		if err != nil {
 			return err
 		}
+		if j.cssPath != "" {
+			tpr, _ := GetCode(j.cssPath)
+			//j.html.AppendNode("style", CodeFx(tpr, j.IsTest))
+			j.html.AppendNode("style", tpr)
+		}
+		if j.jsPath != "" {
+			tpr, _ := GetCode(j.jsPath)
+			j.html.AppendNode("script", CodeFx(tpr, j.IsTest))
+		}
 	} else if j.jsPath != "" {
 		j.scriptFile = true
 		j.PushImportScript(&Attr{className, className}) //change by sunxy 2018-3-2
 	} else {
-		return errors.New("ui.go -> the file isn't exist.")
+		par := ""
+		if j.parent != nil {
+			par = "[" + j.parent.className + "] "
+		}
+		return errors.New("ui.go ->" + par + "import file [" + className + "] isn't exist.")
 
 	}
 
@@ -267,7 +280,6 @@ func (j *UI) PushImportScript(value *Attr) {
 			if Exist(tp) {
 				tp = filepath.Clean(tp)
 				m5, _ := F2md5(tp)
-
 				j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, &ScriptElement{"I", value.Name, "P", m5 + value.Value})
 			} else {
 				j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, &ScriptElement{"O", value.Value, "O", j.className + ": " + value.Value + " isn't Exist."})
@@ -290,7 +302,7 @@ func (j *UI) PushImportScript(value *Attr) {
 				j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, &ScriptElement{"I", value.Value, "H", ft.ToFormatString()})
 			}
 		} else {
-			j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, &ScriptElement{"O", value.Value, "", err.Error()})
+			j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, &ScriptElement{"O", value.Value, "O", err.Error()})
 		}
 	}
 }
@@ -602,13 +614,13 @@ func (j *UI) scanHTML(child []*HTML) {
 				attrName = j.pkgMap[v]
 				if attrName != "" {
 					p.SetAttrName(v, attrName)
-					j.PushCommandScript(&Attr{attrName, "-" + v + "\002" + attrName + "\002" + p.GetAttr("id") + "\002" + attrValue})
+					j.PushCommandScript(&Attr{p.GetAttr("id"), "-" + v + "\002" + attrName + "\002" + p.GetAttr("id") + "\002" + attrValue})
 					j.PushImportScript(&Attr{attrName, attrName})
 				}
 			} else {
 				v = v[1:]
 				attrName = strings.ToLower(v)
-				j.PushCommandScript(&Attr{attrName, "-" + v + "\002" + attrName + "\002" + p.GetAttr("id") + "\002" + attrValue})
+				j.PushCommandScript(&Attr{p.GetAttr("id"), "-" + v + "\002" + attrName + "\002" + p.GetAttr("id") + "\002" + attrValue})
 				j.PushImportScript(&Attr{attrName, attrName})
 			}
 		}
@@ -932,15 +944,27 @@ func (j *UI) rootHTML() {
  *
  */
 func (j *UI) packageHTML(child []*HTML) {
+	var a rune
 	tagName := ""
 	extName := ""
 	var arr []string
+	f := false
 	for _, p := range child {
-		tagName = strings.ToLower(p.TagName())
+		if p.IsText() {
+			continue
+		}
+		tagName = p.TagName()
+		a = []rune(tagName)[0]
+		if a >= 65 && a <= 90 {
+			f = true
+		} else {
+			f = false
+		}
+		tagName = strings.ToLower(tagName)
 		arr = strings.Split(tagName, ":")
 		if len(arr) > 1 {
-			tagName = arr[0]
-			extName = arr[1]
+			extName = arr[0]
+			tagName = arr[1]
 		}
 
 		//替换Module TagName 变为真是的tagName
@@ -948,16 +972,24 @@ func (j *UI) packageHTML(child []*HTML) {
 		if s := j.pkgMap[tagName]; s != "" {
 			tagName = s
 			p.SetTagName(s)
+			f = false
 		} else if s := j.pkgMap[p.TagName()]; s != "" {
 			tagName = s
 			p.SetTagName(s)
+			f = false
 		}
 
-		if extName != "" && j.pkgMap[extName] != "" {
-			extName = j.pkgMap[extName]
-			p.SetTagName(tagName + ":" + extName)
+		if f {
+			tagName = "." + p.TagName()
+			p.SetTagName(tagName)
 		}
+
+		if extName != "" {
+			p.SetTagName(extName + ":" + tagName)
+		}
+
 		extName = ""
+
 		j.packageHTML(p.Child())
 
 	}
@@ -1151,7 +1183,8 @@ func (j *UI) useHTML(html *HTML) {
 				if re != nil {
 					console.Log(re.Error())
 				}
-
+			} else {
+				fmt.Print(j.root+str, path)
 			}
 		}
 	}
@@ -1361,12 +1394,12 @@ func (j *UI) ReadHTML() *HTML {
 		j.html.InsertList(htmls, 0)
 	}
 	//加载外部CSS
-	if j.cssPath != "" {
-		css := &HTML{}
-		tpr, _ := GetCode(j.cssPath)
-		css.ReadFromString("<style>" + CodeFx(tpr, j.IsTest) + "</style>")
-		j.html.Append(css)
-	}
+	// if j.cssPath != "" {
+	// 	css := &HTML{}
+	// 	tpr, _ := GetCode(j.cssPath)
+	// 	css.ReadFromString("<style>" + CodeFx(tpr, j.IsTest) + "</style>")
+	// 	j.html.Append(css)
+	// }
 
 	j.overHTML()
 	j.packageHTML([]*HTML{j.html})
@@ -1418,18 +1451,19 @@ func (j *UI) ReadHTML() *HTML {
 		j.html.Append(node)
 	}
 
-	if j.jsPath != "" {
-		script = &HTMLScript{}
-		script.CreateFrom(j, j.root, j.domain, j.paramValue, j.innerValue, j.extendsScriptBuffer)
-		tpr, _ := GetCode(j.jsPath)
-		scriptString := script.ReadFromString(CodeFx(tpr, j.IsTest)) //scriptString = script.ReadFromString(j.scanMedia(tpr))
+	// 20200511
+	// if j.jsPath != "" {
+	// 	script = &HTMLScript{}
+	// 	script.CreateFrom(j, j.root, j.domain, j.paramValue, j.innerValue, j.extendsScriptBuffer)
+	// 	tpr, _ := GetCode(j.jsPath)
+	// 	scriptString := script.ReadFromString(CodeFx(tpr, j.IsTest)) //scriptString = script.ReadFromString(j.scanMedia(tpr))
 
-		if len(scriptString) != 0 {
-			node := &HTML{}
-			node.AppendNode("script", script.ReadFromString(scriptString))
-			j.html.Append(node)
-		}
-	}
+	// 	if len(scriptString) != 0 {
+	// 		node := &HTML{}
+	// 		node.AppendNode("script", script.ReadFromString(scriptString))
+	// 		j.html.Append(node)
+	// 	}
+	// }
 	j.cssBuffer.WriteString(j.overCss)
 	if j.cssBuffer.Len() > 0 {
 		j.css = &CSS{Root: &Attr{"#" + j.html.GetAttr("src_id"), j.html.TagName()}, Class: j.html.GetAttr("class"), jus: j, CurrentPath: IfStr(j.IsSysLib, "index.src/", "./") + j.relativePath + ".lib"}
@@ -1450,7 +1484,7 @@ func (j *UI) ReadHTML() *HTML {
 
 	if len(j.CommandCode) > 0 {
 		for _, v := range j.CommandCode {
-			j.AddRun(&RunElem{Type: "C", Name: j.domain, Value: v.Value})
+			j.AddRun(&RunElem{Type: "C", Name: v.Name, Value: v.Value})
 		}
 	}
 	//最终加入静态函数变量

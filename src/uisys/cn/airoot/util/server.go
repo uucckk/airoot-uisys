@@ -161,9 +161,9 @@ func (u *UIServer) Start(addr string, cfg string, printf func(string, int, strin
 	}
 
 	if u.IsStatic {
-		printf("", 2, "web server is a static server.")
+		printf("", 2, "Web server is a static server.")
 	} else {
-		printf("", 2, "web server is a ui-system server.")
+		printf("", 2, "Web server is a uisys server.")
 	}
 	if u.Status {
 		return "服务已经开启."
@@ -177,7 +177,7 @@ func (u *UIServer) Start(addr string, cfg string, printf func(string, int, strin
 	}
 	u.Addr = addr
 	go func() {
-		printf("", 2, "WEB Server Started At: ["+addr+"]. Use protocol "+IfStr(u.protocol == "", "http", u.protocol))
+		printf("", 2, "Web server started at: ["+addr+"]. Use protocol "+IfStr(u.protocol == "", "http", u.protocol))
 		handler := http.NewServeMux()
 		handler.HandleFunc("/", u.root)
 		handler.Handle("/ws", websocket.Handler(u.wsHandler))
@@ -233,6 +233,7 @@ func (u *UIServer) SetProject(path string) int {
 			u.IsUIPro = false
 			u.fServerList[rpath] = http.FileServer(http.Dir(path))
 		}
+		fmt.Println()
 		return 1
 	} else {
 		u.RootPath = ""
@@ -1489,7 +1490,7 @@ func (u *UIServer) SetIndexPage(arr []string) {
  */
 func (u *UIServer) AddProxy(pattern string, path string, log bool) {
 	if log {
-		fmt.Println("pattern", pattern, "-->", path)
+		fmt.Println("  pattern", pattern, "-->", path)
 	}
 	cls := 0
 	if Index(strings.ToLower(path), "http://") == 0 || Index(strings.ToLower(path), "https://") == 0 {

@@ -1,0 +1,149 @@
+<!--
+	@author			sunxy
+	@type			JUS 布局框架
+	@description	位置容器
+-->
+<style>
+	body{
+		position:relative;
+	}
+</style>
+<ui.DisplayObject width="100%" height="100%">
+	<@content />
+</ui.DisplayObject>
+<script>
+	var _self = $(dom);
+	private static function layout(_self,event):void{
+		if(_self.is(":hidden")){
+			return;
+		}
+		
+		var tmp:Object = null;
+		var tWidth:int = 0;
+		var tHeight:int = 0;
+		var left:int = 0;
+		var right:int = 0;
+		var top:int = 0;
+		var bottom:int = 0;
+		var vBorderSum:int = 0;
+		var hBorderSum:int = 0;
+		_self.find(">div").each(function(){
+			var $this = $(this);
+			$this.css("position","absolute");
+			vBorderSum = parseInt($this.css("border-top-width")) + parseInt($this.css("border-bottom-width"));
+			hBorderSum = parseInt($this.css("border-left-width")) + parseInt($this.css("border-right-width"));
+			//横向
+			tmp = $this.attr("left");
+			if(tmp){
+				left = parseInt(tmp);
+			}else{
+				left = false;
+			}
+			
+			if(left !== false){
+				if($this.css("left")>_self.width() && left>_self.width()){
+					return;
+				}
+				if($this.css("left") != left){
+					$this.css("left",left);
+				}
+				
+			}
+			
+			tmp = $this.attr("right");
+			if(tmp){
+				right = _self.width() - parseInt(tmp);
+			}else{
+				right = false;
+			}
+			
+			
+			
+			
+			tmp = $this.attr("width");
+			if(tmp && (right === false || left === false)){
+				tWidth = parseInt(tmp);
+				if(tmp.lastIndexOf("%") != -1){
+					tWidth = _self.width() * tWidth/100;
+					$this.width(tWidth - hBorderSum);
+				}else if(left === false && right !== false){
+					$this.css("left",right - tWidth);
+					$this.width(tWidth - hBorderSum);
+				}else if(left == false && right === false){
+					$this.width(tWidth - hBorderSum);
+				}else if(left !== false && right === false){
+					$this.width(tWidth - hBorderSum);
+				}
+			}else{
+				if(left !== false && right !== false){
+					tWidth = right - left;
+					$this.width(tWidth - hBorderSum);
+				}else if(left == false && right !== false){
+					$this.css("left",right - $this.width());
+				}
+			}
+			
+			
+			
+			//纵向
+			tmp = $this.attr("top");
+			if(tmp){
+				top = parseInt(tmp);
+			}else{
+				top = false;
+			}
+			if(top !== false){
+				$this.css("top",top);
+			}
+			
+			tmp = $this.attr("bottom");
+			if(tmp){
+				bottom = _self.height() - parseInt(tmp);
+			}else{
+				bottom = false;
+			}
+			tmp = $this.attr("height");
+			
+			if(tmp && (top === false || bottom === false)){
+				tHeight = parseInt(tmp);
+				if(tmp.lastIndexOf("%") !== -1){
+					tHeight = _self.height() * tHeight/100;
+					$this.height(tHeight - vBorderSum);
+				}else if(top === false && bottom !== false){
+					$this.css("top",bottom - tHeight);
+					$this.height(tHeight - vBorderSum);
+				}else if(top === false && bottom === false){
+					$this.height(tHeight);
+				}else if(top !== false && bottom === false){
+					$this.height(tHeight - vBorderSum);
+				}
+			}else{
+				if(top !== false && bottom !== false){
+					tHeight = bottom - top;
+					$this.height(tHeight - vBorderSum);
+				}
+			}
+			if(left === false && right === false){
+				$this.css("left","0px");
+			}
+			if(top == false && bottom === false){
+				$this.css("top","0px");
+			}
+			if(top == false && bottom !== false){
+				$this.css("bottom",$this.attr("bottom") + "px");
+			}
+			var $id = @global[$this.attr("id")];
+			if($id && $id.trigger){
+				if(parseInt($this.css("left"))>_self.width() || parseInt($this.css("top"))>_self.height()){
+					return;
+				}
+				$id.trigger(event);
+			}
+		});
+	}
+	
+	
+	public function trigger(event):void{
+		layout(_self,event);
+	}
+</script>

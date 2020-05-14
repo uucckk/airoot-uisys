@@ -150,7 +150,7 @@ func (m *MScript) ReadFromString(js string) error {
 	m.domainList = make(map[string]*TagSet, 10)
 
 	//00装入关键字
-	keyWord := [...]string{"public", "private", "super", "var", "let", "function", "func", "if", "else", "switch", "case", "while", "for", "in", "do", "static", "import", "new", "include", "return", "class", "extends", "implements", "interface", "this", "@global", "@this", "@lib", "@root", "set", "get", "try", "catch", "finally", "from"}
+	keyWord := [...]string{"public", "private", "super", "var", "let", "function", "func", "if", "else", "switch", "case", "while", "for", "in", "do", "static", "import", "new", "include", "return", "class", "extends", "implements", "interface", "this", "@global", "@this", "@lib", "@root", "@type", "set", "get", "try", "catch", "finally", "from"}
 	m.kMap = make(map[string]bool, 10)
 	for _, v := range keyWord {
 		m.kMap[v] = true
@@ -201,7 +201,7 @@ func (m *MScript) ReadFromString(js string) error {
 				tag = tag[0:0]
 			}
 			m.position--
-			tp = &Tag{Value: m.ReadString(), TagType: 7}
+			tp = &Tag{Value: m.ReadReg(), TagType: 7}
 			m.lst = append(m.lst, tp)
 			continue
 		}
@@ -527,29 +527,36 @@ func (m *MScript) isObj() bool {
 	offset := m.position - 2
 	var ch rune
 	var p *Tag = nil
+	f := true //判断是否紧跟前一个字节，如果用空格等不可见字符代表飞紧跟
 	for offset >= 0 {
 		ch = m.code[offset]
 		offset--
 		if ch == '\r' || ch == '\n' || ch == '\t' || ch == ' ' {
+			f = false
 			continue
 		}
-		if ch == ',' || ch == '(' || ch == '=' {
+		if ch == ',' || ch == '(' || ch == '=' || ch == '?' || ch == ':' {
 			return true
 		} else {
-			offset = len(m.lst) - 1
-			for offset >= 0 {
-				p = m.lst[offset]
-				offset--
-				if p.TagType < 0 {
-					continue
+			if f {
+				return false
+			} else {
+				offset = len(m.lst) - 1
+				for offset >= 0 {
+					p = m.lst[offset]
+					offset--
+					if p.TagType < 0 {
+						continue
+					}
+					if p.IsKeyWord && "return" == p.Value {
+						return true
+					} else {
+						return false
+					}
 				}
-				if (p.IsKeyWord && "return" == p.Value) || "?" == p.Value || ":" == p.Value {
-					return true
-				} else {
-					return false
-				}
+				return false
 			}
-			return false
+
 		}
 	}
 	return false
@@ -575,7 +582,7 @@ func (m *MScript) ToStringFrom(lst []*Tag) string {
 }
 
 /**
- * 读取字符串或正则表达式
+ * 读取字符串
  * @param code
  * @return
  */
@@ -605,6 +612,49 @@ func (m *MScript) ReadString() string {
 	}
 
 	return strings.Replace(string(sb), "\r\n", string(t)+" + "+string(t), -1)
+}
+
+/**
+ * 读取正则表达式
+ * @param code
+ * @return
+ */
+func (m *MScript) ReadReg() string {
+	sb := make([]rune, 0)
+	var t = m.code[m.position]
+	m.position++
+	var ch rune
+	r := false
+	sb = append(sb, t)
+	for m.position < len(m.code) {
+		ch = m.code[m.position]
+		m.position++
+		sb = append(sb, ch)
+		if ch == t && !r {
+			break
+		}
+		if ch == '\\' {
+			if r {
+				r = false
+			} else {
+				r = true
+			}
+		} else {
+			r = false
+		}
+	}
+
+	for m.position < len(m.code) {
+		ch = m.code[m.position]
+
+		if ch < 65 || (ch > 90 && ch < 97) || ch > 122 {
+			break
+		}
+		m.position++
+		sb = append(sb, ch)
+	}
+
+	return string(sb)
 }
 
 /**

@@ -411,6 +411,16 @@ func (s *Script) initScriptFrom(js *MScript, _global string, _this string, _pri 
 			t.Value = _global
 		} else if t.IsKeyWord && "@lib" == t.Value {
 			t.Value = "\"" + "./" + s.jus.relativePath + ".lib/\""
+		} else if t.IsKeyWord && "@root" == t.Value {
+			f.Value = "index.res/"
+		} else if t.IsKeyWord && "@type" == t.Value {
+			t.Value = "\\$type(__APPDOMAIN__,"
+			for p < len(tl) {
+				if tl[p].TagType == 3 {
+					p++
+					break
+				}
+			}
 		} else if t.IsKeyWord && "this" == t.Value {
 			tlt = append(tlt, t)
 			if s.getLevel(t) == 1 {

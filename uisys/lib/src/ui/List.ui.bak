@@ -1,0 +1,71 @@
+<!--
+	@status			running
+	@author			sunxy
+	@type			JUS 控件
+	@description	垂直可变化布局
+	
+-->
+<style>
+	body{
+		overflow:auto;
+	}
+</style>
+<ui.Box dataLabel="" dataField="">
+	<@component/>
+</ui.Box>
+<script>
+	import @root/js/jquery.min.js;
+	var dataLabel from "dataLabel";
+	var dataField from "dataField";
+	var _self = $(dom);
+	var list = [];
+	private var _selectedIndex:int = 0;
+	private var data:Array = null;
+	public var onClick = null;
+	public var onScroll = null;
+	private var _data = [];
+	function init(){
+		dom.onscroll = function(e){
+			if(onScroll){
+				onScroll(e);
+			}
+			
+		}
+	}
+	
+	public set dataProvider(value){
+		_data = value;
+		initList();
+	}
+	
+	private function initList(){
+		console.log("reset list");
+		//看下之前的
+		var i = 0;
+		for(;i<list.length && i<_data.length;i++){
+			p = list[i];
+			if(p.data){
+				p.data = _data[i];
+			}
+		}
+		var p = null;
+		var c = null;
+		for(;i<_data.length;i++){
+			p = _data[i];
+			c = context.module(p);
+			dom.appendChild(c);
+			list.push(c);
+		}
+		
+		for(i = list.length - 1;i>=_data.length;i--){
+			c = list[i];
+			dom.removeChild(c);
+			list.pop();
+		}
+	}
+	
+	function finalize(){
+		list.length = 0;
+		list = null;
+	}
+</script>

@@ -292,19 +292,18 @@ var __FORMAT__ = function(__DATA__,__APPDOMAIN__,module){
 					}
 					if(!__MODULE_STYLE__[__APPDOMAIN__][v.module]){
 						__MODULE_STYLE__[__APPDOMAIN__][v.module] = true;
-						document.head.appendChild(__InitCSS__(v.module,v.value.replace(/\\r/g,'\r').replace(/\\n/g,'\n')));
+						document.head.appendChild(__InitCSS__(v.module,v.value));
 					}	
 				break;
 				case 'B' ://内部CSS
-					//style = v.value + "\r\n" + style;
 					if(!__GET_MOUDLE__(__APPDOMAIN__,v.module).style){
 						__GET_MOUDLE__(__APPDOMAIN__,v.module).style = "";
 					}
-					//__GET_MOUDLE__(__APPDOMAIN__,v.module).style = v.value + "\r\n" + __GET_MOUDLE__(__APPDOMAIN__,v.module).style
 					__GET_MOUDLE__(__APPDOMAIN__,v.module).style +=  v.value + "\r\n"
 				break;
 				case 'H' ://HTML
 					__GET_MOUDLE__(__APPDOMAIN__,v.module).html = v.value
+					__MODULE_COUNTER__.push({module:module,dep:v.module,type:"M",domain:__APPDOMAIN__});
 				break;
 				case 'I' ://import
 					if(v.value.charAt(0) == "P"){//Package 引入外部包
@@ -366,9 +365,16 @@ var __FORMAT__ = function(__DATA__,__APPDOMAIN__,module){
 					})();
 				break;
 				case "T" ://头文件
-					var head = document.createElement("div");
-					head.innerText = v.value;
-					document.head.appendChild(head);
+					if(window.INDEX && _INSTANCE_COUNT_ == 1){
+						
+					}else{
+						var head = document.createElement("div");
+						head.innerHTML = v.value;
+						for(var k = head.childNodes.length - 1;k>=0;k--){
+							document.head.appendChild(head.childNodes[k]);
+						}
+					}
+					
 				break;
 				case "O" ://Error
 					____ERROR____(v.value.substring(1));
@@ -421,7 +427,7 @@ function __InitHTML__(uuid,html){
 }
 var __C__ = document.createElement("div");
 function __InitBody__(__APPDOMAIN__,uuid,html,style,target,append){
-	if(!html){
+	if(!html || (window.INDEX && uuid == 'J0')){
 		return;
 	}
 	var data = __InitHTML__(uuid,html);
@@ -931,6 +937,26 @@ var __initLst__ = function(uuid){
 	
 }
 
+/**
+ * 获取实例的类型
+ */
+function $type(appd,instance){
+	if(instance.dom && instance.dom instanceof HTMLElement){
+		return instance.dom.getAttribute("class_id");
+	}else{
+		var d = _MODULE_CONTENT_LIST_[appd];
+		var p = null;
+		for(var k in d){
+			p = d[k];
+			if(p == instance.constructor){
+				return k;
+			}
+		}
+	}
+	return null;
+}
+
+
 
 /**
  * 类导入函数
@@ -960,9 +986,9 @@ var __DEFER_LIST_END_ = null;
 var defer = function(dom,obj){
 	if(obj && obj.destroy){
 		if(__DEFER_LIST_END_ == null){
-			__DEFER_LIST_START_ = __DEFER_LIST_END_ = {dom:dom,lst:[obj],next:null};
+			__DEFER_LIST_START_ = __DEFER_LIST_END_ = {dom:dom,obj:obj,next:null};
 		}else{
-			__DEFER_LIST_END_.next = {dom:dom,lst:[obj],next:null};
+			__DEFER_LIST_END_.next = {dom:dom,obj:obj,next:null};
 			__DEFER_LIST_END_ = __DEFER_LIST_END_.next;
 		}
 	}else{
@@ -977,11 +1003,16 @@ var gcDefer = function(){
 	while(p){
 		n = p.next;
 		if(!p.dom.parentNode){
+			try{
+				p.obj.destroy();
+			}catch(e){
+				console.log(e);
+			}
 			p.dom = null;
-			p.lst = null;
+			p.obj = null;
 			p.next = null;
 			delete p.dom;
-			delete p.lst;
+			delete p.obj;
 			delete p.next;
 			if(p == __DEFER_LIST_START_){
 				__DEFER_LIST_START_ = n;
@@ -1144,10 +1175,12 @@ window.Eval = function(value){
 }
 
 function Info(){
+	console.log("__WINDOW__",__WINDOW__);//MODULE 统一样式
 	console.log("__MODULE_STYLE__",__MODULE_STYLE__);//MODULE 统一样式
 	console.log("__MODULE_INIT__",__MODULE_INIT__);
 	console.log("__MODULE_LIST__",__MODULE_LIST__);
 	console.log("__MODULE_METHOD__",__MODULE_METHOD__);//模块方法
+	console.log("_MODULE_CONTENT_LIST_",_MODULE_CONTENT_LIST_);//模块方法
 	console.log("__MODULE_EXTEND__",__MODULE_EXTEND__);//模块扩展方法
 	console.log("__MODULE_RUNLIST__",__MODULE_RUNLIST__);//模块初始化项目
 	console.log("__MODULE_COUNTER__",__MODULE_COUNTER__);//

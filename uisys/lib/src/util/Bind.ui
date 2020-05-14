@@ -1,0 +1,54 @@
+<!-- 
+	数据绑定工具
+	@author sunxy
+	@version 0.0
+	@type util 控件
+ -->
+<div>
+	<@content/>
+</div>
+<script>
+	import util.DOMBinding;
+	import util.BindData;
+	private var bind = new DOMBinding(dom);
+	function init(value){
+		if(value){
+			var bd = new BindData(value);
+			bind.bindData = bd;
+		}
+	}
+	
+	//设置与返回数据对象
+	get data():Object{
+		return bind.data;
+	}
+	
+	set data(value:Object){
+		bind.data = value;
+	}
+	
+	/**
+	 * 添加数据
+	 */
+	func addData(name,value){
+		bind.addData(name,value);
+	}
+	
+	//数据显示过滤器
+	set filters(value:Object){
+		bind.filters = value;
+	}
+	
+	get filters():Object{
+		return filters;
+	}
+	/**
+	 * 监听数据项变化
+	 * @param value		监听的数据对象
+	 * @param listener	回调函数
+	 */
+	function watch(value:String,listener:Function):void{
+		bind.watch = value;
+	}
+	
+</script>

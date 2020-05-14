@@ -1,0 +1,188 @@
+<!--
+	对话框控件
+	@author			sunxy
+	@type			JUS 控件
+	@description	
+-->
+<@import value="ui.*" />
+<displayObject>
+	<style>
+				
+		body { 
+			position:absolute; z-index:42;
+			border:1px solid rgba(0,0,0,0.5);
+			box-shadow:0px 5px 8px 5px rgba(0,0,0,0.2);
+			//filter: drop-shadow(2px 4px 6px black);
+		}
+		
+		.dialogHeader{
+			user-select:none;
+		}
+		
+		.dialogHeader { 
+			display:block;
+			overflow:hidden;
+			height:32px;
+			line-height:30px;
+			background-color:rgba(255,255,255,1);
+		}
+		.dialogHeader .close { display:block; overflow:hidden; text-indent:-1000px; width:19px; height:19px; float:right; margin-top:5px;}
+		
+		.dialogHeader { padding-left:10px; background-position:0 0; position:relative; cursor:move;}
+		.dialogHeader_r { padding-right:5px; background-position:100% -50px;}
+		.dialogHeader_c { padding:0; background-position:0 -100px; background-repeat:repeat-x;}
+		
+		.dialogHeader .close { background-position:0 0; right:4px;}
+		.dialogHeader .close:hover { background-position:0 -50px;}
+		
+	
+		
+		.dialogHeader .close{ background:url(@lib('dialogpanel_icon.png')) no-repeat;}
+		
+		
+		.dialogContent {background-color:#fafafa;}
+
+		
+		#title{
+			font-size:14px;
+		}
+	</style>
+	<div id="header" class="dialogHeader" onselectstart="return false;" oncopy="return false;" onpaste="return false;"oncut="return false;">
+		<div class="dialogHeader_r">
+			<div class="dialogHeader_c">
+				<a class="close" href="#close">close</a>
+				<span id="title">标题</span>
+			</div>
+
+		</div>
+	</div>
+
+	<Box id="content" class="dialogContent layoutBox unitBox">
+		<@content/>
+	</Box>
+
+	<script>
+		import @root/js/jus-win.js;
+		var _self = $(dom);
+		var value = null;
+		public function init(title:String = "弹出框",width:int = 700,height:int = 400){
+			$(#title).text(title);
+			$(#content).width(width);
+			$(#content).height(height);
+			
+			_self.find(".close").click(function(){
+				_self.remove();
+			});
+
+			$(header).bind("mousedown",mouseEvt);
+			$(window).bind("mouseup",mouseEvt);
+			$(window).bind("mousemove",mouseEvt);
+
+			PopManager.addPopUp(@this);
+			
+			_self.css("left",($(window).width() - width)/2).css("top",($(window).height()*0.80 - height)/2 + "px");
+			$("[class_id='ui.Dialog']").css("z-index",998);
+			_self.css("z-index",999);
+		}
+
+		private var mouseFlag = false;
+		private var tx = 0;
+		private var ty = 0;
+		private var mx = 0;
+		private var my = 0;
+		private function mouseEvt(e){
+			switch(e.type){
+				case "mouseup":
+					mouseFlag = false;
+					document.onselectstart = null;
+					dframes(true);
+					if(_self.offset().top<0){
+						_self.css("top","0px");
+					}
+					break;
+				case "mousedown":
+					mouseFlag = true;
+					document.onselectstart = new Function("return false;");
+					dframes(false);
+					tx = parseInt(_self.css("left"));
+					ty = parseInt(_self.css("top"));
+					mx = e.clientX;
+					my = e.clientY;
+					break;
+				case "mousemove":
+					if(mouseFlag){
+						_self.css({left:tx + (e.clientX - mx),top:ty + (e.clientY - my)});
+					}
+					break;
+				default:
+					trace(e.target.data);
+			}
+		}
+	
+		/**
+		 * 加载网页
+		 */
+		public function load(url,value:Array = [],listener:Function){
+			#content.loadModule(url,value,function(e){
+				e.close = function(){
+					close();
+				}
+				if(listener){
+					listener(e);
+				}
+				if(content.trigger){
+					content.trigger(0);
+				}
+				
+			});
+		}
+		
+		
+		public function addChild(obj:Object):void{
+			$(#content).addChild(obj);
+			if(content.trigger){
+				content.trigger(0);
+			}
+			
+		}
+
+		/**
+		 * close Dialog
+		 */
+		public function close(close:Object){
+			_self.remove();
+		}
+		
+		/**
+		 * 控制
+		 */
+		function dframes(value){
+			var f = document.body.getElementsByTagName("iframe");
+			var p = null;
+			if(value){
+				for(var i = 0;i<f.length;i++){
+					p = f[i];
+					if(!p.style){
+						p.style = "";
+					}
+					p.style["pointer-events"] = "unset";
+				}
+			}else{
+				for(var i = 0;i<f.length;i++){
+					p = f[i];
+					if(!p.style){
+						p.style = "";
+					}
+					p.style["pointer-events"] = "none";
+				}
+			}
+		}
+
+		public function finalize(){
+			$(header).unbind("mousedown",mouseEvt);
+			$(window).unbind("mouseup",mouseEvt);
+			$(window).unbind("mousemove",mouseEvt);
+			_self = null;
+		}
+	</script>
+</displayObject>

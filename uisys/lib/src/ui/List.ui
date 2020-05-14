@@ -1,0 +1,211 @@
+<!--
+	@status			running
+	@author			sunxy
+	@type			JUS 控件
+	@description	垂直可变化布局
+	
+-->
+<style>
+	body{
+		overflow:auto;
+		position:relative;
+		box-sizing:border-box;
+	}
+</style>
+<ui.Box dataLabel="" dataField="">
+	<div id="content" style="overflow:hidden">
+		<div id="tp"></div>
+		<@component/>
+	</div>
+</ui.Box>
+<script>
+	import @root/js/jquery.min.js;
+	var dataLabel from "dataLabel";
+	var dataField from "dataField";
+	var _self = $(dom);
+	var list = [];
+	var tList = [];
+	private var _selectedIndex:int = 0;
+	private var data:Array = null;
+	public var onClick = null;
+	public var onScroll = null;
+	private var _data = [];
+	
+	//页面控制
+	var st = 0;
+	function init(){
+		dom.onscroll = scrollEvt;
+		st = dom.scrollTop;
+	}
+	
+	
+	public set dataProvider(value){
+		_data = value;
+		initList(0,dom.offsetHeight);
+	}
+	
+	//滚动事件
+	func scrollEvt(e){
+		initList(dom.scrollTop,dom.scrollTop + dom.offsetHeight);
+	}
+	var tpHeight = 0;
+	var dHeight = 1;
+	var tHeight = 0;
+	var avgHeight = 0;//元素平均高度
+	
+	private function initList(top,bottom){
+		var obj = pList(top,bottom);
+		if(obj){
+			extList(top,obj.min,obj.max,obj.mo);
+		}else{
+			#content.style.height = makeList(top).aHeight*_data.length + "px";
+		}
+		
+	}
+	
+	/// 判断List是否存在可视区域内
+	private function pList(top,bottom){
+		var c = null;
+		var i = 0;
+		var p = null;
+		var min = _data.length - 1;
+		var max = 0;
+		var mo = null;
+		for(i = list.length - 1;i>=0;i--){
+			c = list[i];
+			p = c.obj;
+			if(p.dom.offsetHeight + p.dom.offsetTop<top){
+				tList.push(p);
+				list.splice(i,1);
+				_MODULE_CONTENT_TEMP_.appendChild(p);
+				spad += c.height;
+			}else if(p.dom.offsetTop>bottom){
+				tList.push(p);
+				list.splice(i,1);
+				_MODULE_CONTENT_TEMP_.appendChild(p);
+			}else{
+				if(c.index>max){
+					max = c.index;
+				}
+				if(c.index<min){
+					min = c.index;
+					mo = p.dom;
+				}
+			}
+		}
+		if(list.length>0){
+			return {min:min,max:max,mo:mo};
+		}else{
+			return null;
+		}
+	}
+	
+	
+	private function makeList(top){
+		spad = top;
+		var start = avgHeight ? parseInt(top/avgHeight) : 0;
+		var p,c,d;
+		var height = 0;
+		//向上滚动
+		for(i = start;i <_data.length;i++){
+			p = _data[i];
+			d = getElem(i,p);
+			c = d.obj;
+			#content.appendChild(c);
+			d.height = c.dom.offsetHeight + parseInt(getComputedStyle(c.dom).marginTop) + parseInt(getComputedStyle(c.dom).marginBottom);
+			height += d.height;
+			if(c.dom.offsetTop - dom.scrollTop> dom.offsetHeight){
+				break;
+			}
+		}
+		avgHeight = i == start ? 0 : height/(i-start);
+		return {aHeight:avgHeight};
+	}
+	/// 如果存在就扩展
+	private function extList(top,min,max,mo){
+		var c = null;
+		var d = null;
+		var i = 0;
+		var p = null;
+		if(top - st < 0 && mo){
+			//向下滚动
+			for(i = min - 1;i >= 0;i--){
+				p = _data[i];
+				d = getElem(i,p);
+				c = d.obj;
+				#content.insertBefore(c.dom,mo);
+				mo = c.dom;
+				d.height = c.dom.offsetHeight + parseInt(getComputedStyle(c.dom).marginTop) + parseInt(getComputedStyle(c.dom).marginBottom);
+				spad -= d.height;
+				if(c.dom.offsetTop - dom.scrollTop<0){
+					break;
+				}
+				
+			}
+			
+		}
+		//向上滚动
+		for(i = max + 1;i <_data.length;i++){
+			p = _data[i];
+			d = getElem(i,p);
+			c = d.obj;
+			#content.appendChild(c);
+			d.height = c.dom.offsetHeight + parseInt(getComputedStyle(c.dom).marginTop) + parseInt(getComputedStyle(c.dom).marginBottom);
+			if(c.dom.offsetTop - dom.scrollTop> dom.offsetHeight){
+				break;
+			}
+		}
+	
+		
+		if(spad>dom.scrollTop){
+			spad = dom.scrollTop;
+		}
+		if(#content.offsetHeight<#content.scrollHeight){
+			#content.style.height = #content.scrollHeight + "px";
+		}
+		
+		if(i>= _data.length){
+			#content.style.height = "";
+			#content.style.height = #content.scrollHeight + "px";
+		}
+		
+		if(min == 0){
+			spad = 0;
+		}
+
+		st = top;
+		
+		//console.log("list",list.length,"tList",tList.length);
+	}
+	
+	private set spad(v){
+		tpHeight = v;
+		tp.style.height = tpHeight + "px";
+	}
+	
+	private get spad(){
+		return tpHeight;
+	}
+	
+	function getElem(i,p){
+		var c = null;
+		if(tList.length>0){
+			c = tList.pop();
+			c.data = p;
+		}else{
+			c = context.module(p);
+		}
+		c = {index:i,obj:c};
+		list.push(c);
+		return c;
+	}
+	
+	function trigger(){
+		scrollEvt();
+	}
+	
+	function finalize(){
+		list.length = 0;
+		list = null;
+	}
+</script>

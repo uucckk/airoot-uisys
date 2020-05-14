@@ -3,7 +3,7 @@
 	@author sunxy
 	@version 0.0
  -->
-<@import value="jus.*" />
+<@import value="ui.*" />
 <div>
 	<style>
 		body{

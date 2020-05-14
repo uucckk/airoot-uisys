@@ -1,20 +1,14 @@
-var mod = {};
-var uuid = "UI";
+var HEAD = "";
+var CSS = "";
+var STYLE = "";
+var HTML = "";
+var uuid = "J0";
 var __PACKAGE_LIST__ = [];
-function getObj(value){
-	if(!mod[value]){
-		mod[value] = {};
-	}
-	return mod[value];
-}
 var __FORMAT__ = function(__DATA__,__APPDOMAIN__,module){
 	var list = __DATA__.split("\x01");
 	var p = null;
 	var t = null;
 	var v = null;
-	var html = null;
-	var style = "";
-	var runLst = [];
 	for(var i = 0;i<list.length;i++){
 		p = list[i];
 		t = p.charAt(0)
@@ -24,12 +18,23 @@ var __FORMAT__ = function(__DATA__,__APPDOMAIN__,module){
 			v = __READ_DATA__(p.substring(1));
 			switch(t){
 				case 'T'://HEAD
-					getObj(v.module).head = v.value;
+					HEAD = v.value;
+				break;
+				case 'A'://css
+					if(v.module == UI.GetClassName()){
+						CSS += v.value + "\r\n";
+					}
+				break;
+				case 'B'://style
+					if(v.module == UI.GetClassName()){
+						STYLE += v.value + "\r\n";
+					}
 				break;
 				case 'H' ://HTML
-					getObj(v.module).html = v.value;
-				break;
-				
+					if(v.module == UI.GetClassName()){
+						HTML = v.value;
+					}
+				break;				
 			}
 		}
 		
@@ -67,9 +72,16 @@ var __READ_DATA__ = function(value){
 function main(){
 	try{
 		__FORMAT__(code);
-		var p = mod[UI.GetClassName()];
-		var html = "<!DOCTYPE html><html><head><meta charset='utf-8' ><script src='/uisys.js'></script><base href='/' />" + (p.head ? p.head : "") + "</head>";
-		var temp = "<div style = 'display:none'>" + p.html.replace(/[\b]/g,uuid) + "</div>";
+		var css = "";
+		if(CSS != ""){
+			css = "<style class_id=\"" + UI.GetClassName() + "\">" + CSS + "</style>";
+		}
+		var style = "";
+		if(STYLE != ""){
+			style = "<style id=\"stl_J0\">" + STYLE.replace(/[\b]/g,uuid) + "</style>";
+		}
+		var html = "<!DOCTYPE html><html><head><meta charset='utf-8' ><script src='/uisys.js'></script><base href='/' />" + HEAD + css + style + "</head>";
+		var temp = HTML.replace(/[\b]/g,uuid);
 		var tmp = code.split("</script");
 		var data = "";
 		for(var i = 0;i<tmp.length;i++){
@@ -83,7 +95,7 @@ function main(){
 		
 		var run = "<script type='text/javascript'>";
 		//run += UI.GetCode(UI.SYSTEM_PATH + "/core/parser/module_base.tpl");
-		run += "var fExt=" + (UI.Debug ? " '.ui'" : "'.ui.html'") + ";\r\n";
+		run += "var fExt=" + (UI.Debug ? " '.ui'" : "'.ui.html'") + ";window.INDEX=true\r\n";
 		run += "!function(){";
 		//run += UI.GetCode(UI.SYSTEM_PATH + "/core/parser/module_manager.tpl");
 		//此处兼容ie11 不能用innerText 只能用innerHTML

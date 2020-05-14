@@ -3,27 +3,318 @@
  * @author sunxy
  * @type 功能包
  */
-class DOMBind{
+import util.BindData;
+class DOMBinding{
 	private var node = null;
-	private var a = /\{.+?\}/g;
+	private static var a = /\{.+?\}/g;
 	private var map = {};
-	private var attrLst = [];
-	private var _data = {};
-	private var _pdata = null;
-	private var _onChange = null;
-	private var watchLst = {};//查看关注数据项目
-	//过滤器
-	public var filters:Object = {};
+	private var aList = [];
+	private var uList = [];//没有被渲染的
+	private var _bindData = null;
+	private var _set = {};
+	//过滤器对象
+	public var filter = {};
 	
 	
 	function init(node:HTML){
+		if(!node){
+			alert("DOMBind need a HTMLNode");
+		}
 		if(!(node instanceof HTMLElement)){
 			node = node.dom;
 		}
 		defer(node,@this);
-		read(this.node = node);
+		read(this.node = node,aList);
 		initListener();
 	}
+	
+	/**
+	 * 设置数据
+	 * 数据值为对象
+	 */
+	set data(value){
+		if(@type(value) != 'util.BindData'){
+			_set['#'] = new BindData(value);
+		}
+		render(aList);
+		rebind();
+	}
+	
+	/**
+	 * 获取默认绑定数据对象的值
+	 */
+	function get data(){
+		return _set['#']? _set['#'].data : null;
+	}
+	
+	private func render(aList,name){
+		var p = null;
+		var q = null;
+		var a = null;
+		var v = null;
+		var t = null;
+		var fo = null;
+		var pa = null;
+		var pb = null;
+		var h = -1;
+		for(var i = 0;i<aList.length;i++){//{属性}列表
+			p = aList[i];
+			q = p.attr;
+			pa = [];
+			pb = [];
+			for(var j = 0;j<q.length;j++){// | 列表
+				a = q[j];
+				for(var k = 0;k<a.length;k++){//多少个参属性或参数
+					v = a[k];
+					if(j == 0){
+						switch(v.t){
+							case 0 :
+								let m = gAttr(v.v);
+								switch(h){
+									case 0 : //+
+										pa[pa.length - 1] += m
+										//alert(a[k - 1])
+									break;
+									case 1 : //-
+										pa[pa.length - 1] -= m
+									break;
+									case 2 : //*
+										pa[pa.length - 1] *= m
+									break;
+									case 3 : //\/
+										pa[pa.length - 1] /= m
+									break;
+									case 4 : //%
+										pa[pa.length - 1] %= m
+									break;
+									case 5 : //&
+										pa[pa.length - 1] = pa[pa.length - 1] & m
+									break;
+									case 6 : //|
+										pa[pa.length - 1] %= pa[pa.length - 1] | m
+									break;
+									case 7 : //！
+										pa.push(!m);
+									break;
+								}
+								if(h == -1){
+									pa.push(m);
+								}
+								h = -1;
+								break;
+							case -1:
+							case 1 :
+								switch(h){
+									case 0 : //+
+										pa[pa.length - 1] += v.v
+										//alert(a[k - 1])
+									break;
+									case 1 : //-
+										pa[pa.length - 1] -= v.v
+									break;
+									case 2 : //*
+										pa[pa.length - 1] *= v.v
+									break;
+									case 3 : //\/
+										pa[pa.length - 1] /= v.v
+									break;
+									case 4 : //%
+										pa[pa.length - 1] %= v.v
+									break;
+									case 5 : //&
+										pa[pa.length - 1] = pa[pa.length - 1] & v.v
+									break;
+									case 6 : //|
+										pa[pa.length - 1] %= pa[pa.length - 1] | v.v
+									break;
+									case 7 : //！
+										pa.push(!v.v);
+									break;
+								}
+								if(h == -1){
+									pa.push(v.v);
+								}
+								h = -1;
+								
+								break;
+							case 2 ://计算符
+								h = v.v
+						}
+					}else{
+						if(v.t == 0 && v.p == 0){//函数名
+							fo = v.v;
+						}else{//参数
+							pb.push(v.t == 0 ? gAttr(v.v) : v.v);
+						}
+					}
+				}
+				if(fo){
+					if(filter[fo]){
+						t = filter[fo].apply(this,pb.concat(pa));
+						pb = [t];
+						pa = [];
+					}else{
+						console.error("AIroot-UISYS: util.DomBinding: filter[" + fo + "] isn't exist.");
+					}
+					fo = null;
+				}else{
+					t = pa[0];
+				}	
+			}
+			pa = null;
+			if(p.node.constructor == Text){
+				p.node.nodeValue = t;
+			}else{
+				if(@global[p.node.id]){
+					if(@global[p.node.id][p.name]){
+						@global[p.node.id][p.name] = t;
+					}else{
+						let n = @global[p.node.id];
+						for(let k in n){
+							if(k.toLowerCase() == p.name){
+								n[k] = t;
+							}
+						}
+					}							
+				}else{
+					if(t != null){
+						if(t.constructor == Object){
+						
+							let n = p.node[p.name];
+							for(let k in t){
+								n[k] = t[k];
+							}
+						}else if(t.constructor == Array){
+							if(p.name == "class"){
+								p.node.classList = "";
+								let n = p.node.classList;
+								for(let i = 0;i< t.length;i++){
+									n.add(t[k]);
+								}
+							}else{
+								p.node[p.name] = t.join(" ");
+							}
+							
+						}else{
+							p.node[p.name] = t;
+						}
+					}
+				}
+			};
+		}
+	}
+	
+	
+	/**
+	 * 记录 binding 数据项
+	 */
+	private func rebind(){
+		map = {};
+		var t = null;
+		var p = null;
+		var f = null;
+		var a,j,n;
+		var o;
+		for(var i = 0;i<aList.length;i++){
+			p = aList[i];
+			f = p.father;
+			s:for(var k = 0;k<f.length;k++){
+				o = gAttrD(f[k]);
+				if(o.v == undefined){//说明访问的属性没有值
+					continue;
+				}
+				if(!map[o.d]){
+					map[o.d] = {};
+				}
+				t = map[o.d];
+				n = o.v._u$ + "." + o.a;
+				if(!t[n]){
+					t[n] = [];
+				}else{
+					a = t[n];
+					for(j = 0;i<a.length;i++){
+						if(a[i] == p){
+							continue s;
+						}
+					}
+				}
+				
+				t[n].push(p);
+			}
+		}
+		
+	}
+	
+	
+	/**
+	 * @param n		数据域名
+	 * @param cls	操作类型
+	 * @param obj	数据对象
+	 * @param c		新数据ID
+	 * @param a		更改的属性名称
+	 * @param r		是否要刷新绑定
+	 */
+	private func _chg(n,cls,obj,c,a,r){
+		var v = obj._u$;
+		var d;
+		if(v>-1 && map[n]){
+			d = v + "." + a;
+			var l = map[n][d];
+			if(l){
+				if(c){
+					var j = l[0].father[0];
+					map[n][gAttr( j , "_u$")] = map[n][d];
+					delete map[n][d];
+				}		
+				render(l,a);
+			}
+		}
+		if(r){
+			render(aList);
+			rebind();
+		}
+	}
+	
+	//通过绑定方式设置的数据
+	set bindData(value){
+		if(value){
+			_set['#'] = value;
+			value.\$addListener(_chg,'#');
+			data = value;	
+		}
+	}
+	
+	get bindData(value){
+		return _set['#']
+	}
+	
+	
+	/**
+	 * @param name
+	 * @param value 
+	 * 增加绑定数据
+	 */
+	func addBindData(name,value){
+		name = "#" + name;
+		_set[name] = value;
+		value.\$addListener(_chg,name);
+		render(aList);
+		rebind();
+	}
+	
+	func addData(name,value){
+		addBindData(name,new BindData(value));
+	}
+	
+	
+	func removeBindData(name){
+		delete _set["#" + name];
+	}
+	
+	
+	
+	
+	
 	
 	
 	/**
@@ -38,138 +329,33 @@ class DOMBind{
 	}
 	
 	private function listener(e){
-		var target = e.target;
 		var p = null;
-		var index = null;
-		f:for(var k in map){
-			p = map[k];
-			for(var i in p){
-				if(p[i].node == target){
-					index = k.split(".");
-					break f;
-				}
-			}
-		}
-		if(index && dataContext){
-			p = dataContext;
-			for(var i = 0;i<index.length - 1;i++){
-				p = p[index[i]];
-			}
-			var name = target.getAttribute(":value");
-			if(name){				
-				var n = name.lastIndexOf(".");
-				name = n == -1 ? name : name.substring(n + 1);
-				p[name] = e.target.value;
-			}
-		}
-	}
-	
-	/**
-	 * 数据提供
-	 */
-	public function set dataContext(value:Object){
-		if(typeof value == "object"){
-			if(_pdata != value){
-				_pdata = value;
-			}
-			
-			var p = null;
-			for(var i in _data){
-				p = value[i]
-				if(p != undefined && p != null){
-					_data[i] = p;
-				}
-				
-			}
-		}else{
-			if(window.console){
-				console.error("dataContext input isn't object");
-			}else{
-				alert(value);
-			}
-		}
-		
-	}
-	
-	public function get dataContext():Object{
-		return _data;
-	}
-	
-	/**
-	 * 监听数据变化
-	 */
-	public function watch(value,listener){
-		if(!watchLst[value]){
-			if(listener){
-				watchLst[value] = [listener];
-			}
-			return;
-		}
-		var lst = watchLst[value];
-		for(var i = 0;i<lst.length;i++){
-			if(listener == lst[i]){
-				return;
-			}
-		}
-		lst.push(listener);
-	}
-	
-	
-	/**
-	 * 通知
-	 */
-	private function notify(index,newName,oldName){
-		var name = "";
-		for(var j = 0;j<index.length - 1;j++){
-			name += index[j] + ".";
-		}
-		name += index[index.length - 1];
-		var p = null;
-		for(var k in watchLst){
-			if(k == name){
-				p = watchLst[k];
-				for(var i = 0;i<p.length;i++){
-					p[i](name,newName,oldName);
+		var a = null;
+		var data = null;
+		for(var i = 0;i<aList.length;i++){
+			p = aList[i];
+			if(p.node == e.target){
+				a = p.attr;
+				sAttr(a[0][0].v, p.node.value);
+				let j = null;
+				for(let i = 0;i<p.father.length;i++){
+					j = p.father[i];
+					if(j[0][0] == '#'){
+						data = _set[j[0]]
+					}else{
+						data = _set['#'];
+					}
+					data.event('c',gAttrD(j).v,null,j[j.length - 1]);
 				}
 			}
 		}
 	}
 	
-	/**
-	 * 插入模版
-	 */
-	public function innerTemplate(id,dom){
-		if(typeof dom == "string"){
-			id.innerHTML = dom;
-		}else if(dom instanceof HTMLElement){
-			id.appendChild(dom);
-		}else{
-			alert("未识别元素");
-			return;
-		}
-		read(id);
-		var value = _pdata ? _pdata :_data;
-		var p = null;
-		for(var i in _data){
-			p = value[i]
-			if(p != undefined && p != null){
-				_data[i] = p;
-			}
-			
-		}
-		
-		
-	}
 	
 	
-	/**
-	 * 数据变更通知
-	 */
-	public function set onDataChange(value:Function){
-		_onChange = value;
-	}
 	
-	private function read(node:HTML){
+	
+	private static function read(node:HTML,aList){
 		var node = node.childNodes;
 		var p = null;
 		var m = null;
@@ -190,7 +376,7 @@ class DOMBind{
 						}
 						
 						txt = document.createTextNode("{" + name +  "}");//插入当前匹配项目
-						pushText(fx(name),txt);
+						aList.push(fx(name,txt));
 						p.parentNode.insertBefore(txt,p);
 						start = a.lastIndex;
 						i ++;
@@ -207,230 +393,304 @@ class DOMBind{
 					var nm = null;
 					for(var t = 0;t<atl.length;t++){
 						nm = atl[t];
-						if(nm.name.charAt(0) == ":"){
-							pushText(fx(nm.value),p,nm.name.substring(1));
+						if(nm.value.charAt(0) == "{"){
+							var n = nm.value.substring(1,nm.value.length - 1);
+							aList.push(fx(n,p,nm.name));
+							nm.value = "";
 						}
 					}
-					read(p);
+					read(p,aList);
 				}
 				
 			}
 		}
 	}
 	
-	private function pushText(obj,node,attr){
-		if(!map[obj.stat]){
-			map[obj.stat] = [];
-		}
-		map[obj.stat].push({node:node,attr:attr,filter:obj.filter});
-		//先把所有属性转化下
-		var arr = obj.arr;
-		var c = _data;
-		var p = null;
-		for(var i = 0;i<arr.length;i++){
-			p = arr[i];
-			if(c[p]){
-				if(i == arr.length - 1 && obj.value != null){
-					c[p] = obj.value;
-				}else if(!(typeof c[p] == "object")){
-					c[p] = {};
-				}
-			}else{
-				if(!c.hasOwnProperty(p)){
-					setAttribute(c,p,obj);
-				}
-				if(i == arr.length - 1){
-					c[p] = obj.value;
+	
+	/**
+	 * 分析{}内的内容
+	 */
+	private static function fx(v,node,name){
+		var attr = [];
+		var a = [];
+		var c;
+		var t = null;
+		var s = "";
+		var l = 0;
+		var z = false;
+		var father = [];
+		var cnt = null;//当前处理的属性值
+		for(var i = 0;i<v.length;i++){
+			c = v[i];
+			if(c == '"' || c == "'"){
+				t = readStr(v,i);
+				if(cnt){
+					cnt.push(t.v);
 				}else{
-					c[p] = {};
+					a.push({v:t.v,t:1,p:l});
 				}
+				i = t.i;
+				continue;
+			}else if(c == ' ' || c == ',' || c == '(' || c == ')'){
+				if(s.length > 0){
+					cnt = cnt ? cnt : [];
+					
+					cnt.push(s)
+					if(cnt.length == 1 && !isNaN(cnt[0])){//说明数字
+						a.push({v:+cnt[0],t:-1,p:l});//v 名称，t 是否为字符串, p：是否为参数
+					}else{
+						if(attr.length>0 && a.length == 0){//说明是过滤函数了
+							a.push({v:cnt[0],t:0,p:l});
+						}else{
+							father.push(cnt);
+							a.push({v:cnt,t:0,p:l});//v 名称，t 是否为字符串, p：是否为参数
+						}
+						
+					}
+					s = "";
+					cnt = null;
+					
+				}
+				
+				if(c == '('){
+					l ++;
+				}else if (c == ')'){
+					l --;
+				}
+				
+				continue;
+			}else if(c == '.' || c == '[' || c == ']'){
+				if(s.length != 0){
+					cnt = cnt ? cnt : [];
+					cnt.push(s);
+					s = "";
+				}
+				
+				if(c == '['){
+					z = true
+				}else if(c == ']'){
+					z = false;
+				}
+				
+				continue;
+			}else if(l == 0 && c == '|'){
+				
+				if(s.length>0){
+					cnt = cnt ? cnt : [];
+					cnt.push(s);
+					if(cnt.length == 1 && !isNaN(cnt[0])){//说明数字
+						a.push({v:+cnt[0],t:-1,p:l});//v 名称，t 是否为字符串, p：是否为参数
+					}else{
+						a.push({v:cnt,t:0,p:l});
+					}
+					
+					
+				}
+				attr.push(a);
+				a = [];
+				cnt = null;
+				s = "";
+				continue;
+			}else if(!z && l == 0 && (c == '+' || c == '-' || c == '*' || c == '/' || c == '%' || c == '&' || c == '|' || c == '!')){
+				if(s.length>0){
+					cnt = cnt ? cnt : [];
+					cnt.push(s);
+					if(cnt.length == 1 && !isNaN(cnt[0])){//说明数字
+						a.push({v:+cnt[0],t:-1,p:l});//v 名称，t 是否为字符串, p：是否为参数
+					}else{
+						father.push(cnt);
+						a.push({v:cnt,t:0,p:l});
+					}
+					
+					cnt = null;
+					s = "";
+				}
+				switch(c){
+					case '+' :
+					a.push({v:0,t:2,p:0});//t = 2 代表运算符
+					break;
+					case '-' :
+					a.push({v:1,t:2,p:0});//t = 2 代表运算符
+					break;
+					case '*' :
+					a.push({v:2,t:2,p:0});//t = 2 代表运算符
+					break;
+					case '/' :
+					a.push({v:3,t:2,p:0});//t = 2 代表运算符
+					break;
+					case '%' :
+					a.push({v:4,t:2,p:0});//t = 2 代表运算符
+					break;
+					case '&' :
+					a.push({v:5,t:2,p:0});//t = 2 代表运算符
+					break;
+					case '|' :
+					a.push({v:6,t:2,p:0});//t = 2 代表运算符
+					break;
+					case '!' :
+					a.push({v:7,t:2,p:0});//t = 2 代表运算符
+					break;
+				}
+				
+				continue;
 			}
-			c = c[p];
+			s += c;
 		}
+		
+		
+		if(s.length > 0){//如果结束为变量名
+			cnt = cnt ? cnt : [];
+			
+			cnt.push(s);
+			if(cnt.length == 1 && !isNaN(cnt[0])){//说明数字
+				a.push({v:+cnt[0],t:-1,p:l});//v 名称，t 是否为字符串, p：是否为参数
+			}else{
+				father.push(cnt);
+				a.push({v:cnt,t:0,p:l});//v 名称，t 是否为字符串, p：是否为参数
+			}
+			
+			attr.push(a);
+			s = "";
+			a = null
+			cnt = null;
+		}
+		if(cnt){//如果结束为字符串
+			father.push(cnt);
+			a.push({v:cnt,t:0,p:l});//v 名称，t 是否为字符串, p：是否为参数
+			attr.push(a);
+			a = null;
+			cnt = null;
+		}
+		
+		if(a && a.length>0){//如果多个|后的结束
+			attr.push(a);
+		}
+		if(name){
+			return {father:father,attr:attr,node:node,name:name};
+		}else{
+			return {father:father,attr:attr,node:node};
+		}
+		
 		
 	}
 	
-	/**
-	 * obj
-	 */
-	private function fx(value){
-		var stat = null;
-		var arr = null;
-		var val = null;
-		var filter = [];
-		/*
-		var i = value.indexOf("=");
-		if(i == -1){
-			stat = value;
-			arr = value.split(".");
+	//读取字符串
+	private static func readStr(v,i):int{
+		var f = v[i++];
+		var t = i;
+		var b = false;
+		var c = null;
+		for(;i<v.length;i++){
+			c = v[i];
+			if(c == '\\'){
+				b != b;
+				continue;
+			}
+			if(!b && c == f){
+				return {v:v.substring(t,i),i:i};
+			}
+		}
+		throw new Error("string isn't over");
+	}
+	
+	//读取属性
+	private func gAttr(cmt,value){
+		var i,j;
+		var data;
+		if(cmt[0][0] == '#'){
+			data = _set[cmt[0]];
+			i = 1;
 		}else{
-			stat = value.substring(0,i).trim();
-			var b = value.substring(i+1).trim();
-			arr = stat.split(".");
-			val = eval(b);
+			data = _set['#'];
+			i = 0;
 		}
-		return {stat:stat,arr:arr,value:val};
-		*/
-		var sb = "";
-		var p = null;
-		var E = false;
-		for(var i = 0;i<value.length;i++){
-			p = value.charAt(i);
-			if(p == "'" || p == '"'){
-				if(E){
-					var b = readString(i,value);
-					val = eval(b.value);
-					i = b.index;
-				}else{
-					throw new Error("read: " + value + "hav error.");
+		if(data){
+			data = data.data;
+			for(;i<cmt.length - 1;i++){
+				j = cmt[i];
+				j = j[0] == '-' ?cmt.length + (j - 1) : j;
+				data = data[j];
+				if(data == undefined){
+					return "";
 				}
-				continue;
 			}
-			if(p == '='){
-				E = true;
-				continue;
-			}
-			if(p == '|'){
-				readFilter(i,value,filter);
-				break;
-			}
-			sb += p;
+			return value ? data[value] : data[cmt[cmt.length - 1]];
 		}
-		stat = sb.trim();
-		//console.log({stat:stat,arr:stat.split("."),value:val,filter:filter});
-		return {stat:stat,arr:stat.split("."),value:val,filter:filter};
+		return "";
 	}
 	
-	private function readString(index,value){
-		var p = null;
-		var c = value.charAt(index);
-		var str = c;
-		var f = false;
-		for(var i = index + 1;i<value.length;i++){
-			p = value.charAt(i);
-			str += p;
-			if(p == c && f == false){
-				return {index:i,value:str};
-			}
-			if(p == '\\'){
-				f = !f;
-			}
+	//读取属性和数据作用域
+	private func gAttrD(cmt){
+		var d;
+		var i,j;
+		var data;
+		if(cmt[0][0] == '#'){
+			data = _set[d = cmt[0]];
+			i = 1;
+		}else{
+			d = '#'
+			data = _set[d];
+			i = 0;
 		}
-		throw new Error("read: " + value + "hav error.");
-	}
-	
-	private function readFilter(index,value,filter){
-		var str = "";
-		for(var i = index + 1;i<value.length;i++){
-			p = value.charAt(i);
-			if(p == '|'){
-				filter.push(str.trim());
-				str = "";
-				continue;
+		if(data){
+			data = data.data;
+			for(;i<cmt.length - 1;i++){
+				j = cmt[i];
+				j = j[0] == '-' ? cmt.length + (j - 1) : j;
+				
+				if(data[j] == undefined){
+					return {v:data,d:d}
+				}
+				data = data[j];
 			}
-			str += p;
-			
+			return {v:data,d:d,a:cmt[cmt.length - 1]};
 		}
-		filter.push(str.trim());
 		return {};
 	}
 	
-	private function setAttribute(obj,name,info){
-		var index = info.arr;
-		var _value = null;
-		var V = null;
-		Object.defineProperty(obj,name,{
-			set:function(value){
-				var tValue = _value;
-				if(_value && typeof value == "object"){
-					if(V != value){
-						V = value;
-					}
-					for(var k in _value){
-						_value[k] = value[k];
-					}
-					return;
-				}
-				if(_value != value){
-					var p = _pdata ? _pdata : _data;
-					for(var i = 0;i<index.length - 1;i++){
-						p = p[index[i]];
-						if(!p){
-							break;
-						}
-					}
-					_value = value;
-					if(p){
-						
-						if(_pdata){
-							notify(index,value,tValue);
-							p[name] = value;
-						}
-						
-					}
-					
-					render(info.stat,value);
-				}
-				
-				
-			},
-			get:function(){
-				return _value;
-			}
-		,enumerable:true});
+	
+	//设置属性
+	private func sAttr(cmt,value){
+		var i,j;
+		var data;
+		if(cmt[0][0] == '#'){
+			data = _set[cmt[0]];
+			i = 1;
+		}else{
+			data = _set['#'];
+			i = 0;
+		}
+		data = data.data;
+		for(;i<cmt.length - 1;i++){
+			j = cmt[i];
+			j = j[0] == '-' ?cmt.length + (j - 1) : j;
+			data = data[j];
+		}
+		return data[cmt[cmt.length - 1]] = value ;
 	}
 	
-	//渲染元素
-	private function render(stat,value){
-		var arr = map[stat];
-		var f = null;
-		var p = null;
-		var k = null;
-		var v = null;
-		for(var i = 0;i<arr.length;i++){
-			p = arr[i];
-			if(p.filter){
-				f = p.filter;
-				v = value;
-				for(var j = 0;j<f.length;j++){
-					k = filters[f[j]];
-					if(k){
-						if(p){
-							v = k(v);
-						}
-					}else{
-						console.error("Template Filter:[" + f[j] + "] isn't exist.");
-					}
-				}
-			}else{
-				v = value;
-			}
-			if(p.attr){//HTMLElement
-				if(p.attr.charAt(0) == "+"){
-					p.node.setAttribute(p.attr.substring(1),v);
-				}else{
-					if(p.node.type){
-						if(p.node.type == "radio"){
-							if(p.node.value == v){
-								p.node.checked = true;
-							}
-						}else{
-							p.node[p.attr] = v;
-						}
-					}else{
-						p.node[p.attr] = v;
-					}
-					
-				}
-				
-			}else{//Text
-				p.node.nodeValue = v;
-			}
-		}
-	}	
 	
+	//销毁这个模板
 	public function destroy(){
 		removeListener();
+		node = null;
+		map = null;
+		aList.length = 0;
+		aList = null;
+		if(_bindData){
+			_bindData.\$removeListener(_chg);
+			_bindData = null;
+		}
+		var b = null;
+		for(var k in _set){
+			b = _set[k];
+			if(b.\$removeListener){
+				b.\$removeListener(_chg);
+			}
+			_set[k] = null;
+		}
+		_set = null;
+		console.log("clear");
 	}
 	
 }
