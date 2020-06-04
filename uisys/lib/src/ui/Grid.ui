@@ -111,7 +111,7 @@
 				return;
 			}
 			_self.attr("height",totalHeight);
-			_self.triggerParent();
+			//_self.triggerParent();
 		}
 		
 	}

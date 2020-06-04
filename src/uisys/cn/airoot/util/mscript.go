@@ -49,7 +49,7 @@ type Tag struct {
 	Level         int    //标签域名级别
 	Domain        string //所属域级别
 	Value         string
-	TagType       int //-4:大注释,-3：中注释,-2:小注释,-1:隐含字符,0：字符，1：字符串,2：运算符,3:域操作符,4:语句结束符,5:换行符,6:数字,7:正则表达式,8:元素自动转换符,9点,10类型声明符,11:三目运算符,12:XML对象,13:XML特殊对象
+	TagType       int //-4:大注释,-3：中注释,-2:小注释,-1:隐含字符,0：字符，1：字符串,2：运算符,3:域操作符,4:语句结束符,5:换行符,6:数字,7:正则表达式,8:元素自动转换符,9点,10类型声明符,11:三目运算符,12:XML对象,13:XML特殊对象,14:跳转标签
 	Cls           string
 	PType         int  //参数域
 	IsClass       bool //是否为类
@@ -150,7 +150,7 @@ func (m *MScript) ReadFromString(js string) error {
 	m.domainList = make(map[string]*TagSet, 10)
 
 	//00装入关键字
-	keyWord := [...]string{"public", "private", "super", "var", "let", "function", "func", "if", "else", "switch", "case", "while", "for", "in", "do", "static", "import", "new", "include", "return", "class", "extends", "implements", "interface", "this", "@global", "@this", "@lib", "@root", "@type", "set", "get", "try", "catch", "finally", "from"}
+	keyWord := [...]string{"public", "private", "super", "var", "let", "function", "func", "if", "else", "switch", "case", "while", "for", "in", "do", "static", "import", "new", "include", "return", "class", "extends", "implements", "interface", "this", "@global", "@this", "@lib", "@root", "@type", "set", "get", "try", "catch", "finally", "from", "continue"}
 	m.kMap = make(map[string]bool, 10)
 	for _, v := range keyWord {
 		m.kMap[v] = true
@@ -315,9 +315,13 @@ func (m *MScript) ReadFromString(js string) error {
 
 	//03归拢操作符
 	tag = tag[0:0]
-	for _, p := range m.lst {
+	for i, p := range m.lst {
 		if p.TagType == 2 {
 			if p.Value == ":" {
+				nw := m.nextWord(i)
+				if nw.IsKeyWord && (nw.Value == "do" || nw.Value == "while" || nw.Value == "for") {
+					m.prvWord(i).TagType = 14
+				}
 				tlst = append(tlst, p)
 			} else {
 				tag = appendRunes(tag, []rune(p.Value))
@@ -408,6 +412,32 @@ func (m *MScript) ReadFromString(js string) error {
 func (m *MScript) Push(tag *Tag) *MScript {
 	m.lst = append(m.lst, tag)
 	return m
+}
+
+//查看下一个单词
+func (m *MScript) nextWord(i int) *Tag {
+	var p *Tag
+	i++
+	for ; i < len(m.lst); i++ {
+		p = m.lst[i]
+		if p.TagType >= 0 {
+			break
+		}
+	}
+	return p
+}
+
+//查看上一个单词
+func (m *MScript) prvWord(i int) *Tag {
+	var p *Tag
+	i--
+	for ; i >= 0; i-- {
+		p = m.lst[i]
+		if p.TagType >= 0 {
+			break
+		}
+	}
+	return p
 }
 
 /**
@@ -756,6 +786,8 @@ func (m *MScript) readArea(i int, domain string, paramType int) int {
 				i = m.elseLogicMethod(i, domain, paramType)
 			} else if "switch" == p.Value {
 				i = m.logicMethod(i, domain, paramType)
+			} else if "continue" == p.Value || "break" == p.Value {
+				i = m.goOver(i)
 			} else if "try" == p.Value {
 				i = m.elseLogicMethod(i, domain, paramType)
 			} else if "catch" == p.Value {
@@ -897,6 +929,23 @@ sg:
 	return i
 }
 
+///读到最后
+func (m *MScript) goOver(i int) int {
+	ml := len(m.lst)
+	var p *Tag = nil
+	for i < ml {
+		p = m.lst[i]
+		i++
+		if p.TagType == 4 || p.TagType == 5 {
+			break
+		}
+		if p.TagType == 0 {
+			p.TagType = 14
+		}
+	}
+	return i
+}
+
 /**
  * 逻辑判断方法
  * @param lst2
@@ -954,7 +1003,6 @@ sg:
  * @throws Exception
  */
 func (m *MScript) jsonMethod(i int, domain string, paramType int) int {
-
 	var p *Tag = nil
 	var k *Tag = nil
 	isKey := false
@@ -1029,7 +1077,7 @@ func (m *MScript) varMethod(i int, domain string, tag *Tag, isFuncParam bool, pa
 			i--
 			break
 		}
-		if p.TagType == 4 {
+		if p.TagType == 4 || p.TagType == 5 {
 			break
 		}
 

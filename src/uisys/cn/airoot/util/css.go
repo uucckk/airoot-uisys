@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"strings"
 	. "uisys"
-	"uisys/str"
 	"uisys/tool"
 )
 
@@ -210,6 +209,20 @@ out:
 
 }
 
+func (c *CSS) CopyRule(ce *ClassElement) *ClassElement {
+	r := &ClassElement{}
+	t := r
+	for {
+		t.Next = &ClassElement{ElementType: ce.ElementType, Value: ce.Value}
+		ce = ce.Next
+		t = t.Next
+		if ce == nil {
+			break
+		}
+	}
+	return r.Next
+}
+
 /**
  * 为所有类添加首域名
  * @param domain
@@ -223,12 +236,18 @@ func (c *CSS) AddDomain(domain string) {
 		l = len(p)
 		for i := 0; i < l; i++ {
 			ce = p[i]
-			if ce.Value == c.Root.Value || str.Index(c.Class, ce.Value[1:]) != -1 {
+			if ce.Value == c.Root.Value {
 				t := &ClassElement{Value: domain, ElementType: 0}
 				t.Next = ce.Next
 				v.AddRule(t)
 			}
-			if strings.IndexRune(ce.Value, '$') != -1 || "body" == ce.Value {
+			if ce.Value[0] == '.' {
+				t := &ClassElement{Value: domain, ElementType: 1}
+				t.Next = ce.Next
+				v.AddRule(t)
+				t.Next = c.CopyRule(ce)
+			}
+			if strings.IndexRune(ce.Value, '$') != -1 || "body" == ce.Value { //代表不转化
 				continue
 			}
 			if ce.Value[0] == '#' && ce.Value == c.Root.Name {
@@ -296,13 +315,13 @@ func (c *CSS) GetComponentClass(isPub bool) map[string]string {
 				if (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '>' {
 
 					if c.jus.GetPackageMap()[strings.ToLower(ce.Value)] != "" {
-						hm[strings.ToLower(ce.Value)] = c.jus.GetDomain() + "-" + ce.Value
-						if isPub {
-							ce.Value = "." + "-" + ce.Value
-						} else {
-							ce.Value = "." + c.jus.GetDomain() + "-" + ce.Value
-						}
-
+						hm[strings.ToLower(ce.Value)] = "-" + ce.Value
+						// if isPub {
+						// 	ce.Value = "." + "-" + ce.Value
+						// } else {
+						// 	ce.Value = "." + c.jus.GetDomain() + "-" + ce.Value
+						// }
+						ce.Value = "." + "-" + ce.Value
 					}
 				}
 				ce = ce.Next

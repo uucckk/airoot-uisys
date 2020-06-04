@@ -34,8 +34,10 @@ class DOMBinding{
 	 */
 	set data(value){
 		if(@type(value) != 'util.BindData'){
-			_set['#'] = new BindData(value);
+			value = new BindData(value);
+			
 		}
+		_set['#'] = value;
 		render(aList);
 		rebind();
 	}

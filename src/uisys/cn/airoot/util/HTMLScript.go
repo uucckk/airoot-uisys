@@ -15,23 +15,21 @@ import (
 
 //--------------------------------Script----------------------------------------
 type HTMLScript struct {
-	ui               *UI
-	root             string
-	hMap             []*Attr //导入的类文件
-	gsMap            map[string]*GSetter
-	domain           string
-	constructorValue *Attr
-	innerValue       string
-	extendScript     string
-	mjs              *MScript
-	isScript         bool
+	ui           *UI
+	root         string
+	hMap         []*Attr //导入的类文件
+	gsMap        map[string]*GSetter
+	domain       string
+	innerValue   string
+	extendScript string
+	mjs          *MScript
+	isScript     bool
 }
 
-func (s *HTMLScript) CreateFrom(ui *UI, root string, domain string, constructorValue *Attr, innerValue string, extendScript string) *HTMLScript {
+func (s *HTMLScript) CreateFrom(ui *UI, root string, domain string, innerValue string, extendScript string) *HTMLScript {
 	s.ui = ui
 	s.root = root
 	s.domain = domain
-	s.constructorValue = constructorValue
 	s.innerValue = innerValue
 	s.hMap = make([]*Attr, 0)
 	s.extendScript = extendScript
@@ -780,7 +778,7 @@ func (s *HTMLScript) initClass(name string, data string) string {
  * @throws Exception
  */
 func (s *HTMLScript) ReadFromString(script string) string {
-	if len(script) == 0 {
+	if len(script) == 0 && len(s.ui.htmlAdv) == 0 {
 		return ""
 	}
 	out := bytes.NewBufferString("")
@@ -797,15 +795,58 @@ func (s *HTMLScript) ReadFromString(script string) string {
 	}
 	templ = strings.Replace(templ, "{@CLASS_NAME}", s.ui.className, -1)
 	templ = strings.Replace(templ, "{@DESCRIPTION}", "//@ sourceURL=[UI]"+s.ui.className+"\r\n"+IfStr(s.ui.Debug, s.GetSourceHTML()+"\r\n", ""), -1)
-	templ = strings.Replace(templ, "{@GLOBAL}", IfStr(s.ui.IsPublic, "window[__NAME__] = ____;", ""), -1)
+
+	endB := bytes.NewBufferString("")
+	if len(s.ui.htmlAdv) > 0 {
+		endB.WriteString(script)
+		endB.WriteString("\r\nfunction _$m_(){\r\n")
+		for _, p := range s.ui.htmlAdv {
+			for _, attr := range p.AdvanceAttrs() {
+				if attr.Value.Type <= 0 {
+					continue
+				}
+				if p.GetAttr("class_id") != "" {
+					endB.WriteString("__OBJECT__[__NAME__+'" + strings.Replace(p.GetAttr("id"), "\b", "", -1) + "']")
+				} else {
+					endB.WriteString("window[__NAME__+'" + strings.Replace(p.GetAttr("id"), "\b", "", -1) + "']")
+				}
+				endB.WriteString("." + attr.Name + "=")
+				switch attr.Value.Type {
+				case 1: //(
+					endB.WriteString(attr.Value.Value)
+				case 2: //[
+					endB.WriteRune('[')
+					endB.WriteString(attr.Value.Value)
+					endB.WriteRune(']')
+				case 3: //{
+					endB.WriteRune('{')
+					endB.WriteString(attr.Value.Value)
+					endB.WriteRune('}')
+				}
+				endB.WriteString("\r\n")
+				p.RemoveAttr(attr.Name)
+			}
+		}
+		endB.WriteString("}\r\n")
+		script = endB.String()
+		endB.Reset()
+	}
+
+	endB.WriteString(IfStr(s.ui.IsPublic, "window[__NAME__] = ____;", ""))
+	if len(s.ui.htmlAdv) > 0 {
+		endB.WriteString("__MODULE_INIT__[__DOMAIN__].push({domain:____,name:____._$m_,value:__NAME__});")
+	}
+
+	templ = strings.Replace(templ, "{@GLOBAL}", endB.String(), -1)
 	templ = strings.Replace(templ, "{@domain}", s.ui.domain, -1)
 	templ = strings.Replace(templ, "{@Base}", "\b", -1)
 
-	if s.constructorValue != nil {
-		templ = strings.Replace(templ, "{@value}", s.constructorValue.Value, -1)
-	} else {
-		templ = strings.Replace(templ, "{@value}", "", -1)
-	}
+	// if s.constructorValue != nil {
+	// 	templ = strings.Replace(templ, "{@value}", s.constructorValue.Value, -1)
+	// 	fmt.Println("HS", templ)
+	// } else {
+	// 	templ = strings.Replace(templ, "{@value}", "", -1)
+	// }
 
 	s.mjs = &MScript{}
 	s.mjs.ReadFromString(script)

@@ -32,7 +32,6 @@ type Script struct {
 	iMap         []string //接口文件
 	gsMap        map[string]*GSetter
 	domain       string
-	value        *Attr
 	extendScript string
 	mjs          *MScript
 	className    string
@@ -40,11 +39,10 @@ type Script struct {
 	fromBuf      string //通过from导入的类
 }
 
-func (s *Script) CreateFrom(jus *UI, root string, domain string, value *Attr, extendScript string, className string) *Script {
+func (s *Script) CreateFrom(jus *UI, root string, domain string, extendScript string, className string) *Script {
 	s.jus = jus
 	s.root = root
 	s.domain = domain
-	s.value = value
 	s.extendScript = extendScript
 	s.hMap = make([]*Attr, 0)
 	s.gsMap = make(map[string]*GSetter)
@@ -451,6 +449,7 @@ func (s *Script) initScriptFrom(js *MScript, _global string, _this string, _pri 
 								if s.mjs != js && a == nil {
 									c := s.mjs.GetDefine("class")
 									if c != nil {
+										fmt.Println("t.value", t.Value)
 										a = c.Get(t.Value)
 										if a.IsPublic {
 											param.Value = "__this_"
@@ -788,15 +787,15 @@ func (s *Script) initClass(name string, data string) string {
 			ft := &UI{SYSTEM_PATH: s.jus.SYSTEM_PATH, CLASS_PATH: s.jus.CLASS_PATH}
 			if err := ft.CreateFromParent(s.root, "", nil, strings.TrimSpace(value), s.jus); err == nil {
 				if ft.IsScript() {
-					code += "var __UP__ = new " + ft.ReadHTML().ToString() + ";\r\n"
+					code += "var __UP__ = new " + ft.ReadHTML().ToXHTML() + ";\r\n"
 				} else {
 					tHTML := ft.ReadHTML()
 					script := &HTMLScript{}
-					script.CreateFrom(s.jus, s.jus.root, s.jus.domain, nil, "", "")
+					script.CreateFrom(s.jus, s.jus.root, s.jus.domain, "", "")
 					scriptHTML := &HTML{}
 					scriptHTML.ReadFromString("<script>" + script.ReadFromString(data) + "</script>")
 					tHTML.Append(scriptHTML)
-					return "\"" + Escape(tHTML.ToString()) + "\";\r\n"
+					return "\"" + Escape(tHTML.ToXHTML()) + "\";\r\n"
 				}
 			} else {
 				fmt.Println("Script.go ->", strings.TrimSpace(value), err)

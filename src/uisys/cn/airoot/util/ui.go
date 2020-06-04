@@ -61,8 +61,12 @@ type UI struct {
 	idMap               map[string]*HTMLObject
 	staticScript        map[string][]*Attr
 	staticCode          map[string][]*Attr
-	styleCode           map[string]string
-	CommandCode         []*Attr //指令集合
+
+	/// 这里定义模块的临时寄存代码
+	cssCode             []*bytes.Buffer //最终的CSS（处理后）的集合
+	styleCode           []*bytes.Buffer //最终的STYLE（处理后）的集合
+	htmlAdv             []*HTML         //本模块的HTML代码高级属性:()、[]、{}
+	CommandCode         []*Attr         //指令集合
 	extendFlag          bool
 	style               *CSS
 	css                 *CSS
@@ -211,7 +215,6 @@ func (j *UI) CreateFrom(root string, domain string, node *HTML, className string
 		}
 		if j.cssPath != "" {
 			tpr, _ := GetCode(j.cssPath)
-			//j.html.AppendNode("style", CodeFx(tpr, j.IsTest))
 			j.html.AppendNode("style", tpr)
 		}
 		if j.jsPath != "" {
@@ -295,7 +298,7 @@ func (j *UI) PushImportScript(value *Attr) {
 			ft.IsImport = value.Value
 			if ft.IsScript() {
 				scriptObj := &Script{}
-				scriptObj.CreateFrom(j, j.root, j.domain, j.paramValue, j.extendsScriptBuffer, strings.TrimSpace(value.Value))
+				scriptObj.CreateFrom(j, j.root, j.domain, j.extendsScriptBuffer, strings.TrimSpace(value.Value))
 				tpr, _ := ft.GetInitString()
 				j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, &ScriptElement{"I", value.Value, "S", scriptObj.ReadFromString(tpr)}) //j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, "\t_MODULE_CONTENT_LIST_[\f]['"+strings.TrimSpace(value.Name)+"'] = "+scriptObj.ReadFromString(j.scanMedia(tpr))+";\r\n")
 			} else {
@@ -423,16 +426,6 @@ func (j *UI) GetStaticCodeMap() map[string][]*Attr {
 	return j.staticCode
 }
 
-func (j *UI) GetStyleCodeMap() map[string]string {
-	//if j.parent != nil {
-	//	return j.parent.GetStyleCodeMap()
-	//}
-	if j.styleCode == nil {
-		j.styleCode = make(map[string]string, 10)
-	}
-	return j.styleCode
-}
-
 /**
  * 获取顶级
  */
@@ -483,17 +476,6 @@ func (j *UI) AddStaticCode(className string, funcName string, value string) {
 	}
 	fun = append(fun, attr)
 	j.staticCode[className] = fun
-}
-
-func (j *UI) AddStyleCode(className string, value string) {
-	if j.styleCode == nil {
-		j.styleCode = make(map[string]string, 10)
-	}
-	fun := j.styleCode[className]
-	if fun == "" {
-		j.styleCode[className] = value
-	}
-
 }
 
 func (j *UI) overHTML() {
@@ -648,7 +630,7 @@ func (j *UI) scanHTML(child []*HTML) {
 					// 	j.idMap[p.GetAttr("src_id")] = &HTMLObject{Name: p.GetAttr("id"), HTMLObjectType: 1}
 					// }
 					th := tFunc.ReadHTML()
-					j.AddRun(&RunElem{"L", j.domain, th.ToString()})
+					j.AddRun(&RunElem{"L", j.domain, th.ToXHTML()})
 					tHTML = &HTML{}
 				} else {
 					if p.GetConstructerParameter() != "" {
@@ -660,9 +642,7 @@ func (j *UI) scanHTML(child []*HTML) {
 					}
 					tFunc.SetConstructor(&Attr{tagName, p.GetConstructerParameter()}).setExtend(p.GetAttr("id") == j.domain)
 					tHTML = tFunc.ReadHTML()
-					//clsTmp := tHTML.GetAttr("class")
 					tHTML.CopyFrom(p)
-					//tHTML.SetAttr("class", clsTmp+" &"+tHTML.GetAttr("class"))
 					if len(arr) > 1 {
 						tHTML.SetTagName(arr[0])
 					}
@@ -678,6 +658,7 @@ func (j *UI) scanHTML(child []*HTML) {
 			} else {
 				p.ReplaceWith(tHTML)
 			}
+
 			continue
 		}
 		j.scanHTML(p.Child())
@@ -687,7 +668,7 @@ func (j *UI) scanHTML(child []*HTML) {
 func (j *UI) componentInitParam(value *Attr) string {
 	s := j.componentInitCode(value)
 	script := &HTMLScript{}
-	script.CreateFrom(j, j.root, j.domain, j.paramValue, j.innerValue, j.extendsScriptBuffer)
+	script.CreateFrom(j, j.root, j.domain, j.innerValue, j.extendsScriptBuffer)
 	str := script.FormatString(s)
 	return str
 }
@@ -784,8 +765,8 @@ func (j *UI) loadSetting() {
 
 func (j *UI) importHTML() {
 	sets := j.html.GetElementsByTagName("@import")
-	sets = append(sets, &HTML{tagData: map[string]string{"value": ""}})
-	sets = append(sets, &HTML{tagData: map[string]string{"value": ".$" + j.className}})
+	sets = append(sets, &HTML{tagData: map[string]*Ch{"value": &Ch{Type: 0, Value: ""}}})
+	sets = append(sets, &HTML{tagData: map[string]*Ch{"value": &Ch{Type: 0, Value: ".$" + j.className}}})
 
 	p := 0
 	value := ""
@@ -1235,8 +1216,13 @@ func (j *UI) initObj(html *HTML) {
 			}
 			continue
 		}
-		for _, attr := range p.Attrs() {
+		for _, attr := range p.AdvanceAttrs() {
 			if "id" == strings.ToLower(attr.Name) {
+				continue
+			}
+			if attr.Value.Type > 0 {
+				j.htmlAdv = append(j.htmlAdv, p)
+
 				continue
 			}
 			if Index(p.GetAttr(attr.Name), "@this") != -1 {
@@ -1245,12 +1231,64 @@ func (j *UI) initObj(html *HTML) {
 			}
 			p.SetAttr(attr.Name, ScriptInitD(strings.Replace(p.GetAttr(attr.Name), "@lib", IfStr(j.IsSysLib, "index.src/", "./")+j.relativePath+".lib", -1), j.domain))
 		}
+
 		j.initObj(p)
 	}
 }
 
 func (j *UI) testHTML() *HTML {
 	return j.html
+}
+
+/// 获取这个模块的转化后的CSS代码，注意是注册在 parent == nil 上的
+func (j *UI) pushCssCode(buf *bytes.Buffer) {
+	if j.parent != nil {
+		j.parent.pushCssCode(buf)
+	}
+	if j.cssCode == nil {
+		j.cssCode = make([]*bytes.Buffer, 0, 5)
+	}
+	j.cssCode = append(j.cssCode, buf)
+}
+
+/// 获取这个模块的转化后的CSS代码，注意是注册在 parent == nil 上的
+func (j *UI) getCssCode() *bytes.Buffer {
+	if j.parent != nil {
+		return j.parent.getCssCode()
+	}
+	buf := bytes.NewBuffer(nil)
+	if j.cssCode != nil {
+		l := len(j.cssCode)
+		for i := l - 1; i >= 0; i-- {
+			buf.Write(j.cssCode[i].Bytes())
+		}
+	}
+	return buf
+}
+
+/// 获取这个模块的转化后的Style代码，注意是注册在 parent == nil 上的
+func (j *UI) pushStyleCode(buf *bytes.Buffer) {
+	if j.parent != nil && j.Count == 0 {
+		j.parent.pushStyleCode(buf)
+	}
+	if j.styleCode == nil {
+		j.styleCode = make([]*bytes.Buffer, 0, 5)
+	}
+	j.styleCode = append(j.styleCode, buf)
+}
+
+func (j *UI) getStyleCode() *bytes.Buffer {
+	if j.parent != nil && j.Count == 0 {
+		return j.parent.getStyleCode()
+	}
+	buf := bytes.NewBuffer(nil)
+	if j.styleCode != nil {
+		l := len(j.styleCode)
+		for i := l - 1; i >= 0; i-- {
+			buf.Write(j.styleCode[i].Bytes())
+		}
+	}
+	return buf
 }
 
 func (j *UI) ReadHTML() *HTML {
@@ -1272,6 +1310,7 @@ func (j *UI) ReadHTML() *HTML {
 		if j.paramValue != nil && j.paramValue.Value != "" {
 			tps.WriteString(j.paramValue.Value)
 			tps.WriteRune(',')
+			fmt.Println("UI", tps.String())
 		}
 		if tps.Len() > 0 {
 			tps.Truncate(tps.Len() - 1)
@@ -1393,13 +1432,6 @@ func (j *UI) ReadHTML() *HTML {
 		j.html = j.html.At(0)
 		j.html.InsertList(htmls, 0)
 	}
-	//加载外部CSS
-	// if j.cssPath != "" {
-	// 	css := &HTML{}
-	// 	tpr, _ := GetCode(j.cssPath)
-	// 	css.ReadFromString("<style>" + CodeFx(tpr, j.IsTest) + "</style>")
-	// 	j.html.Append(css)
-	// }
 
 	j.overHTML()
 	j.packageHTML([]*HTML{j.html})
@@ -1424,14 +1456,12 @@ func (j *UI) ReadHTML() *HTML {
 	j.html.SetAttr("class", headCss+" "+j.html.GetAttr("class"))
 
 	if j.style != nil {
-		style := &HTML{}
-		style.ReadFromString("<style>" + j.styleFormat() + "</style>")
-		j.html.Insert(style, 0)
+		j.pushStyleCode(bytes.NewBufferString(j.styleFormat()))
 	}
 
 	//开始组装参数
 	script := &HTMLScript{}
-	script.CreateFrom(j, j.root, j.domain, j.paramValue, j.innerValue, j.extendsScriptBuffer)
+	script.CreateFrom(j, j.root, j.domain, j.innerValue, j.extendsScriptBuffer)
 	scriptCodeString := script.ReadFromString(j.scriptBuffer.String())
 
 	if len(scriptCodeString) != 0 {
@@ -1451,35 +1481,13 @@ func (j *UI) ReadHTML() *HTML {
 		j.html.Append(node)
 	}
 
-	// 20200511
-	// if j.jsPath != "" {
-	// 	script = &HTMLScript{}
-	// 	script.CreateFrom(j, j.root, j.domain, j.paramValue, j.innerValue, j.extendsScriptBuffer)
-	// 	tpr, _ := GetCode(j.jsPath)
-	// 	scriptString := script.ReadFromString(CodeFx(tpr, j.IsTest)) //scriptString = script.ReadFromString(j.scanMedia(tpr))
-
-	// 	if len(scriptString) != 0 {
-	// 		node := &HTML{}
-	// 		node.AppendNode("script", script.ReadFromString(scriptString))
-	// 		j.html.Append(node)
-	// 	}
-	// }
 	j.cssBuffer.WriteString(j.overCss)
 	if j.cssBuffer.Len() > 0 {
 		j.css = &CSS{Root: &Attr{"#" + j.html.GetAttr("src_id"), j.html.TagName()}, Class: j.html.GetAttr("class"), jus: j, CurrentPath: IfStr(j.IsSysLib, "index.src/", "./") + j.relativePath + ".lib"}
 		j.css.ReadFromString(j.scanMedia(j.cssBuffer.String()))
-		j.AddStyleCode(j.className, j.cssFormat())
-	}
-	sb := bytes.NewBufferString("<css>")
-	j.styleCode = j.GetStyleCodeMap()
-	for name, value := range j.styleCode {
-		j.ToFormatLine("A", name, value, sb)
-	}
-	if sb.Len() > 5 {
-		cssHTML := &HTML{}
-		sb.WriteString("</css>")
-		cssHTML.ReadFromString(sb.String())
-		j.html.Insert(cssHTML, 0)
+		buf := bytes.NewBufferString("")
+		j.ToFormatLine("A", j.className, j.cssFormat(), buf)
+		j.pushCssCode(buf)
 	}
 
 	if len(j.CommandCode) > 0 {
@@ -1544,7 +1552,6 @@ func (j *UI) ReadHTML() *HTML {
 		sb.Reset()
 		sb = nil
 	}
-
 	j.html.SetAttr("class_id", j.className)
 	return j.testHTML()
 }
@@ -1554,7 +1561,7 @@ func (j *UI) ReadHTML() *HTML {
  */
 func (j *UI) componentInitCode(value *Attr) string {
 	ms := &MScript{}
-	ms.ReadFromString(value.Value)
+	ms.ReadFromString(value.Value + " ")
 	sb := bytes.NewBufferString("")
 	for _, v := range ms.GetJUIScriptData() {
 		if v.Value == "this" && v.Domain == "class" {
@@ -1653,21 +1660,14 @@ func (j *UI) ToFormatRun(cls string, domain string, value string, data *bytes.Bu
  */
 func (j *UI) ToFormatBytes() []byte {
 	result := j.ReadHTML()
-	stls := result.GetElementsByTagName("css") //获取公共css属性
+	//获取公共css属性
 	json := bytes.NewBufferString("\x01")
 	if j.pub != "" && j.headBuffer.Len() > 0 {
 		j.ToFormatLine("T", j.className, j.headBuffer.String(), json)
 	}
-	for _, v := range stls {
-		json.WriteString(ListToHTMLString(v.Child()))
-		v.Remove()
-	}
-	stls = result.GetElementsByTagName("style") //获取公共css属性
-	for _, v := range stls {
-		j.ToFormatLine("B", j.className, ListToHTMLString(v.Child()), json)
-		v.Remove()
-	}
-
+	json.Write(j.getCssCode().Bytes())
+	//获取私有css属性
+	j.ToFormatLine("B", j.className, j.getStyleCode().String(), json)
 	spts := result.GetElementsByTagName("script") //获取Script属性
 	for _, v := range spts {
 		if v.GetAttr("type") == "" {
@@ -1680,7 +1680,7 @@ func (j *UI) ToFormatBytes() []byte {
 	if j.IsScript() {
 
 	} else {
-		j.ToFormatLine("H", j.className, result.ToString(), json)
+		j.ToFormatLine("H", j.className, result.ToXHTML(), json)
 	}
 
 	for _, v := range j.runList {

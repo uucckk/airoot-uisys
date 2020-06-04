@@ -45,192 +45,218 @@ func (p StringBuffer) toString() string {
 	HTML
 */
 type HTML struct {
-	parent  *HTML             //父级元素
-	tag     string            //标签类型
-	value   string            //字符串实际值
-	param   string            //节点构造函数参数
-	code    string            //节点初始化代码
-	tagData map[string]string //内部属性
-	tagList []string          //内部属性列表，方便排序
-	tagType int               //HTML结束类型
-	list    []*HTML           //内部的HTML列表
-}
-
-/**
- * 字符
- */
-type Ch struct {
-	Value string
-	Type  int
+	parent  *HTML          //父级元素
+	tag     string         //标签类型
+	value   string         //字符串实际值
+	param   string         //节点构造函数参数
+	code    string         //节点初始化代码
+	tagData map[string]*Ch //内部属性
+	tagList []string       //内部属性列表，方便排序
+	tagType int            //HTML结束类型
+	list    []*HTML        //内部的HTML列表
 }
 
 //初始化Tag
-func (p *HTML) init() {
+func (h *HTML) fx(code []rune, position int) (map[string]*Ch, []string, int) {
 	lst := []*Ch{}
+	var key string
+	eq := false
+	var ch rune
+	var block string
+	var tagData = make(map[string]*Ch)
+	var tagList = make([]string, 0)
+	tp := 0
 	tmp := []rune{}
-	code := []rune(p.value)
-	position := 0
-	var ch, tch rune
-	var zy bool = false //转义符号
-	var lvl int = 0
 	for position < len(code) { //整理元素，去掉不必要的空格
 		ch = code[position]
-		position++
+		if ch == '/' {
+			if eq == true {
+				block, position = h.fxr(code, position)
+				tagData[key] = &Ch{block, 4}
+				key = ""
+				eq = false
+			}
+			position++
+			continue
+		}
+		if ch == '>' {
+			if len(tmp) > 0 {
+				if key == "" {
+					tagData[string(tmp)] = nil
+				} else {
+					tagData[key] = &Ch{string(tmp), 0}
+				}
 
-		if ch == '(' || ch == ')' || ch == '{' || ch == '}' || ch == '[' || ch == ']' || ch == ',' { //|| ch == ':'
+				tmp = tmp[0:0]
+			} else if key != "" {
+				tagData[key] = nil
+			}
+
+			return tagData, tagList, position
+		}
+		if ch == '(' || ch == '[' || ch == '{' {
 			if len(tmp) > 0 {
 				lst = append(lst, &Ch{string(tmp), 0})
 				tmp = tmp[0:0]
 			}
-			lst = append(lst, &Ch{string(ch), 2})
+			switch ch {
+			case '(':
+				block, position = h.fxa(code, position, ch, ')')
+				tp = 1
+			case '[':
+				block, position = h.fxa(code, position, ch, ']')
+				tp = 2
+			case '{':
+				block, position = h.fxa(code, position, ch, '}')
+				tp = 3
+			}
+			if key == "" {
+				tagData[key] = &Ch{block, -1}
+			} else {
+				tagData[key] = &Ch{block, tp}
+			}
+			key = ""
+			eq = false
+			position++
 			continue
 		}
 
-		if ch == ' ' || ch == '\t' || ch == '\n' {
+		if ch == ' ' || ch == '\t' || ch == '\n' || ch == '=' || ch == ':' {
 			if len(tmp) > 0 {
-				lst = append(lst, &Ch{string(tmp), 0})
-				tmp = tmp[0:0]
-			}
-			continue
-		}
-		if ch == '=' {
-			if len(tmp) > 0 {
-				lst = append(lst, &Ch{string(tmp), 0})
+				if eq {
+					tagData[key] = &Ch{string(tmp), 0}
+					key = ""
+					eq = false
+				} else {
+					if key != "" {
+						tagData[key] = nil
+						tagList = append(tagList, key)
+					}
+					key = string(tmp)
+					tagList = append(tagList, key)
+
+				}
 				tmp = tmp[0:0]
 			}
 
-			lst = append(lst, &Ch{"=", 0})
+			if ch == '=' || ch == ':' {
+				eq = true
+			}
 
+			position++
 			continue
 		}
 
 		if ch == '"' || ch == '\'' {
-			tch = ch
-			for position < len(code) {
-				ch = code[position]
-				position++
-				if ch == tch && zy == false {
-					if position > 1 {
-						lst = append(lst, &Ch{string(tmp), 1})
-						tmp = tmp[0:0]
-						break
-					}
-				}
-
-				if ch == '"' && zy == false {
-					tmp = append(tmp, '\\')
-					tmp = append(tmp, '"')
-				} else {
-					tmp = append(tmp, ch)
-				}
-
-				if ch == '\\' {
-					zy = true
-				} else {
-					zy = false
-				}
-
-			}
+			block, position = h.fxs(code, position, ch)
+			tagData[key] = &Ch{block, 0}
+			key = ""
+			eq = false
+			position++
 			continue
 		}
 		tmp = append(tmp, ch)
-
+		position++
 	}
 
 	if len(tmp) > 0 {
 		lst = append(lst, &Ch{string(tmp), 0})
 	}
 
-	//对文字分段
-	isAttr := true
-	attr := ""
-	value := bytes.NewBufferString("")
-	var v *Ch
-w:
-	for position = 0; position < len(lst); position++ {
-		v = lst[position]
-		if v.Value == "=" {
-			isAttr = false
-			continue
-		}
-
-		if isAttr {
-			if attr != "" {
-				p.tagData[attr] = ""
-				p.tagList = append(p.tagList, attr)
-			}
-			if v.Value == "(" {
-				position++
-				lvl = 1
-				for position < len(lst) {
-					v = lst[position]
-					if v.Value == "(" {
-						lvl++
-					} else if v.Value == ")" {
-						lvl--
-					}
-					if v.Value == ")" && lvl == 0 {
-						p.param = value.String()
-						value.Reset()
-						continue w
-					}
-					if v.Type == 1 {
-						value.WriteString("\"" + v.Value + "\"")
-					} else {
-						value.WriteString(v.Value + " ")
-					}
-					position++
-				}
-			} else if v.Value == "{" {
-				position++
-				lvl = 1
-				for position < len(lst) {
-					v = lst[position]
-					if v.Value == "{" {
-						lvl++
-					} else if v.Value == "}" {
-						lvl--
-					}
-					if v.Value == "}" && lvl == 0 {
-						p.code = value.String()
-						value.Reset()
-						continue w
-					}
-					if v.Type == 1 {
-						value.WriteString("\"" + v.Value + "\"")
-					} else {
-						value.WriteString(v.Value + " ")
-					}
-
-					position++
-				}
-			}
-			attr = v.Value
-		} else {
-			value.Reset()
-			value.WriteString(v.Value)
-			p.tagData[attr] = value.String()
-			p.tagList = append(p.tagList, attr)
-			isAttr = true
-			attr = ""
-			value.Reset()
-		}
-	}
-	if attr != "" && attr != "/" {
-		p.tagData[attr] = ""
-		p.tagList = append(p.tagList, attr)
-	}
-
+	return tagData, tagList, position
 }
 
-/**
- * 创建HTML
- */
-func (h *HTML) Create() *HTML {
-	h.list = make([]*HTML, 0, 100)
-	h.tagData = make(map[string]string, 20)
-	h.init()
-	return h
+///处理正则表达式
+func (h *HTML) fxr(code []rune, position int) (string, int) {
+	f := false
+	var v rune
+	position++
+	sb := bytes.NewBufferString("/")
+	for position < len(code) {
+		v = code[position]
+		sb.WriteRune(v)
+		if !f && v == '/' {
+			break
+		}
+		if v == '\\' {
+			f = !f
+		} else {
+			f = false
+		}
+
+		position++
+	}
+	position++
+	for position < len(code) {
+		v = code[position]
+		if v == ' ' || v == '/' || v == '>' {
+			break
+		}
+		sb.WriteRune(v)
+		position++
+	}
+	return sb.String(), position
+}
+
+///分析括号变量作用域
+func (h *HTML) fxa(code []rune, position int, s rune, e rune) (string, int) {
+	position++
+	var block string
+	lvl := 1
+	sb := bytes.NewBufferString("")
+	var v rune
+	for position < len(code) {
+		v = code[position]
+		if v == s {
+			lvl++
+		} else if v == e {
+			lvl--
+		}
+		if v == e && lvl == 0 {
+			break
+		}
+		if v == '"' || v == '\'' {
+			block, position = h.fxs(code, position, v)
+			sb.WriteRune('"')
+			sb.WriteString(block)
+			sb.WriteRune('"')
+			position++
+			continue
+		}
+		sb.WriteRune(v)
+		position++
+	}
+	return sb.String(), position
+}
+
+///分析字符串作用域
+func (h *HTML) fxs(code []rune, position int, ch rune) (string, int) {
+	position++
+	tch := ch
+	var zy bool = false //转义符号
+	tmp := []rune{}
+	for position < len(code) {
+		ch = code[position]
+
+		if ch == tch && zy == false {
+			break
+		}
+
+		if ch == '"' && zy == false {
+			tmp = append(tmp, '\\')
+			tmp = append(tmp, '"')
+		} else {
+			tmp = append(tmp, ch)
+		}
+
+		if ch == '\\' {
+			zy = !zy
+		} else {
+			zy = false
+		}
+		position++
+	}
+	return string(tmp), position
 }
 
 /**
@@ -251,7 +277,7 @@ func (h *HTML) ReadOneBlock(code []rune, index int) (*HTML, int, error) {
 
 func (h *HTML) read(code []rune, index int) (*HTML, int, error) {
 	h.list = make([]*HTML, 0, 100)
-	h.tagData = make(map[string]string, 20)
+	h.tagData = make(map[string]*Ch, 20)
 	position := 0
 	if index != -1 {
 		position = index
@@ -264,6 +290,9 @@ func (h *HTML) read(code []rune, index int) (*HTML, int, error) {
 	var tagType int = 0 //HTML的类型
 	var block int = 0
 	tagTemp := make([]string, 0, 100) //tag临时储存位置，用于记录标签配对问题
+
+	var tagData map[string]*Ch
+	var tagList []string
 
 m:
 	for position < len(code) {
@@ -287,7 +316,7 @@ m:
 								k++
 								if k == len(keys) {
 									sb = sb[:(len(sb) - k + 2)]
-									parent.list = append(parent.list, &HTML{tag: "!", value: sb.toString(), parent: parent, tagType: 0, tagData: make(map[string]string, 20)})
+									parent.list = append(parent.list, &HTML{tag: "!", value: sb.toString(), parent: parent, tagType: 0, tagData: make(map[string]*Ch, 20)})
 									sb = sb[0:0] //清除
 									tagName = ""
 									block--
@@ -300,9 +329,7 @@ m:
 						continue m
 					} else {
 						tagName = string(sb)
-						if ch == '>' || ch == '(' || ch == '{' {
-							position--
-						}
+						tagData, tagList, position = h.fx(code, position-1)
 					}
 
 					sb = sb[0:0]
@@ -345,8 +372,7 @@ m:
 					tagType = 0
 				}
 				tagTemp = append(tagTemp, tagName)
-				tag = &HTML{tag: tagName, value: sb.toString(), parent: parent, tagType: tagType}
-				tag.Create()
+				tag = &HTML{tag: tagName, value: sb.toString(), tagData: tagData, tagList: tagList, parent: parent, tagType: tagType}
 				parent.list = append(parent.list, tag)
 				parent = tag
 				sb = sb[0:0] //清除
@@ -363,7 +389,7 @@ m:
 						} else {
 							if k > 1 && ch == '>' {
 								sb = sb[:(len(sb) - k - 1)]
-								parent.list = append(parent.list, &HTML{value: sb.toString(), parent: parent, tagType: -1, tagData: make(map[string]string, 20)})
+								parent.list = append(parent.list, &HTML{value: sb.toString(), parent: parent, tagType: -1, tagData: make(map[string]*Ch, 20)})
 								sb = sb[0:0] //清除
 								parent = parent.parent
 								block--
@@ -393,7 +419,7 @@ m:
 				sb = append(sb, ch)
 			}
 			if len(sb) != 0 {
-				parent.list = append(parent.list, &HTML{value: sb.toString(), parent: parent, tagType: -1, tagData: make(map[string]string, 20)})
+				parent.list = append(parent.list, &HTML{value: sb.toString(), parent: parent, tagType: -1, tagData: make(map[string]*Ch, 20)})
 				sb = sb[0:0] //清除
 
 			}
@@ -419,14 +445,23 @@ func (h *HTML) SetTagName(value string) {
 
 //返回HTML的属性值
 func (h *HTML) GetAttr(attrName string) string {
-	return h.tagData[attrName]
+	v := h.tagData[attrName]
+	if v != nil {
+		return v.Value
+	} else {
+		return ""
+	}
+
 }
 
 //返回HTML的属性值
 func (h *HTML) GetAttrCmd() []string {
 	attrs := make([]string, 0)
-	for _, k := range h.tagList {
-		if k[0] == '-' {
+	for k, _ := range h.tagData {
+		if k == "" {
+			continue
+		}
+		if k != "" && k[0] == '-' {
 			attrs = append(attrs, k)
 		}
 	}
@@ -434,7 +469,12 @@ func (h *HTML) GetAttrCmd() []string {
 }
 
 func (h *HTML) GetConstructerParameter() string {
-	return h.param
+	v := h.tagData[""]
+	if v != nil {
+		return v.Value
+	} else {
+		return ""
+	}
 }
 
 func (h *HTML) GetConstructerCode() string {
@@ -443,7 +483,7 @@ func (h *HTML) GetConstructerCode() string {
 
 //设置HTML的属性
 func (h *HTML) SetAttr(attrName string, attrValue string) string {
-	h.tagData[attrName] = attrValue
+	h.tagData[attrName] = &Ch{Type: 0, Value: attrValue}
 	return attrValue
 }
 
@@ -701,7 +741,24 @@ func (h *HTML) CopyFrom(html *HTML) {
 func (h *HTML) Attrs() []*Attr {
 	arr := make([]*Attr, 0, 20)
 	for name, value := range h.tagData {
-		arr = append(arr, &Attr{Name: name, Value: value})
+		if value == nil {
+			arr = append(arr, &Attr{Name: name, Value: ""})
+		} else {
+			if value.Type == 0 {
+				arr = append(arr, &Attr{Name: name, Value: value.Value})
+			}
+		}
+	}
+	return arr
+}
+
+/// 高级属性
+func (h *HTML) AdvanceAttrs() []*AdvAttr {
+	arr := make([]*AdvAttr, 0, 20)
+	for name, value := range h.tagData {
+		if value != nil {
+			arr = append(arr, &AdvAttr{name, value})
+		}
 	}
 	return arr
 }
@@ -722,7 +779,6 @@ func (h *HTML) Append(list *HTML) {
 //在指定节点名的文本
 func (h *HTML) AppendNode(tagName string, value string) {
 	tag := &HTML{tag: tagName, tagType: 1}
-	tag.Create()
 	tag.list = append(tag.list, &HTML{value: value, tagType: -1, parent: tag})
 	tag.parent = h
 	h.list = append(h.list, tag)
@@ -829,6 +885,50 @@ func (h *HTML) IsText() bool {
 	return false
 }
 
+func (h *HTML) ToXHTML() string {
+	if h.tag == "!" {
+		return "<!" + h.value + ">"
+	}
+	if h.tagType == -1 {
+		return h.value
+	}
+	sb := bytes.NewBufferString("")
+	if h.parent != nil {
+		sb.WriteString("<")
+		sb.WriteString(h.tag)
+		var keys []string
+		for k := range h.tagData {
+			keys = append(keys, k)
+		}
+
+		sort.Strings(keys)
+		for _, v := range keys {
+			if h.tagData[v] == nil {
+				sb.WriteString(" " + v)
+				continue
+			}
+			switch h.tagData[v].Type {
+			case 0:
+				sb.WriteString(" " + v + "=" + "\"" + h.tagData[v].Value + "\"")
+			}
+		}
+		if h.tagType == 0 {
+			sb.WriteString("/>")
+		} else {
+			sb.WriteString(">")
+		}
+
+	}
+	list := h.list
+	for _, v := range list {
+		sb.Write(v.ToStringBytes(true))
+	}
+	if h.parent != nil && h.tagType == 1 {
+		sb.WriteString("</" + h.tag + ">")
+	}
+	return sb.String()
+}
+
 /**
  * 将HTML转换为字符串
  */
@@ -847,9 +947,27 @@ func (h *HTML) ToString() string {
 		for k := range h.tagData {
 			keys = append(keys, k)
 		}
+
 		sort.Strings(keys)
 		for _, v := range keys {
-			sb.WriteString(" " + v + "=" + "\"" + h.tagData[v] + "\"")
+			if h.tagData[v] == nil {
+				sb.WriteString(" " + v)
+				continue
+			}
+			switch h.tagData[v].Type {
+			case -1:
+				sb.WriteString("(" + h.tagData[v].Value + ")")
+			case 0:
+				sb.WriteString(" " + v + "=" + "\"" + h.tagData[v].Value + "\"")
+			case 1:
+				sb.WriteString(" " + v + "=" + "(" + h.tagData[v].Value + ")")
+			case 2:
+				sb.WriteString(" " + v + "=" + "[" + h.tagData[v].Value + "]")
+			case 3:
+				sb.WriteString(" " + v + "=" + "{" + h.tagData[v].Value + "}")
+			case 4:
+				sb.WriteString(" " + v + "=" + h.tagData[v].Value)
+			}
 		}
 		if h.tagType == 0 {
 			sb.WriteString("/>")
@@ -860,7 +978,7 @@ func (h *HTML) ToString() string {
 	}
 	list := h.list
 	for _, v := range list {
-		sb.Write(v.ToStringBytes())
+		sb.Write(v.ToStringBytes(false))
 	}
 	if h.parent != nil && h.tagType == 1 {
 		sb.WriteString("</" + h.tag + ">")
@@ -883,13 +1001,9 @@ func (h *HTML) ToTextStringBytes() []byte {
 		} else {
 			sb.WriteString("<span style='font-weight:bold;color:#009688'>" + h.tag + "</span>")
 		}
-		var keys []string
-		for k := range h.tagData {
-			keys = append(keys, k)
-		}
-		sort.Strings(keys)
-		for _, v := range keys {
-			sb.WriteString(" <span style='color: #FF5722;font-weight: bold;'>" + v + "</span>=" + "\"<span style='color:#888888'>" + h.tagData[v] + "</span>\"")
+
+		for _, v := range h.tagList {
+			sb.WriteString(" <span style='color: #FF5722;font-weight: bold;'>" + v + "</span>=" + "\"<span style='color:#888888'>" + h.tagData[v].Value + "</span>\"")
 		}
 
 		if h.tagType == 0 {
@@ -943,7 +1057,7 @@ func (h *HTML) ToTextString() string {
 		}
 
 		for i, v := range h.tagData {
-			sb.WriteString(" <span style='color: #FF5722;font-weight: bold;'>" + i + "</span>=" + "\"<span style='color:#888888'>" + v + "</span>\"")
+			sb.WriteString(" <span style='color: #FF5722;font-weight: bold;'>" + i + "</span>=" + "\"<span style='color:#888888'>" + v.Value + "</span>\"")
 		}
 		if h.tagType == 0 {
 			sb.WriteString("/&gt;<br/>")
@@ -975,7 +1089,7 @@ func (h *HTML) ToTextString() string {
 	}
 	return sb.String()
 }
-func (h *HTML) ToStringBytes() []byte {
+func (h *HTML) ToStringBytes(xf bool) []byte {
 	if h.tag == "!" {
 		return []byte("<!" + h.value + ">")
 	}
@@ -992,18 +1106,45 @@ func (h *HTML) ToStringBytes() []byte {
 		}
 		sort.Strings(keys)
 		for _, v := range keys {
-			sb.WriteString(" " + v + "=" + "\"" + h.tagData[v] + "\"")
+			if h.tagData[v] == nil {
+				sb.WriteString(" " + v)
+				continue
+			}
+			switch h.tagData[v].Type {
+			case -1:
+				if !xf {
+					sb.WriteString("(" + h.tagData[v].Value + ")")
+				}
+			case 0:
+				sb.WriteString(" " + v + "=" + "\"" + h.tagData[v].Value + "\"")
+			case 1:
+				if !xf {
+					sb.WriteString(" " + v + "=" + "(" + h.tagData[v].Value + ")")
+				}
+			case 2:
+				if !xf {
+					sb.WriteString(" " + v + "=" + "[" + h.tagData[v].Value + "]")
+				}
+			case 3:
+				if !xf {
+					sb.WriteString(" " + v + "=" + "{" + h.tagData[v].Value + "}")
+				}
+			case 4: //正则表达
+				if !xf {
+					sb.WriteString(" " + v + "=" + h.tagData[v].Value)
+				}
+			}
 		}
 		if h.tagType == 0 {
-			sb.WriteString("/>")
+			sb.WriteString(" />")
 		} else {
-			sb.WriteString(">")
+			sb.WriteString(" >")
 		}
 
 	}
 	list := h.list
 	for _, v := range list {
-		sb.Write(v.ToStringBytes())
+		sb.Write(v.ToStringBytes(xf))
 	}
 	if h.parent != nil && h.tagType == 1 {
 		sb.WriteString("</" + h.tag + ">")

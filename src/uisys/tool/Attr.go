@@ -5,6 +5,19 @@ type Attr struct {
 	Value string
 }
 
+type AdvAttr struct {
+	Name  string
+	Value *Ch
+}
+
+/**
+ * 字符
+ */
+type Ch struct {
+	Value string
+	Type  int
+}
+
 type RunElem struct {
 	Type  string
 	Name  string
