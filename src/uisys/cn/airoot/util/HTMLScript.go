@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"crypto/md5"
 	"encoding/hex"
+	"fmt"
 	"path/filepath"
 	"strings"
 	. "uisys"
@@ -313,13 +314,14 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _global string, _this string, _
 					break
 				}
 				if f.IsKeyWord { //说明要用commandJS规范导读
+					fmt.Println("IsKeyWord", f.Value)
 					if f.Value == "from" {
 						f.Value = "\002"
 						isFrom = true
 					} else if f.Value == "@root" {
 						f.Value = "index.res"
 					} else if f.Value == "@lib" {
-						t.Value = "\"" + IfStr(s.ui.IsSysLib, "index.src/", "") + "/" + s.ui.relativePath + ".lib/\""
+						f.Value = IfStr(s.ui.IsSysLib, "index.src/", "") + "/" + s.ui.relativePath + ".lib/"
 						if s.ui.IsSysLib {
 							s.ui.GetRoot().PushSysLibDirs(s.ui.className, s.ui.relativePath+".lib")
 						}
@@ -339,6 +341,7 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _global string, _this string, _
 					value = Substring(value, 1, -1)
 				}
 			}
+
 			if strings.TrimSpace(lst[point].Value) != "" {
 				Single(&s.hMap, &Attr{lst[point].Value, value})
 				s.ui.PushImportScript(&Attr{lst[point].Value, value})

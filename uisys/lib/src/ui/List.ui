@@ -41,7 +41,19 @@
 	
 	public set dataProvider(value){
 		_data = value;
+		if(!value || value.length == 0){
+			clear();
+		}
 		initList(0,dom.offsetHeight);
+	}
+	
+	
+	
+	func clear(){
+		var p = null;
+		while(p = list.pop()){
+			#content.removeChild(p.obj);
+		}
 	}
 	
 	//滚动事件
@@ -114,7 +126,7 @@
 			#content.appendChild(c);
 			d.height = c.dom.offsetHeight + parseInt(getComputedStyle(c.dom).marginTop) + parseInt(getComputedStyle(c.dom).marginBottom);
 			height += d.height;
-			if(c.dom.offsetTop - dom.scrollTop> dom.offsetHeight){
+			if(c.dom.offsetTop - dom.scrollTop> dom.offsetHeight || dom.offsetHeight == 0){
 				break;
 			}
 		}
@@ -123,6 +135,7 @@
 	}
 	/// 如果存在就扩展
 	private function extList(top,min,max,mo){
+		
 		var c = null;
 		var d = null;
 		var i = 0;
@@ -151,7 +164,7 @@
 			c = d.obj;
 			#content.appendChild(c);
 			d.height = c.dom.offsetHeight + parseInt(getComputedStyle(c.dom).marginTop) + parseInt(getComputedStyle(c.dom).marginBottom);
-			if(c.dom.offsetTop - dom.scrollTop> dom.offsetHeight){
+			if(c.dom.offsetTop - dom.scrollTop> dom.offsetHeight || dom.offsetHeight == 0){
 				break;
 			}
 		}
@@ -175,7 +188,6 @@
 
 		st = top;
 		
-		//console.log("list",list.length,"tList",tList.length);
 	}
 	
 	private set spad(v){

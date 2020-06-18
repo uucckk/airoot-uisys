@@ -65,8 +65,9 @@ type UI struct {
 	/// 这里定义模块的临时寄存代码
 	cssCode             []*bytes.Buffer //最终的CSS（处理后）的集合
 	styleCode           []*bytes.Buffer //最终的STYLE（处理后）的集合
-	htmlAdv             []*HTML         //本模块的HTML代码高级属性:()、[]、{}
-	CommandCode         []*Attr         //指令集合
+	scriptCode          []string
+	htmlAdv             []*HTML //本模块的HTML代码高级属性:()、[]、{}
+	CommandCode         []*Attr //指令集合
 	extendFlag          bool
 	style               *CSS
 	css                 *CSS
@@ -280,6 +281,7 @@ func (j *UI) PushImportScript(value *Attr) {
 				tp = j.root + "/" + value.Value
 				//value.Value = Substring(tp, StringLen(j.root), -1)
 			}
+			fmt.Println("Exist", tp, Exist(tp))
 			if Exist(tp) {
 				tp = filepath.Clean(tp)
 				m5, _ := F2md5(tp)
@@ -1241,6 +1243,32 @@ func (j *UI) testHTML() *HTML {
 }
 
 /// 获取这个模块的转化后的CSS代码，注意是注册在 parent == nil 上的
+func (j *UI) pushScriptCode(buf string) {
+	if j.parent != nil {
+		j.parent.pushScriptCode(buf)
+	}
+	if j.scriptCode == nil {
+		j.scriptCode = make([]string, 0, 5)
+	}
+	j.scriptCode = append(j.scriptCode, buf)
+}
+
+/// 获取这个模块的转化后的CSS代码，注意是注册在 parent == nil 上的
+func (j *UI) getScriptCode() *bytes.Buffer {
+	if j.parent != nil {
+		return j.parent.getScriptCode()
+	}
+	buf := bytes.NewBuffer(nil)
+	if j.scriptCode != nil {
+		l := len(j.scriptCode)
+		for i := l - 1; i >= 0; i-- {
+			buf.WriteString(j.scriptCode[i])
+		}
+	}
+	return buf
+}
+
+/// 获取这个模块的转化后的CSS代码，注意是注册在 parent == nil 上的
 func (j *UI) pushCssCode(buf *bytes.Buffer) {
 	if j.parent != nil {
 		j.parent.pushCssCode(buf)
@@ -1465,9 +1493,10 @@ func (j *UI) ReadHTML() *HTML {
 	scriptCodeString := script.ReadFromString(j.scriptBuffer.String())
 
 	if len(scriptCodeString) != 0 {
-		node := &HTML{}
-		node.AppendNode("script", scriptCodeString)
-		j.html.Append(node)
+		// node := &HTML{}
+		// node.AppendNode("script", scriptCodeString)
+		// j.html.Append(node)
+		j.pushScriptCode(scriptCodeString)
 	}
 
 	if len(j.componentCode) > 0 {
@@ -1476,9 +1505,10 @@ func (j *UI) ReadHTML() *HTML {
 			code += j.componentInitCode(v)
 		}
 		code += "}"
-		node := &HTML{}
-		node.AppendNode("script", script.ReadFromString(code))
-		j.html.Append(node)
+		// node := &HTML{}
+		// node.AppendNode("script", script.ReadFromString(code))
+		// j.html.Append(node)
+		j.pushScriptCode(script.ReadFromString(code))
 	}
 
 	j.cssBuffer.WriteString(j.overCss)
@@ -1525,9 +1555,10 @@ func (j *UI) ReadHTML() *HTML {
 		}
 
 		if sb.Len() > 0 {
-			node := &HTML{}
-			node.AppendNode("script", sb.String())
-			j.html.Insert(node, 0)
+			// node := &HTML{}
+			// node.AppendNode("script", sb.String())
+			// j.html.Insert(node, 0)
+			j.pushScriptCode(sb.String())
 		}
 
 		sb.Reset()
@@ -1539,9 +1570,10 @@ func (j *UI) ReadHTML() *HTML {
 			}
 		}
 		if sb.Len() > 0 {
-			node := &HTML{}
-			node.AppendNode("script", sb.String())
-			j.html.Append(node)
+			// node := &HTML{}
+			// node.AppendNode("script", sb.String())
+			// j.html.Append(node)
+			j.pushScriptCode(sb.String())
 		}
 
 		pList := j.html.GetElementsByTagName("@uncare")
@@ -1668,14 +1700,15 @@ func (j *UI) ToFormatBytes() []byte {
 	json.Write(j.getCssCode().Bytes())
 	//获取私有css属性
 	j.ToFormatLine("B", j.className, j.getStyleCode().String(), json)
-	spts := result.GetElementsByTagName("script") //获取Script属性
-	for _, v := range spts {
-		if v.GetAttr("type") == "" {
-			json.Write(ListToHTMLStringBytes(v.Child()))
-			v.Remove()
-		}
+	// spts := result.GetElementsByTagName("script") //获取Script属性
+	// for _, v := range spts {
+	// 	if v.GetAttr("type") == "" {
+	// 		json.Write(ListToHTMLStringBytes(v.Child()))
+	// 		v.Remove()
+	// 	}
 
-	}
+	// }
+	json.Write(j.getScriptCode().Bytes())
 
 	if j.IsScript() {
 
