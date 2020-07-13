@@ -77,7 +77,7 @@ func (t *TestServer) initSocket() bool {
 					if e := listen.Close(); e != nil {
 						fmt.Println(t.Name+" Close havs error: ", e)
 					}
-					break
+					continue
 				}
 				t.Client(socket, t.To)
 			}

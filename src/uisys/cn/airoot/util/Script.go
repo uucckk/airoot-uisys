@@ -419,6 +419,8 @@ func (s *Script) initScriptFrom(js *MScript, _global string, _this string, _pri 
 					break
 				}
 			}
+		} else if t.Value[0] == '@' {
+			t.Value = s.jus.SERVER.GetServerVar(t.Value)
 		} else if t.IsKeyWord && "this" == t.Value {
 			tlt = append(tlt, t)
 			if s.getLevel(t) == 1 {

@@ -281,7 +281,6 @@ func (j *UI) PushImportScript(value *Attr) {
 				tp = j.root + "/" + value.Value
 				//value.Value = Substring(tp, StringLen(j.root), -1)
 			}
-			fmt.Println("Exist", tp, Exist(tp))
 			if Exist(tp) {
 				tp = filepath.Clean(tp)
 				m5, _ := F2md5(tp)

@@ -40,7 +40,7 @@
 	}
 	
 	get filters():Object{
-		return filters;
+		return bind.filters;
 	}
 	/**
 	 * 监听数据项变化

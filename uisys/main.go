@@ -27,7 +27,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-var version string = "AIroot UISYS v1.1"
+var version string = "AIroot UISYS v1.2"
 var lang map[string]string
 
 var zhCN = make(map[string]string, 0)

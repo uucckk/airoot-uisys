@@ -13,7 +13,7 @@ class DOMBinding{
 	private var _bindData = null;
 	private var _set = {};
 	//过滤器对象
-	public var filter = {};
+	public var filters = {};
 	
 	
 	function init(node:HTML){
@@ -151,12 +151,12 @@ class DOMBinding{
 					}
 				}
 				if(fo){
-					if(filter[fo]){
-						t = filter[fo].apply(this,pb.concat(pa));
+					if(filters[fo]){
+						t = filters[fo].apply(this,pb.concat(pa));
 						pb = [t];
 						pa = [];
 					}else{
-						console.error("AIroot-UISYS: util.DomBinding: filter[" + fo + "] isn't exist.");
+						console.error("AIroot-UISYS: util.DomBinding: filters[" + fo + "] isn't exist.");
 					}
 					fo = null;
 				}else{
