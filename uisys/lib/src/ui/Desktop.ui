@@ -70,7 +70,7 @@
 		padding = _self.outerHeight(true) - _self.height();
 		_self.height(stageHeight - padding);
 		setTimeout(function(){
-			super.trigger(_self.attr("auto") == "true" ? (stageWidth>=stageHeight ? 0 : 1) : 0);
+			@global[dom.getAttribute("id")].trigger(_self.attr("auto") == "true" ? (stageWidth>=stageHeight ? 0 : 1) : 0);
 		},0);
 		
 	}

@@ -27,8 +27,8 @@
 		public function init(parent:Object){
 			this.map = parent;
 			rect = map.mapRect;
-			ctx = #cvs[0].getContext("2d");
-			dvs = #cvs;
+			ctx = #cvs.getContext("2d");
+			dvs = $(#cvs);
 			
 		}
 		
@@ -147,7 +147,7 @@
 		 */
 		public function render(name:String):void{
 			requestAnimationFrame(function(){
-				#cvs.hide();
+				$(#cvs).hide();
 				clear();
 				var p = null;
 				var data:Array = null;
@@ -185,7 +185,7 @@
 					}
 					filter(ctx,data);
 				}
-				#cvs.show();
+				$(#cvs).show();
 			});
 		}
 		

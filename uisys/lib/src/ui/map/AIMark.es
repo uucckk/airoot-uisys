@@ -91,19 +91,19 @@ class AIMark{
 			
 			//left;
 			if(mapX >map.mapRect.left - 256*bl2 &&!map.hav[(left - 1) + "_" + top]){
-				var mark = new component.map.AIMark(map,level,left-1,top);
+				var mark = new ui.map.AIMark(map,level,left-1,top);
 			}
 			//right;
 			if(mapX <map.mapRect.right + 256*bl2 && !map.hav[(left + 1) + "_" + top]){
-				var mark = new component.map.AIMark(map,level,left+1,top);
+				var mark = new ui.map.AIMark(map,level,left+1,top);
 			}
 			//top;
 			if(mapY <map.mapRect.top +256*bl2 && !map.hav[left + "_" + (top + 1)]){
-				var mark = new component.map.AIMark(map,level,left,(top + 1));
+				var mark = new ui.map.AIMark(map,level,left,(top + 1));
 			}
 			//bottom
 			if(mapY  > map.mapRect.bottom - 256*bl2 && !map.hav[left + "_" + (top - 1)]){
-				var mark = new component.map.AIMark(map,level,left,(top - 1));
+				var mark = new ui.map.AIMark(map,level,left,(top - 1));
 			}
 			
 		}else{
@@ -126,19 +126,19 @@ class AIMark{
 			
 			//left;
 			if(mapX >map.mapRect.left - 256*bl2 &&!map.hav[(left - 1) + "_" + top]){
-				var mark = new component.map.AIMark(map,level,left-1,top);
+				var mark = new ui.map.AIMark(map,level,left-1,top);
 			}
 			//right;
 			if(mapX <map.mapRect.right + 256*bl2 && !map.hav[(left + 1) + "_" + top]){
-				var mark = new component.map.AIMark(map,level,left+1,top);
+				var mark = new ui.map.AIMark(map,level,left+1,top);
 			}
 			//top;
 			if(mapY >map.mapRect.top -256*bl2 && !map.hav[left + "_" + (top - 1)]){
-				var mark = new component.map.AIMark(map,level,left,(top - 1));
+				var mark = new ui.map.AIMark(map,level,left,(top - 1));
 			}
 			//bottom
 			if(mapY  < map.mapRect.bottom + 256*bl2 && !map.hav[left + "_" + (top + 1)]){
-				var mark = new component.map.AIMark(map,level,left,(top + 1));
+				var mark = new ui.map.AIMark(map,level,left,(top + 1));
 			}
 			
 		}

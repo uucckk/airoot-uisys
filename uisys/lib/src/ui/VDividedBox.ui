@@ -36,6 +36,9 @@
 
 
 	function mouseDown(){
+		if(!ba || !bb){
+			return;
+		}
 		al = ba.offset().top;
 		br = bb.offset().top + ba.outerHeight(true);
 		if(can){

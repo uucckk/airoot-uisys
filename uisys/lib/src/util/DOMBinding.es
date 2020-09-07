@@ -13,7 +13,7 @@ class DOMBinding{
 	private var _bindData = null;
 	private var _set = {};
 	//过滤器对象
-	public var filters = {};
+	var _filters = {};
 	
 	
 	function init(node:HTML){
@@ -26,6 +26,15 @@ class DOMBinding{
 		defer(node,@this);
 		read(this.node = node,aList);
 		initListener();
+	}
+	
+	public set filters(v){
+		_filters = v;
+		render(aList)
+	}
+	
+	public get filters(v){
+		return _filters;
 	}
 	
 	/**

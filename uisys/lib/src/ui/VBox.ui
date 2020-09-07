@@ -133,10 +133,10 @@
 		});
 	}
 	
-	function load(url){
+	function load(url,params){
 		dom.loadModule(url,function(e){
 			trigger();
-		});
+		},params);
 	}
 
 	

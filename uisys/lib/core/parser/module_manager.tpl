@@ -204,7 +204,9 @@ function __INIT_PACKAGE__(){
 					define.amd = {};
 					try{
 						eval(p.value);
-					}catch(e){}
+					}catch(e){
+						console.error(p.value);
+					}
 					if(f){
 						var _TMP_ = eval("(" + p.value + ")");
 						__AMD_LIST__[p.url] = function(){return _TMP_};
@@ -746,8 +748,9 @@ UI.loadModule = function(target,module){
 		}else if(p instanceof Array){
 			value = p;
 		}else{
-			throw new Error("parameters type error.");
-			return;
+			if(p != null){
+				value = [p];
+			}
 		}
 	}
 	var url = UI.PATH + module.replace(/\./g,"/") + ".ui.html";

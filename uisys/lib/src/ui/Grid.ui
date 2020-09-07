@@ -54,6 +54,7 @@
 		var posV:int = paddingTop;
 	
 		var obj = _self.children("div").not(":hidden");
+		console.log("obj length",obj.length);
 		obj.each(function(){
 			var $this = $(this);
 			$this.css("position","absolute");
@@ -83,7 +84,6 @@
 			if($id && $id.trigger){
 				$id.trigger(event);
 			}
-
 			if(tWidth + width>gridWidth){
 				tWidth = width + paddingLeft + hPadding;
 				posV += maxHeight + vPadding;
@@ -92,9 +92,6 @@
 				
 				return true;
 			}
-
-			
-			
 			$this.css("left",tWidth).css("top",posV);
 			tWidth += width + hPadding;
 			if(height>maxHeight){

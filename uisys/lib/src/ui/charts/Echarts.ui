@@ -1,0 +1,75 @@
+<div></div>
+<script>
+	import lib/js/echarts.min.js;
+	var theme from "theme";
+	private var myChart = null;
+	private var temp = null;
+	function init(){
+		// 基于准备好的dom，初始化echarts实例
+		if(theme != null){
+			asjs.load(theme,function(e){
+				var obj = JSON.parse(e.target.data);
+				echarts.registerTheme(theme, obj)
+				initChart();
+			});
+		}else{
+			initChart();
+		}
+
+	}
+	
+	function initChart(){
+		myChart = theme ? echarts.init(dom,theme) : echarts.init(dom);
+		if(temp){
+			myChart.setOption(temp);
+			return;
+		}
+		var s = dom.getAttribute("src");
+		if(s){
+			src = s;
+		}else{
+			option = {
+				title: {
+					text: 'ECharts Example'
+				},
+				tooltip: {},
+				legend: {
+					data:['销量']
+				},
+				xAxis: {
+					data: ["A","B","C","D","E","F"]
+				},
+				yAxis: {},
+				series: [{
+					name: 'Number',
+					type: 'line',
+					data: [5, 20, 36, 10, 10, 20]
+				}]
+			};
+		}
+	}
+	
+	set option(value){
+		if(myChart){
+			myChart.setOption(value);
+		}else{
+			temp = value;
+		}
+		
+	}
+	
+	set src(value){
+		asjs.load(value,function(e){
+			var json = JSON.parse(e.target.data);
+			option = json;
+		});
+	}
+	
+	
+	function trigger(e){
+		if(myChart){
+			myChart.resize();
+		}
+		
+	}
+</script>

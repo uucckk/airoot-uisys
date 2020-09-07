@@ -4,7 +4,7 @@
  -->
 <@import value="ui.*" />
 <@import value="ui.map.core.*"/>
-<PositionArea width="100%" height="100%">
+<Position width="100%" height="100%">
 	<style>
 		body{
 			position:relative;
@@ -26,15 +26,15 @@
 			display:block;
 		}
 	</style>
-	<cartoon(parent) id="cton" />
+	<Cartoon(@this) id="cton" />
 	<!-- 地图加载 -->
-	<layout width="100%" height="100%" id="dituContent">
+	<Layout width="100%" height="100%" id="dituContent">
 		<canvas id="ditu" />
-	</layout>
+	</Layout>
 	
 	<!--svg-->
-	<svglayer(parent) id="svg" />
-	<renderlayer(parent) id="cvs" />
+	<svglayer(@this) id="svg" />
+	<renderlayer(@this) id="cvs" />
 	<!-- compoent -->
 	<div id="cpnt" x="0" y="0" width="100%" height="100%"  ><!-- style="pointer-events:none;" -->
 		
@@ -67,7 +67,7 @@
 		/**
 		 * 地图图层Canvas句柄
 		 */
-		private var lay0:CanvasContext = #ditu[0].getContext("2d");
+		private var lay0:CanvasContext = #ditu.getContext("2d");
 
 		
 		/**
@@ -135,7 +135,7 @@
 		
 		
 		function init(value){
-			#label.hide();
+			$(#label).hide();
 			iniBlackGrid();
 			ctPos = #content;
 			if(value){
@@ -259,7 +259,7 @@
 					
 					mouseEnabled = false;
 					enterframe();
-					#label.hide();
+					$(#label).hide();
 					if(onMouseOut){
 						onMouseOut({target:@this});
 					}
@@ -300,9 +300,9 @@
 					_mouseY = mapRect.top + mapY;
 					_mouseLong = _projection.x2Lng(_mouseX,layerSet[level]);
 					_mouseLat = _projection.y2Lat(_mouseY,layerSet[level]);
-					#label.show();
+					$(#label).show();
 					//#label.text("N: " + parseInt(_mouseLong*10000)/10000 + ",W: " + parseInt(_mouseLat*10000)/10000 + ",X: "  + _mouseX + ",Y: " + _mouseY);//+ " - " + toXPixel(_projection.x2Lng(_mouseX,am.level)) +"," + toYPixel(_projection.y2Lat(_mouseY,am.level))
-					#label.text("经度: " + parseInt(_mouseLong*10000)/10000 + ",纬度: " + parseInt(_mouseLat*10000)/10000 + ",级别: " + level);//+ " - " + toXPixel(_projection.x2Lng(_mouseX,am.level)) +"," + toYPixel(_projection.y2Lat(_mouseY,am.level))
+					$(#label).text("经度: " + parseInt(_mouseLong*10000)/10000 + ",纬度: " + parseInt(_mouseLat*10000)/10000 + ",级别: " + level);//+ " - " + toXPixel(_projection.x2Lng(_mouseX,am.level)) +"," + toYPixel(_projection.y2Lat(_mouseY,am.level))
 				}
 				if(_down && _mEnabled){
 					
@@ -581,7 +581,7 @@
 		 * 增加Object
 		 */
 		public function addChild(object:Object){
-			#cpnt.addChild(object);
+			$(#cpnt).addChild(object);
 			_componentList.push(object);
 		}
 		
@@ -1175,4 +1175,4 @@
 		
 
 	</script>
-</PositionArea>
+</Position>

@@ -5,62 +5,62 @@
 	@description	
 -->
 <@import value="ui.*" />
+<style>
+	body{
+		position:relative;
+		overflow:hidden;
+		-moz-user-select: none;
+		-webkit-user-select: none;
+		-ms-user-select: none;
+		-khtml-user-select: none;
+		user-select:none;
+	}
+	#content{
+		overflow:hidden;
+		-ms-user-select:none;
+		user-select:none;
+	}
+	#hBar{
+	
+	}
+	
+	#vBarBackground{
+		position:relative;
+		cursor:pointer;
+		overflow:hidden;
+	}
+	
+	#hBarBackground{
+		position:relative;
+		cursor:pointer;
+		overflow:hidden;
+	}
+	
+	#vBar{
+		position:absolute;
+		top:0px;
+		left:2px;
+		width:6px;
+		border-radius:10px;
+		
+	}
+	#hBar{
+		position:absolute;
+		top:2px;
+		left:0px;
+		height:6px;
+		border-radius:10px;
+		
+	}
+	.bar{
+		pointer-events:none;
+		background-color:#c7d0d5;
+	}
+	
+	
+	
+</style>
 <position width="100%" height="100%">
-	<style>
-		body{
-			position:relative;
-			overflow:hidden;
-			-moz-user-select: none;
-			-webkit-user-select: none;
-			-ms-user-select: none;
-			-khtml-user-select: none;
-			user-select:none;
-		}
-		#content{
-			overflow:hidden;
-			-ms-user-select:none;
-			user-select:none;
-		}
-		#hBar{
-		
-		}
-		
-		#vBarBackground{
-			position:relative;
-			cursor:pointer;
-			overflow:hidden;
-		}
-		
-		#hBarBackground{
-			position:relative;
-			cursor:pointer;
-			overflow:hidden;
-		}
-		
-		#vBar{
-			position:absolute;
-			top:0px;
-			left:2px;
-			width:6px;
-			border-radius:10px;
-			
-		}
-		#hBar{
-			position:absolute;
-			top:2px;
-			left:0px;
-			height:6px;
-			border-radius:10px;
-			
-		}
-		.bar{
-			pointer-events:none;
-			background-color:#c7d0d5;
-		}
-		
-		
-		
-	</style>
 	<div id="content" height="100%" left="0" right="10">
 		<@content />
 	</div>
@@ -72,224 +72,224 @@
 		<div id="hBar" class="bar">
 		</div>
 	</div>
-	
-	<script>
-		var _self = $(dom);
-		//当滑动时候
-		public var onScroll:Function = null;
-		public var ct:Dom = null;
-		private var vDownFlag:Boolean = false;
-		private var hDownFlag:Boolean = false;
-		private var vScrollHeight:int = 100;//垂直滚动条高度
-		private var hScrollWidth:int = 100;//垂直滚动条高度
-		private var minVScrollHeight:int = 100;
-		private var minHScrollWidth:int = 100;
-		private var tHeight:int = 0;//判断历史高度
-		private var tWidth:int = 0;//判断历史高度
-		private var tid:int = 0;
-		private var _fixed:Boolean = false;
-		function init(){
-			ct = document.getElementById("$content");
-			ct.onscroll = function(e){
-				vPercent();
-				hPercent();
-				if(vDownFlag && onScroll){
-					onScroll(e);
-				}
-				else if(hDownFlag && onScroll){
-					//onScroll(e);
-				}
+</position>
+<script>
+	var _self = $(dom);
+	//当滑动时候
+	public var onScroll:Function = null;
+	public var ct:Dom = null;
+	private var vDownFlag:Boolean = false;
+	private var hDownFlag:Boolean = false;
+	private var vScrollHeight:int = 100;//垂直滚动条高度
+	private var hScrollWidth:int = 100;//垂直滚动条高度
+	private var minVScrollHeight:int = 100;
+	private var minHScrollWidth:int = 100;
+	private var tHeight:int = 0;//判断历史高度
+	private var tWidth:int = 0;//判断历史高度
+	private var tid:int = 0;
+	private var _fixed:Boolean = false;
+	private var ty = 0;
+	function init(){
+		ct = document.getElementById("$content");
+		ct.onscroll = function(e){
+			vPercent();
+			hPercent();
+			if(vDownFlag && onScroll){
+				onScroll(e);
 			}
-			
+			else if(hDownFlag && onScroll){
+				//onScroll(e);
+			}
+		}
+		
 
-			_self.on("mousewheel",function(e){
-				if(_fixed){
-					return;
-				}
-				ct.scrollTop -= e.originalEvent.wheelDelta;
-				if(onScroll){
-					e.scrollTop = ct.scrollTop;
-					e.scrollHeight = ct.scrollHeight;
-					e.scrollLeft = ct.scrollLeft;
-					onScroll(e);
-				}
-			});
-			
-			//点击鼠标
-			$(#vBarBackground).on("mousedown",function(e){
-				vDownFlag = true;
-				ty = e.pageY - _self.offset().top;
-				$(#content).css("user-select","none");
-				$(#vBar).css("background-color","#4eb8f3");
+		_self.on("mousewheel",function(e){
+			if(_fixed){
+				return;
+			}
+			ct.scrollTop -= e.originalEvent.wheelDelta;
+			if(onScroll){
+				e.scrollTop = ct.scrollTop;
+				e.scrollHeight = ct.scrollHeight;
+				e.scrollLeft = ct.scrollLeft;
+				onScroll(e);
+			}
+		});
+		
+		//点击鼠标
+		$(#vBarBackground).on("mousedown",function(e){
+			vDownFlag = true;
+			ty = e.pageY - _self.offset().top;
+			$(#content).css("user-select","none");
+			$(#vBar).css("background-color","#4eb8f3");
+			var per = (e.pageY - _self.offset().top - vScrollHeight/2)/(_self.height() - $(#vBar).height());
+			setVPercent(per);
+		});
+		
+		//点击鼠标
+		$(#hBarBackground).on("mousedown",function(e){
+			hDownFlag = true;
+			ty = e.pageX - _self.offset().left;
+			$(#content).css("user-select","none");
+			$(#hBar).css("background-color","#4eb8f3");
+			var per = (e.pageX - _self.offset().left - hScrollWidth/2)/(_self.width() - $(#vBar).width());
+			setHPercent(per);
+		});
+		
+		
+		$(window).on("mousemove",function(e){
+			if(vDownFlag){
 				var per = (e.pageY - _self.offset().top - vScrollHeight/2)/(_self.height() - $(#vBar).height());
 				setVPercent(per);
-			});
-			
-			//点击鼠标
-			$(#hBarBackground).on("mousedown",function(e){
-				hDownFlag = true;
-				ty = e.pageX - _self.offset().left;
-				$(#content).css("user-select","none");
-				$(#hBar).css("background-color","#4eb8f3");
-				var per = (e.pageX - _self.offset().left - hScrollWidth/2)/(_self.width() - $(#vBar).width());
+			}
+			else if(hDownFlag){
+				var per = (e.pageX - _self.offset().left - hScrollWidth/2)/(_self.width() - $(#hBar).width());
 				setHPercent(per);
-			});
-			
-			
-			$(window).on("mousemove",function(e){
-				if(vDownFlag){
-					var per = (e.pageY - _self.offset().top - vScrollHeight/2)/(_self.height() - $(#vBar).height());
-					setVPercent(per);
-				}
-				else if(hDownFlag){
-					var per = (e.pageX - _self.offset().left - hScrollWidth/2)/(_self.width() - $(#hBar).width());
-					setHPercent(per);
-				}
-				
-			});
-			
-			
-			$(window).on("mouseup",function(e){
-				vDownFlag = false;
-				hDownFlag = false;
-				$(#content).css("user-select","text");
-				$(#vBar).css("background-color","#c7d0d5");
-				$(#hBar).css("background-color","#c7d0d5");
-			})
-			initVBar();
-			tid = setTimeout(scanEvt,100);
-		}
-		
-		private function scanEvt():void{
-			clearTimeout(tid);
-			try{
-				if(ct.scrollHeight != tHeight){
-					initVBar();
-					tHeight = ct.scrollHeight;
-				}else{
-					$(#vBar).hide();
-				}
-				if(ct.scrollHeight <= _self.height()){
-					$(#vBar).hide();
-				}else{
-					$(#vBar).show();
-				}
-				if(ct.scrollWidth != tWidth){
-					initVBar();
-					tWidth = ct.scrollWidth;
-				}
-				if(ct.scrollWidth <= _self.width()){
-					$(#vBar).hide();
-				}else{
-					$(#vBar).show();
-				}
-				tid = setTimeout(scanEvt,100);
-			}catch(e){
-			
 			}
 			
-		}
+		});
 		
 		
-		private function initVBar(){
-			tHeight = ct.scrollHeight;
-			vScrollHeight = _self.height() * $(#content).height()/ct.scrollHeight;
-			if(vScrollHeight < minVScrollHeight){
-				vScrollHeight = 36;
-			}
-			$(#vBar).height(vScrollHeight);
-			
-			tWidth = ct.scrollWidth;
-			hScrollWidth = _self.width() * $(#content).width()/ct.scrollWidth;
-			if(hScrollWidth < minHScrollWidth){
-				hScrollWidth = 36;
-			}
-			$(#hBar).width(hScrollWidth);
-		}
-		
-		public function get hBarWidth():int{
-			return 10;
-		}
-		
-		/**
-		 * 滚动条Top
-		 */
-		public function get scrollTop(){
-			return ct.scrollTop;
-		}
-		
-		/**
-		 * 滚动条整体实体高度
-		 */
-		public function get scrollHeight(){
-			return ct.scrollHeight;
-		}
-		/**
-		 * 滚动条Left
-		 */
-		public function get scrollLeft(){
-			return ct.scrollTop;
-		}
-		
-		/**
-		 * 滚动条整体实体宽度
-		 */
-		public function get scrollWidth(){
-			return ct.scrollHeight;
-		}
-		
-		
-		private function vPercent():void{
-			var per = ct.scrollTop/(ct.scrollHeight - _self.height());
-			$(#vBar).css("top",per * (_self.height() - $(#vBar).height()));
-		}
-		
-		private function hPercent():void{
-			var per = ct.scrollLeft/(ct.scrollWidth - _self.width());
-			$(#hBar).css("left",per * (_self.width() - $(#hBar).width()));
-		}
-		
-		private function setVPercent(value:Number):void{
-			ct.scrollTop = (ct.scrollHeight - $(#content).height())*value;
-
-		}
-		
-		
-		private function setHPercent(value:Number):void{
-			ct.scrollLeft = (ct.scrollWidth - $(#content).width())*value;
-		}
-		
-		/**
-		 * 滚动条宽度
-		 */
-		public function get barWidth():int{
-			return 10;
-		}
-		
-		/**
-		 * 将滚动条移动到底端
-		 */
-		public function moveVEnd():void{
-			ct.scrollTop = ct.scrollHeight - $(#content).height();
-		}
-		
-		
-		public function set fixed(value:Boolean):void{
-			_fixed = value;
-			if(_fixed){
-				$(#vBarBackground).hide();
+		$(window).on("mouseup",function(e){
+			vDownFlag = false;
+			hDownFlag = false;
+			$(#content).css("user-select","text");
+			$(#vBar).css("background-color","#c7d0d5");
+			$(#hBar).css("background-color","#c7d0d5");
+		})
+		initVBar();
+		tid = setTimeout(scanEvt,100);
+	}
+	
+	private function scanEvt():void{
+		clearTimeout(tid);
+		try{
+			if(ct.scrollHeight != tHeight){
+				initVBar();
+				tHeight = ct.scrollHeight;
 			}else{
-				$(#vBarBackground).show();
+				$(#vBar).hide();
 			}
-			
-			
+			if(ct.scrollHeight <= _self.height()){
+				$(#vBar).hide();
+			}else{
+				$(#vBar).show();
+			}
+			if(ct.scrollWidth != tWidth){
+				initVBar();
+				tWidth = ct.scrollWidth;
+			}
+			if(ct.scrollWidth <= _self.width()){
+				$(#vBar).hide();
+			}else{
+				$(#vBar).show();
+			}
+			tid = setTimeout(scanEvt,100);
+		}catch(e){
+		
 		}
 		
-		public function trigger(e):void{
-			super.trigger(e);
-			initVBar();
+	}
+	
+	
+	private function initVBar(){
+		tHeight = ct.scrollHeight;
+		vScrollHeight = _self.height() * $(#content).height()/ct.scrollHeight;
+		if(vScrollHeight < minVScrollHeight){
+			vScrollHeight = 36;
+		}
+		$(#vBar).height(vScrollHeight);
+		
+		tWidth = ct.scrollWidth;
+		hScrollWidth = _self.width() * $(#content).width()/ct.scrollWidth;
+		if(hScrollWidth < minHScrollWidth){
+			hScrollWidth = 36;
+		}
+		$(#hBar).width(hScrollWidth);
+	}
+	
+	public function get hBarWidth():int{
+		return 10;
+	}
+	
+	/**
+	 * 滚动条Top
+	 */
+	public function get scrollTop(){
+		return ct.scrollTop;
+	}
+	
+	/**
+	 * 滚动条整体实体高度
+	 */
+	public function get scrollHeight(){
+		return ct.scrollHeight;
+	}
+	/**
+	 * 滚动条Left
+	 */
+	public function get scrollLeft(){
+		return ct.scrollTop;
+	}
+	
+	/**
+	 * 滚动条整体实体宽度
+	 */
+	public function get scrollWidth(){
+		return ct.scrollHeight;
+	}
+	
+	
+	private function vPercent():void{
+		var per = ct.scrollTop/(ct.scrollHeight - _self.height());
+		$(#vBar).css("top",per * (_self.height() - $(#vBar).height()));
+	}
+	
+	private function hPercent():void{
+		var per = ct.scrollLeft/(ct.scrollWidth - _self.width());
+		$(#hBar).css("left",per * (_self.width() - $(#hBar).width()));
+	}
+	
+	private function setVPercent(value:Number):void{
+		ct.scrollTop = (ct.scrollHeight - $(#content).height())*value;
+
+	}
+	
+	
+	private function setHPercent(value:Number):void{
+		ct.scrollLeft = (ct.scrollWidth - $(#content).width())*value;
+	}
+	
+	/**
+	 * 滚动条宽度
+	 */
+	public function get barWidth():int{
+		return 10;
+	}
+	
+	/**
+	 * 将滚动条移动到底端
+	 */
+	public function moveVEnd():void{
+		ct.scrollTop = ct.scrollHeight - $(#content).height();
+	}
+	
+	
+	public function set fixed(value:Boolean):void{
+		_fixed = value;
+		if(_fixed){
+			$(#vBarBackground).hide();
+		}else{
+			$(#vBarBackground).show();
 		}
 		
 		
-	</script>
-</position>
+	}
+	
+	public function trigger(e):void{
+		super.trigger(e);
+		initVBar();
+	}
+	
+	
+</script>

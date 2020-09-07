@@ -50,7 +50,7 @@
 	<div id="header" class="dialogHeader" onselectstart="return false;" oncopy="return false;" onpaste="return false;"oncut="return false;">
 		<div class="dialogHeader_r">
 			<div class="dialogHeader_c">
-				<a class="close" href="#close">close</a>
+				<a class="close">close</a>
 				<span id="title">标题</span>
 			</div>
 

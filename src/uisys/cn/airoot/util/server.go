@@ -154,10 +154,13 @@ func (u *UIServer) Start(addr string, cfg string, printf func(string, int, strin
 
 	if Index(cfg, "d") != -1 { //表示每个插件都可以调试
 		u.IsPublic = true
+		fmt.Println("== USE DEBUG ==")
 	} else if Index(cfg, "n") != -1 {
 		u.IsPublic = false
+		fmt.Println("== USE STANDARD ==")
 	} else {
 		u.IsPublic = true
+		fmt.Println("== USE DEBUG ==")
 	}
 
 	if u.IsStatic {
@@ -500,7 +503,7 @@ func (u *UIServer) jusEvt(w http.ResponseWriter, req *http.Request, ext string) 
 	if Index(req.URL.RawQuery, "only") == 0 {
 		query = true
 	}
-	jus := &UI{IsPublic: u.IsPublic, SERVER: u, SYSTEM_PATH: u.SysPath, CLASS_PATH: u.SysPath + "/src/", Debug: true, IsTest: query}
+	jus := &UI{IsPublic: u.IsPublic, SERVER: u, SYSTEM_PATH: u.SysPath, CLASS_PATH: u.SysPath + "/src/", Debug: u.IsPublic, IsTest: query}
 	className := Substring(req.URL.Path, 0, LastIndex(req.URL.Path, ext))
 	className = Replace(className, "/", ".")
 	if err := jus.CreateFrom(u.RootPath+"/", "", nil, className); err == nil {
@@ -525,6 +528,30 @@ func (u *UIServer) jusEvt(w http.ResponseWriter, req *http.Request, ext string) 
 
 	}
 	jus = nil
+
+}
+
+func (u *UIServer) esEvt(w http.ResponseWriter, req *http.Request, ext string) {
+	es := &ScriptS{SERVER: u, SYSTEM_PATH: u.SysPath, CLASS_PATH: u.SysPath + "/src/", Debug: u.IsPublic}
+	className := Substring(req.URL.Path, 0, LastIndex(req.URL.Path, ext))
+	className = Replace(className, "/", ".")
+	if err := es.CreateFrom(u.RootPath+"/", className); err == nil {
+		b := es.Bytes()
+		total := len(b)
+		w.Header().Set("Content-Type", "text/html;charset=UTF-8")
+		w.Header().Set("Content-Length", strconv.Itoa(total))
+		w.Write(b)
+	} else {
+		fmt.Println("service.go ->", className, err)
+		if err.Error() == "ui.go -> the file isn't exist." {
+			w.WriteHeader(404)
+			w.Write([]byte("<h1>" + err.Error() + "</h1>"))
+		} else {
+			w.WriteHeader(500)
+			w.Write([]byte("<h1>" + err.Error() + "</h1>"))
+		}
+
+	}
 
 }
 
@@ -571,6 +598,11 @@ func (u *UIServer) root(w http.ResponseWriter, req *http.Request) {
 
 		if IsType(req.URL.Path, ".ui.html") {
 			u.jusEvt(w, req, ".ui.html")
+			return
+		}
+
+		if IsType(req.URL.Path, ".es") {
+			u.esEvt(w, req, ".es")
 			return
 		}
 

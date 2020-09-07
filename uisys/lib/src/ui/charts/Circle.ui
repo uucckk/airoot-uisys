@@ -1,0 +1,96 @@
+<@pub/>
+<style>
+	body{
+		background-color:#000;
+		display:flex;
+		align-items:center;
+		justify-content:center;
+		position:relative;
+		width:160px;
+		height:160px;
+		text-align:center;
+		font-family: "Open Sans";
+		font-weight: 300;
+		color: rgb(254, 254, 254);
+	}
+	canvas{
+		position:absolute;
+	}
+</style>
+<div r="70">
+	<canvas id="cvs" width="160" height="160"></canvas>
+	<div>
+		<div style="font-size:36px;" id="title">0</div>
+		<div id="subText">Hello</div>
+	</div>
+</div>
+<script>
+	var ctx = null;
+	var r:int from "r";
+	var _value = 0.8;
+	var _lineWidth = 18;
+	var _color = "#ffaa00";
+	function init(){
+		ctx = #cvs.getContext("2d");
+		ctx.lineWidth = _lineWidth;
+		ctx.lineCap="round"
+		render();
+		window.a = @this;
+	}
+	
+	set width(value){
+		#cvs.width = value;
+		render();
+	}
+	
+	get width():int{
+		return #cvs.width;
+	}
+	
+	set height(value){
+		#cvs.height = value;
+		render();
+	}
+	
+	get height(value){
+		return #cvs.height;
+	}
+	
+	set value(value){
+		_value = value;
+		render();
+	}
+	
+	set title(value){
+		#title.innerText = value;
+	}
+	
+	set subText(value){
+		#subText.innerText = value;
+	}
+	//设置圆环颜色
+	set color(value){
+		_color = value;
+		render();
+	}
+	
+	set lineWidth(value){
+		_lineWidth = ctx.lineWidth = value;
+		render();
+	}
+	
+	func render(){
+		ctx.clearRect(0,0,width,height);
+		ctx.strokeStyle = _color;
+		/**开始一条新路径
+		 * beginPath() 方法开始一条路径，或重置当前的路径*/
+		ctx.beginPath();
+		/**创建弧线/曲线
+		 * 圆心的位置为画布的中心，圆形半径为 50 像素(不能带单位)
+		 * 起始角度为 0，即 x 轴的正方向，结束角度为 360度*/
+		var R = cvs.width>cvs.height ? cvs.height/2 - _lineWidth : cvs.width/2 - _lineWidth;
+		ctx.arc(cvs.width / 2, cvs.height / 2, R, - Math.PI/2, 2 * Math.PI*_value - Math.PI/2);
+		//绘制定义好的路径
+		ctx.stroke();//方法实际地绘制路径
+	}
+</script>

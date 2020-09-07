@@ -18,7 +18,7 @@
 		public function init(parent:MapView){
 			console.log(parent)
 			map = parent;
-			ctx = #cvs[0].getContext("2d");
+			ctx = #cvs.getContext("2d");
 			
 		}
 		
@@ -28,7 +28,7 @@
 		 */
 		public function pushMarks(obj:Object){
 			px = py = 0;
-			#cvs.css("transform","translate(0px,0px)");
+			$(#cvs).css("transform","translate(0px,0px)");
 			map.clearCanvas();
 			for(var a in obj){
 				hav[a] = obj[a];
@@ -211,7 +211,7 @@
 		public function move(dx,dy){
 			px += dx;
 			py += dy;
-			#cvs.css("transform","translate(" + px + "px," + py + "px)");
+			$(#cvs).css("transform","translate(" + px + "px," + py + "px)");
 			
 		}
 		

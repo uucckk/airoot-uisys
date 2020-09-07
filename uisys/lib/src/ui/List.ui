@@ -33,7 +33,9 @@
 	
 	//页面控制
 	var st = 0;
-	function init(){
+	var par = null;
+	function init(p){
+		par = p;
 		dom.onscroll = scrollEvt;
 		st = dom.scrollTop;
 	}
@@ -41,8 +43,9 @@
 	
 	public set dataProvider(value){
 		_data = value;
+		clear();
 		if(!value || value.length == 0){
-			clear();
+			return
 		}
 		initList(0,dom.offsetHeight);
 	}
@@ -67,6 +70,7 @@
 	
 	private function initList(top,bottom){
 		var obj = pList(top,bottom);
+		console.log(obj);
 		if(obj){
 			extList(top,obj.min,obj.max,obj.mo);
 		}else{
@@ -135,7 +139,6 @@
 	}
 	/// 如果存在就扩展
 	private function extList(top,min,max,mo){
-		
 		var c = null;
 		var d = null;
 		var i = 0;
@@ -205,7 +208,7 @@
 			c = tList.pop();
 			c.data = p;
 		}else{
-			c = context.module(p);
+			c = context.module(p,par);
 		}
 		c = {index:i,obj:c};
 		list.push(c);

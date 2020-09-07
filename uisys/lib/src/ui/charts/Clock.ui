@@ -1,0 +1,137 @@
+<div style="width:520px;margin:0 auto;">
+	<canvas id="clock">您的浏览器不支持canvas标签</canvas>
+</div>
+<script>
+	//背景颜色
+	var bg:color from "background";
+	//边框颜色
+	var border:uint from "border";
+	private var canvas = #clock;
+	private var clock = canvas.getContext('2d');
+	var centerX = 0;
+	var centerY = 0;
+	var clockR = 100;
+	function drowClock(){
+		//清除画布
+		clock.clearRect(0, 0, #clock.width, #clock.height);
+		var now = new Date();
+		var secd = now.getSeconds();
+		var min = now.getMinutes();
+		var hour = now.getHours();
+		//小时必须获取浮点类型（小时+分数转化的小时）
+		//时间格式19:23:30
+		//将24小时进制装换为12小时进制
+		hour = hour + (min / 60);
+		hour = hour > 12 ? hour - 12 : hour;
+		//背景
+		clock.beginPath();
+		clock.lineWidth = clockR/30;
+		clock.strokeStyle = "#000000";
+		clock.arc(centerX,centerY, clockR, 0, 360, false);
+		clock.stroke();
+		clock.closePath();
+		//刻度
+		//时刻度
+		for (var i = 0; i < 12; i++) {
+			clock.save();
+			//设置时针的粗细
+			clock.lineWidth = clockR/20;
+			//设置时针的颜色
+			clock.strokeStyle = "#000";
+			//先设置0,0点
+			clock.translate(centerX, centerY);
+			//再设置旋转角度
+			clock.rotate((i * 30) * Math.PI / 180);//角度*Math.PI/180=弧度
+			clock.beginPath();
+			clock.moveTo(0, -clockR*8.3/10);
+			clock.lineTo(0, -clockR*9.4/10);
+			clock.closePath();
+			clock.stroke();
+			clock.restore();
+		}
+		//分刻度
+		for (var i = 0; i < 60; i++) {
+			clock.save();
+			//设置时针的粗细
+			clock.lineWidth = clockR/45;
+			//设置时针的颜色
+			clock.strokeStyle = "#000";
+			//先设置0,0点
+			clock.translate(centerX,centerY);
+			//再设置旋转角度
+			clock.rotate((i * 6) * Math.PI / 180);//角度*Math.PI/180=弧度
+			clock.beginPath();
+			clock.moveTo(0, -clockR*9/10);
+			clock.lineTo(0, -clockR*9.4/10);
+			clock.closePath();
+			clock.stroke();
+			clock.restore();
+		}
+		//时针
+		clock.save();
+		clock.lineWidth = clockR/20;
+		clock.strokeStyle = "black";
+		clock.translate(centerX,centerY);
+		clock.rotate(hour * 30 * Math.PI / 180);
+		clock.beginPath();
+		clock.moveTo(0, -clockR+ 48);
+		clock.lineTo(0, 20);
+		clock.stroke();
+		clock.closePath();
+		clock.restore();
+		////分针
+		clock.save();
+		clock.lineWidth = clockR/25;
+		clock.strokeStyle = "black";
+		clock.translate(centerX,centerY);
+		clock.rotate(min * 6 * Math.PI / 180);
+		clock.beginPath();
+		clock.moveTo(0, -clockR+ 25);
+		clock.lineTo(0, 25);
+		clock.stroke();
+		clock.closePath();
+		clock.restore();
+		//秒针
+		clock.save();
+		clock.lineWidth = clockR/45;
+		clock.strokeStyle = "red";
+		clock.translate(centerX,centerY);
+		clock.rotate(secd * 6 * Math.PI / 180);
+		clock.beginPath();
+		clock.moveTo(0, -clockR*4/5);
+		clock.lineTo(0, 48*3/4);
+		clock.closePath();
+		clock.stroke();
+		//画交叉点
+		clock.beginPath();
+		clock.arc(0, 0, 5, 0, 360, false);
+		clock.closePath();
+		clock.fillStyle = "black";
+		clock.fill();
+		clock.stroke();
+		clock.beginPath();
+		clock.arc(0, -clockR*2/3, 5*clockR/120, 0, 360, false);
+		clock.closePath();
+		clock.fillStyle = "white";
+		clock.fill();
+		clock.stroke();
+		clock.restore();
+	}
+	function init(){
+		//使用setInternal（代码，（毫秒）时间）  让时钟动起来
+		drowClock();
+		setInterval(drowClock, 1000);
+	}
+	
+	
+	function trigger(e){
+		#clock.width = dom.offsetWidth;
+		#clock.height = dom.offsetHeight;
+		centerX = #clock.width/2;
+		centerY = #clock.height/2
+		clockR = #clock.width>#clock.height ? #clock.height/2 : #clock.width/2;
+		clockR *= 0.8;
+		drowClock();
+	}
+	
+</script>

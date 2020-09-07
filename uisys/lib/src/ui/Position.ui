@@ -21,6 +21,9 @@
 		var tmp:Object = null;
 		var tWidth:int = 0;
 		var tHeight:int = 0;
+		var orgin:int = 0;
+		var x:int = 0;
+		var y:int = 0;
 		var left:int = 0;
 		var right:int = 0;
 		var top:int = 0;
@@ -29,13 +32,18 @@
 		var hBorderSum:int = 0;
 		_self.find(">div").each(function(){
 			var $this = $(this);
+			orgin = $this.attr("orgin");
 			$this.css("position","absolute");
 			vBorderSum = parseInt($this.css("border-top-width")) + parseInt($this.css("border-bottom-width"));
 			hBorderSum = parseInt($this.css("border-left-width")) + parseInt($this.css("border-right-width"));
 			//横向
 			tmp = $this.attr("left");
 			if(tmp){
-				left = parseInt(tmp);
+				if(tmp.indexOf("%") == -1){
+					left = parseInt(tmp);
+				}else{
+					left = parseInt(tmp)/100*$this.parent().width();
+				}
 			}else{
 				left = false;
 			}
@@ -47,7 +55,6 @@
 				if($this.css("left") != left){
 					$this.css("left",left);
 				}
-				
 			}
 			
 			tmp = $this.attr("right");
@@ -67,7 +74,7 @@
 					tWidth = _self.width() * tWidth/100;
 					$this.width(tWidth - hBorderSum);
 				}else if(left === false && right !== false){
-					$this.css("left",right - tWidth);
+					left = right - tWidth;
 					$this.width(tWidth - hBorderSum);
 				}else if(left == false && right === false){
 					$this.width(tWidth - hBorderSum);
@@ -83,12 +90,27 @@
 				}
 			}
 			
+			tmp = $this.attr("x");
+			if(tmp){
+				if(tmp.indexOf("%") == -1){
+					x = parseInt(tmp);
+				}else{
+					x = parseInt(tmp)/100*$this.parent().width();
+				}
+				left = x - $this.outerWidth(true)/2;
+				
+			}
+			
 			
 			
 			//纵向
 			tmp = $this.attr("top");
 			if(tmp){
-				top = parseInt(tmp);
+				if(tmp.indexOf("%") == -1){
+					top = parseInt(tmp);
+				}else{
+					top = parseInt(tmp)/100*$this.parent().height();
+				}
 			}else{
 				top = false;
 			}
@@ -114,6 +136,16 @@
 					$this.height(tHeight - vBorderSum);
 				}else if(top === false && bottom === false){
 					$this.height(tHeight);
+					tmp = $this.attr("y");
+					if(tmp){
+						if(tmp.indexOf("%") == -1){
+							y = parseInt(tmp);
+						}else{
+							y = parseInt(tmp)/100*$this.parent().height();
+						}
+						top = y - $this.outerHeight(true)/2;
+						
+					}
 				}else if(top !== false && bottom === false){
 					$this.height(tHeight - vBorderSum);
 				}
@@ -123,14 +155,12 @@
 					$this.height(tHeight - vBorderSum);
 				}
 			}
-			if(left === false && right === false){
-				$this.css("left","0px");
-			}
-			if(top == false && bottom === false){
-				$this.css("top","0px");
-			}
+			$this.css("left",left == false ? "0px":left);
+			
 			if(top == false && bottom !== false){
 				$this.css("bottom",$this.attr("bottom") + "px");
+			}else{
+				$this.css("top",top == false ? "0px":top);
 			}
 			var $id = @global[$this.attr("id")];
 			if($id && $id.trigger){

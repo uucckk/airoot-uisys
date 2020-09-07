@@ -15,10 +15,10 @@ import (
 
 //--------------------------------Script----------------------------------------
 type HTMLScript struct {
-	ui           *UI
-	root         string
-	hMap         []*Attr //导入的类文件
-	gsMap        map[string]*GSetter
+	ui   *UI
+	root string
+	hMap []*Attr //导入的类文件
+
 	domain       string
 	innerValue   string
 	extendScript string
@@ -33,7 +33,7 @@ func (s *HTMLScript) CreateFrom(ui *UI, root string, domain string, innerValue s
 	s.innerValue = innerValue
 	s.hMap = make([]*Attr, 0)
 	s.extendScript = extendScript
-	s.gsMap = make(map[string]*GSetter, 10)
+
 	return s
 }
 
@@ -49,6 +49,7 @@ func (s *HTMLScript) initScript(js *MScript) string {
  * @throws Exception
  */
 func (s *HTMLScript) initScriptFrom(js *MScript, _global string, _this string, _pri string) string {
+	gsMap := make(map[string]*GSetter, 10)
 	out := bytes.NewBufferString("")
 	tmp := bytes.NewBufferString("")
 	newString := bytes.NewBufferString("")
@@ -362,7 +363,6 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _global string, _this string, _
 					break
 				}
 			}
-
 			tl = append(tl, &Tag{Value: s.includeJs(tmp.String()), TagType: 0})
 			tl = append(tl, f)
 			continue
@@ -589,7 +589,7 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _global string, _this string, _
 		}
 
 		if t.IsGet {
-			s.pushGSetter(0, t)
+			s.pushGSetter(gsMap, 0, t)
 			if !t.IsStatic {
 				tlt = append(tlt, &Tag{Value: "function " + t.Value, TagType: 0})
 				continue
@@ -598,7 +598,7 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _global string, _this string, _
 		}
 
 		if t.IsSet {
-			s.pushGSetter(1, t)
+			s.pushGSetter(gsMap, 1, t)
 			if !t.IsStatic {
 				tlt = append(tlt, &Tag{Value: "function " + t.Value, TagType: 0})
 				continue
@@ -675,7 +675,7 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _global string, _this string, _
 	//处理Getter Setter
 	var pgs *GSetter = nil
 	tsb := bytes.NewBufferString("")
-	for name, value := range s.gsMap {
+	for name, value := range gsMap {
 		pgs = value
 		tsb.WriteString("Object.defineProperty(" + _this + ",'" + name + "',{")
 		if pgs.Setter != nil {
@@ -727,11 +727,11 @@ func (s *HTMLScript) getLevel(t *Tag) int {
 	return count
 }
 
-func (s *HTMLScript) pushGSetter(i int, tag *Tag) {
-	var p *GSetter = s.gsMap[tag.Value]
+func (s *HTMLScript) pushGSetter(gsMap map[string]*GSetter, i int, tag *Tag) {
+	var p *GSetter = gsMap[tag.Value]
 	if p == nil {
 		p = &GSetter{}
-		s.gsMap[tag.Value] = p
+		gsMap[tag.Value] = p
 	}
 
 	if i == 0 { //getter

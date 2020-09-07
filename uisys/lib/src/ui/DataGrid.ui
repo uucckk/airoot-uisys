@@ -363,7 +363,7 @@
 						cp = _columns[c];
 						pTd = TD.clone();
 						vl = cp.filter ? cp.filter(data[i][cp.name] + "",data[i],i) : data[i][cp.name];
-						if(!vl || (vl + "").length == 0){
+						if(vl != 0 && (!vl || (vl + "").length == 0)){
 							vl = "&nbsp;";
 						}
 						pTd.append(vl);

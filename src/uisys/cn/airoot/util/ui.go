@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -764,6 +765,24 @@ func (j *UI) loadSetting() {
 	j.html.RemoveChildByTagName("@pub")
 }
 
+// 引入文件
+func (j *UI) includeHTML() error {
+	sets := j.html.GetElementsByTagName("@include")
+	value := ""
+	for _, v := range sets {
+		value = v.GetAttr("value")
+		value = j.dirPath + "/" + value
+		code, err := GetCode(value)
+		if err != nil {
+			return err
+		}
+		_, err = v.ReplaceWithFromString(code)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
 func (j *UI) importHTML() {
 	sets := j.html.GetElementsByTagName("@import")
 	sets = append(sets, &HTML{tagData: map[string]*Ch{"value": &Ch{Type: 0, Value: ""}}})
@@ -1323,13 +1342,13 @@ func (j *UI) ReadHTML() *HTML {
 		tHTML := &HTML{}
 		//
 		if j.parent == nil {
-			sb := bytes.NewBufferString("<script>")
+			sb := bytes.NewBufferString("")
 			for _, v := range j.scriptElementBuffer {
 				j.ToFormatLine(v.Cls, v.ModuleName, v.Header+v.Value, sb)
 			}
-			sb.WriteString("</script>")
-			tHTML.ReadFromString(sb.String())
-
+			sb.WriteString("")
+			//tHTML.ReadFromString(sb.String())
+			j.pushScriptCode(sb.String())
 			return tHTML
 		}
 
@@ -1445,6 +1464,9 @@ func (j *UI) ReadHTML() *HTML {
 		return tHTML
 	}
 	j.loadSetting()
+	if err := j.includeHTML(); err != nil {
+		log.Println(err)
+	}
 	j.useHTML(j.html)
 	j.rootHTML()
 	j.defineHTML()
@@ -1699,14 +1721,6 @@ func (j *UI) ToFormatBytes() []byte {
 	json.Write(j.getCssCode().Bytes())
 	//获取私有css属性
 	j.ToFormatLine("B", j.className, j.getStyleCode().String(), json)
-	// spts := result.GetElementsByTagName("script") //获取Script属性
-	// for _, v := range spts {
-	// 	if v.GetAttr("type") == "" {
-	// 		json.Write(ListToHTMLStringBytes(v.Child()))
-	// 		v.Remove()
-	// 	}
-
-	// }
 	json.Write(j.getScriptCode().Bytes())
 
 	if j.IsScript() {

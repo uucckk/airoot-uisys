@@ -121,7 +121,7 @@ func (h *HTML) fx(code []rune, position int) (map[string]*Ch, []string, int) {
 			continue
 		}
 
-		if ch == ' ' || ch == '\t' || ch == '\n' || ch == '=' || ch == ':' {
+		if ch == ' ' || ch == '\t' || ch == '\n' || ch == '=' {
 			if len(tmp) > 0 {
 				if eq {
 					tagData[key] = &Ch{string(tmp), 0}
@@ -139,7 +139,7 @@ func (h *HTML) fx(code []rune, position int) (map[string]*Ch, []string, int) {
 				tmp = tmp[0:0]
 			}
 
-			if ch == '=' || ch == ':' {
+			if ch == '=' {
 				eq = true
 			}
 
@@ -307,7 +307,13 @@ m:
 					if ch == '!' {
 						k := 0
 						sb = sb[0:0]
-						keys := []rune("-->")
+						var keys []rune
+						if code[position] == '[' {
+							keys = []rune("]]>")
+						} else {
+							keys = []rune("-->")
+						}
+
 						for position < len(code) {
 							ch = code[position]
 							position++

@@ -1744,7 +1744,7 @@
 
 </css>
 <button class="ant-btn">
-	<span>
+	<span id="label">
 		<@content/>
 	</span>
 </button>
@@ -1760,6 +1760,15 @@
 		}
 		
 	}
+	
+	set label(v){
+		#label.innerText = v;
+	}
+	
+	get label(){
+		return #label.innerText;
+	}
+	
 	set type(v){
 		_type = v;
 		dom.classList.add('ant-btn-' + v);
