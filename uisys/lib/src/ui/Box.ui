@@ -16,6 +16,11 @@
 		});
 	}
 	
+	function appendChild(obj){
+		dom.appendChild(obj);
+		trigger(0);
+	}
+	
 	public function trigger(event){
 		_self.children("div").each(function(){
 			var $this = $(this);

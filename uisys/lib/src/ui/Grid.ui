@@ -54,7 +54,6 @@
 		var posV:int = paddingTop;
 	
 		var obj = _self.children("div").not(":hidden");
-		console.log("obj length",obj.length);
 		obj.each(function(){
 			var $this = $(this);
 			$this.css("position","absolute");

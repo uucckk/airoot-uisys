@@ -34,12 +34,20 @@
 			_x = value;
 			_self.css("left",value);
 		}
+		
+		public get x(){
+			return _x;
+		}
 		/**
 		 * @param value		设置x属性
 		 */
 		public function set y(value){
 			_y = value;
 			_self.css("top",value);
+		}
+		
+		public get y(){
+			return _y;
 		}
 		/**
 		 * 设定容器宽度

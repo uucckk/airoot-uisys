@@ -3,18 +3,17 @@
 	@type			JUS 布局框架
 	@description	桌面布局主框架，如果使用桌面布局首先要引入此模块
 -->
-<ui.vbox>
-	<css>
-		body{
-			position:fixed;
-			overflow:hidden;
-			transition: transform .3s;
-			transform:translateX(100%);
-
-		}
-	</css>
+<css>
+	body{
+		position:fixed;
+		overflow:hidden;
+		transition: transform .3s;
+		transform:translateX(100%);
+	}
+</css>
+<ui.VBox>
 	<@content />
-</ui.vbox>
+</ui.VBox>
 <script>
 	import @root/js/jquery.min.js;
 	static var currentM = null;
@@ -25,7 +24,7 @@
 	var win = null;
 	
 	static func back(){
-		currentM.close();
+		return currentM.close();
 	}
 	
 	/**
@@ -94,7 +93,7 @@
 		padding = _self.outerHeight(true) - _self.height();
 		_self.height(stageHeight - padding);
 		setTimeout(function(){
-			super.trigger(_self.attr("auto") == "true" ? (stageWidth>=stageHeight ? 0 : 1) : 0);
+			@global[dom.getAttribute("id")].trigger(_self.attr("auto") == "true" ? (stageWidth>=stageHeight ? 0 : 1) : 0);
 		},0);
 		
 	}
@@ -117,12 +116,16 @@
 			currentM = prvM;
 			
 			setTimeout(func(){
-				$(dom).remove();
+				if(dom.parentNode){
+					dom.parentNode.removeChild(dom);
+				}
 			},200);
-			
-			
+			currentM.show();
+			return true	
+		}else{
+			return false
 		}
-		currentM.show();
+		
 	}
 	
 	function finalize():void{

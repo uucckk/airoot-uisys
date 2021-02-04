@@ -7,7 +7,6 @@
 <ui.vbox>
 	<style>
 		body{
-			background-color:#fefefe;
 			border:1px solid #c0c0c0;
 			overflow:hidden;
 			color:#15282c;
@@ -33,6 +32,7 @@
 			border-top:none;
 			height:26px;
 			line-height:26px;
+			width:100%;
 		}
 		
 		.$row>div{
@@ -41,7 +41,7 @@
 			border-right:solid 1px #e0e0e0;
 		}
 		
-		#head{
+		.head{
 			color:#222222;
 			height:26px;
 			border-bottom:1px solid #c0c0c0;
@@ -82,6 +82,7 @@
 		}
 		
 		#pageBar{
+			display:none;
 			height:28px;
 			background: linear-gradient(#ffffff, #f7f7f7); 
 			border-top:1px solid #c0c0c0;
@@ -165,8 +166,23 @@
 		.$result li>span{
 			font-weight:bold;
 		}
+		
+		.odd{
+			background-color:#fefefe;
+		}
+		.even{
+			background-color:#f5f5f5;
+		}
+		.odd.over,.even.over{
+			background-color:#e0ffe0;
+		}
+		.odd.selected,.even.selected{
+			background-color:#5791e8;
+			color:#ffffff;
+		}
+		
 	</style>
-	<div id="head"></div>
+	<div id="head" class="head"></div>
 	<div id="content" height="100%">
 		<div id="grid">
 		
@@ -187,6 +203,7 @@
 		private var _headWidth:Array = [];
 		private var contentWidth:int = 0;
 		private var data = [];
+		private var tmp_data = [];
 		
 		
 		private var dgContent:JQuery = null;
@@ -218,6 +235,9 @@
 		public var onDblClick:Function = null;
 		var time = new Date().getTime();
 		
+		private var _filter = null;//默认过滤器，过滤不要的数据
+		private var _filterValues = null;
+		
 		var _self = $(dom);
 		function init(){
 			dgContent = $(#content);
@@ -225,27 +245,46 @@
 			gridContent.mousemove(function(e){
 				var ty = e.pageY - dgContent.offset().top + dgContent.scrollTop();
 				var i = parseInt(ty/_rowHeight);
-			
 				if(rollIndex != -1 && rowLst[rollIndex] && rollIndex != selectedIndex){
-					rowLst[rollIndex].css("background-color",rollIndex % 2 == 0 ? "#fefefe" : "#f5f5f5");
-					
+					rowLst[rollIndex].removeClass("over");
 				}
 				if(i != selectedIndex && rowLst[i]){
-					rowLst[i].css("background-color","#e0ffe0");
+					rowLst[i].addClass("over");
 				}
 				
 				rollIndex = i;
 
 			});
 			
+			gridContent.on("mouseout",".$row",function(e){
+				var tp = $(e.currentTarget);
+				tp.removeClass("over");
+				return;
+				var i = tp.attr("row");
+				if(rollIndex != -1 && rowLst[rollIndex] && rollIndex != selectedIndex){
+					rowLst[i].removeClass("over");
+				}
+				
+				
+				rollIndex = i;
+				if(onMouseOut){
+					onMouseOut(data[i].__INDEX__,data[i],e);
+				}
+
+			});
+			
 			gridContent.click(function(e){
 				var ty = e.pageY - dgContent.offset().top + dgContent.scrollTop();
 				var i = parseInt(ty/_rowHeight);
-				if(selectedIndex != -1 && rowLst[selectedIndex]){
-					rowLst[selectedIndex].css("background-color",selectedIndex % 2 == 0 ? "#fefefe" : "#f5f5f5");	
-					rowLst[i].css("background-color","#d0ffe0");
+				if(rowLst[selectedIndex]){
+					rowLst[selectedIndex].removeClass("selected");
 				}
 				
+				if(selectedIndex != -1 && rowLst[selectedIndex]){
+					rowLst[selectedIndex].addClass(rollIndex % 2 == 0 ? "odd" : "even");
+					
+				}
+				rowLst[i].addClass("selected");
 				selectedIndex = i;
 				
 				if(onChange){
@@ -256,8 +295,8 @@
 				var ty = e.pageY - dgContent.offset().top + #content.scrollTop();
 				var i = parseInt(ty/_rowHeight);
 				if(selectedIndex != -1 && rowLst[selectedIndex]){
-					rowLst[selectedIndex].css("background-color",selectedIndex % 2 == 0 ? "#fefefe" : "#f5f5f5");	
-					rowLst[i].css("background-color","#d0ffe0");
+					rowLst[selectedIndex].addClass(rollIndex % 2 == 0 ? "odd" : "even");
+					rowLst[i].addClass("selected");
 				}
 				
 				selectedIndex = i;
@@ -329,6 +368,36 @@
 			});
 		}
 		
+		/**
+		 * 设置过滤器方法
+		 * @param method	方法
+		 */
+		public set filter(method){
+			_filter = method;
+			initFilter();
+			initDataGrid();
+		}
+		
+		
+		/**
+		 * 设置过滤器的条件
+		 */
+		public set filterValues(v){
+			_filterValues = v;
+			initFilter();
+			initDataGrid();
+		}
+		
+		// 设置是否显示分页栏
+		public set showPageBar(v){
+			if(v){
+				#pageBar.style.display = "block";
+			}else{
+				#pageBar.style.display = "none";
+			}
+			this.trigger(0);
+		}
+		
 		private function initDataGrid(){
 			var contentHeight = dgContent.height();
 			var sumHeight = 0;
@@ -362,7 +431,7 @@
 					for(var c:int = 0;c<_columns.length;c++){
 						cp = _columns[c];
 						pTd = TD.clone();
-						vl = cp.filter ? cp.filter(data[i][cp.name] + "",data[i],i) : data[i][cp.name];
+						vl = cp.filter ? cp.filter(data[i][cp.name],data[i],i) : data[i][cp.name];
 						if(vl != 0 && (!vl || (vl + "").length == 0)){
 							vl = "&nbsp;";
 						}
@@ -370,7 +439,7 @@
 						pTd.width(_headWidth[c]);
 						if(cp.fixed){
 							pTd.css("position","relative");
-							pTd.css("background-color",i % 2 == 0 ? "#fefefe" : "#f5f5f5");
+							pTd.addClass(i % 2 == 0 ? "odd" : "even");
 						}
 						if(cp.style){
 							pTd.css(cp.style);
@@ -381,7 +450,7 @@
 					gridContent.append(row);
 					rowLst[i] = row;
 					if(i == selectedIndex){
-						row.css("background-color","#d0ffe0");
+						row.addClass("selected");
 					}
 					continue;
 				}
@@ -423,8 +492,8 @@
 			}
 			var row = rowTmp.clone();
 			row.css("top",i*_rowHeight);
-			row.css("background-color",i%2 == 0 ? "#fefefe" : "#f5f5f5");
-			row.width(contentWidth);
+			row.addClass(i % 2 == 0 ? "odd" : "even");
+			//row.width(contentWidth);
 			return row;
 		}
 		
@@ -463,9 +532,25 @@
 		}
 		
 		public function set dataProvider(value:Array){
-			data = value;
+			tmp_data = value;
+			initFilter();
 			initDataGrid();
-			
+		}
+		
+		
+		private function initFilter(){
+			data.length = 0;
+			if(_filter){
+				var p = null;
+				for(var i = 0;i<tmp_data.length;i++){
+					p = tmp_data[i];
+					if(_filter.call(p,_filterValues)){
+						data.push(p);
+					}
+				}
+			}else{
+				data = data.concat(tmp_data);
+			}
 		}
 		
 		private var colList:List = null;
@@ -606,7 +691,6 @@
 					_headWidth[index] = dWidth;
 					for(var r:int = startRow;r<endRow;r++){
 						if(rowLst[r]){
-							rowLst[r].width(contentWidth);
 							rowLst[r].children("div").eq(index).width(_headWidth[index]);
 						}
 						

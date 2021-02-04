@@ -45,7 +45,7 @@
 			#content.appendChild(layout);
 			moduleList[className] = layout;
 			$(layout.dom).attr("left","0").attr("width","100%").attr("height","100%");
-			layout.dom.addModule(className,[],function(obj){
+			layout.dom.addModule(className,params?params:[],function(obj){
 				$(loader.dom).remove();
 				$(layout.dom).css({"left":"0px","top":"0px"});
 				try{

@@ -806,10 +806,10 @@ func (s *HTMLScript) ReadFromString(script string) string {
 				if attr.Value.Type <= 0 {
 					continue
 				}
-				if p.GetAttr("class_id") != "" {
-					endB.WriteString("__OBJECT__[__NAME__+'" + strings.Replace(p.GetAttr("id"), "\b", "", -1) + "']")
+				if Index(p.TagName(), ".") != -1 {
+					endB.WriteString("__OBJECT__[__NAME__+'" + strings.Replace(p.GetAttr("id"), p.GetAttr("domain"), "", -1) + "']")
 				} else {
-					endB.WriteString("window[__NAME__+'" + strings.Replace(p.GetAttr("id"), "\b", "", -1) + "']")
+					endB.WriteString("window[__NAME__+'" + strings.Replace(p.GetAttr("id"), p.GetAttr("domain"), "", -1) + "']")
 				}
 				endB.WriteString("." + attr.Name + "=")
 				switch attr.Value.Type {

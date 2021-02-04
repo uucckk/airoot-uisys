@@ -59,13 +59,10 @@
 			
 			tmp = $this.attr("right");
 			if(tmp){
-				right = _self.width() - parseInt(tmp);
+				right = _self.width() - parseInt(tmp)
 			}else{
 				right = false;
 			}
-			
-			
-			
 			
 			tmp = $this.attr("width");
 			if(tmp && (right === false || left === false)){
@@ -86,7 +83,7 @@
 					tWidth = right - left;
 					$this.width(tWidth - hBorderSum);
 				}else if(left == false && right !== false){
-					$this.css("left",right - $this.width());
+					$this.css("right",right + "px");
 				}
 			}
 			
@@ -155,9 +152,16 @@
 					$this.height(tHeight - vBorderSum);
 				}
 			}
-			$this.css("left",left == false ? "0px":left);
+			
+			if(left == false && right !== false){
+				$this.css("right",$this.attr("bottom") + "px");
+			}else{
+				$this.css("left",left == false ? "0px":left);
+			}
+			
 			
 			if(top == false && bottom !== false){
+				$this.css("top","");
 				$this.css("bottom",$this.attr("bottom") + "px");
 			}else{
 				$this.css("top",top == false ? "0px":top);

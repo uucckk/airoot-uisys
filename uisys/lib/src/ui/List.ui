@@ -13,7 +13,7 @@
 	}
 </style>
 <ui.Box dataLabel="" dataField="">
-	<div id="content" style="overflow:hidden">
+	<div id="content" style="overflow:hidden;flex-shrink:0px;">
 		<div id="tp"></div>
 		<@component/>
 	</div>
@@ -31,6 +31,8 @@
 	public var onScroll = null;
 	private var _data = [];
 	
+	public var onClick:Function = null;//确定点击事件
+	
 	//页面控制
 	var st = 0;
 	var par = null;
@@ -38,6 +40,13 @@
 		par = p;
 		dom.onscroll = scrollEvt;
 		st = dom.scrollTop;
+		$(#content).on("click",">div",func(){
+			var $this = $(this);
+			var row = $this.attr("row");
+			if(onClick){
+				onClick({index:row,data:_data[row]});
+			}
+		});
 	}
 	
 	
@@ -48,6 +57,35 @@
 			return
 		}
 		initList(0,dom.offsetHeight);
+	}
+	
+	/**
+	 * 在指定索引处插入数据
+	 * @param index		索引位置
+	 * @param data		插入数组
+	 */
+	public func insertAt(index,data){
+		index = parseInt(index);
+		if(_data&& index<=_data.length){
+			var endA = _data.slice(index + 1,_data.length);
+			_data.length = index + 1;
+			_data = _data.concat(data,endA);
+			initList(dom.scrollTop,dom.scrollTop + dom.offsetHeight);
+		}else{
+			if(window.console && console.error){
+				console.error("ui.List>>insertAt isn't have index",index);
+			}
+		}
+	}
+	
+	
+	/**
+	 * 在指定所以删除其自数据
+	 */
+	public func removeAt(index){
+		if(_data&& index<=_data.length){
+		
+		}
 	}
 	
 	
@@ -70,11 +108,19 @@
 	
 	private function initList(top,bottom){
 		var obj = pList(top,bottom);
-		console.log(obj);
 		if(obj){
 			extList(top,obj.min,obj.max,obj.mo);
 		}else{
-			#content.style.height = makeList(top).aHeight*_data.length + "px";
+			contentHeight = makeList(top).aHeight*_data.length;
+		}
+		
+	}
+	
+	private set contentHeight(v){
+		if(v<dom.offsetHeight){
+			#content.style.height = "auto";
+		}else{
+			#content.style.height = v + "px";
 		}
 		
 	}
@@ -177,12 +223,12 @@
 			spad = dom.scrollTop;
 		}
 		if(#content.offsetHeight<#content.scrollHeight){
-			#content.style.height = #content.scrollHeight + "px";
+			contentHeight = #content.scrollHeight;
 		}
 		
 		if(i>= _data.length){
 			#content.style.height = "";
-			#content.style.height = #content.scrollHeight + "px";
+			contentHeight = #content.scrollHeight;
 		}
 		
 		if(min == 0){
@@ -209,6 +255,11 @@
 			c.data = p;
 		}else{
 			c = context.module(p,par);
+		}
+		if(c.dom){
+			c.dom.setAttribute("row",i);
+		}else{
+			c.setAttribute("row",i);
 		}
 		c = {index:i,obj:c};
 		list.push(c);

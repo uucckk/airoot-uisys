@@ -1,5 +1,5 @@
 <@import value="ui.*" />
-<style>
+<style id="style">
 	.icon{
 		width:26px;
 		height:26px;
@@ -94,29 +94,6 @@
 			return false;
 		});
 		
-		
-		FrameEvent("@this","root.tree",function(e){
-			console.log("police:"+e);
-			console.log($("[index="+e+"] .quan"));
-			//$($("[index="+e+"]")[0].children[4]).removeClass("display");
-			try{
-				$($("[index="+e+"] .quan")[0]).removeClass("display");
-				$($("[index="+e+"] .quan")[1]).removeClass("display");
-			}catch(e){
-				console.log(e);
-			}
-		});
-		FrameEvent("@this","root.trees",function(e){
-			console.log("police:"+e);
-			console.log($("[index="+e+"]")[0].children[4]);
-			//$($("[index="+e+"]")[0].children[4]).addClass("display");
-			try{
-				$($("[index="+e+"] .quan")[0]).addClass("display");
-				$($("[index="+e+"] .quan")[1]).addClass("display");
-			}catch(e){
-				console.log(e);
-			}
-		});
 	}
 	
 	
@@ -135,6 +112,7 @@
 			
 		}
 	}
+	
 	
 	
 	public function set onClick(value:Function):void{

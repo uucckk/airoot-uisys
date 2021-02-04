@@ -68,6 +68,12 @@
 		var label from "label";
 		var child from "child";
 		
+		/**
+		 * 当鼠标点击的时候，出发事件
+		 */
+		public var onClick = null;
+		
+		
 		//过滤器
 		private var _filter:Function = null;
 			
@@ -99,10 +105,18 @@
 			var p:Object = null;
 			var t:li = null;
 			var tmp = null;
+			var elem = null;
 			for(var i:int = 0;i<list.length;i++){
 				p = list[i];
 				t = li.clone();
-				t.html(_filter ? _filter(p) : "<a href='#'>" + p[label] + (p[child] ? "+" : "") + "</a>");
+				elem = _filter ? _filter(p) : "<a href='javascript:void(0);'>" + p[label] + (p[child] ? "+" : "") + "</a>";
+				elem = $(elem);
+				t.html(elem);
+				t.click(p,func(e){
+					if(onClick){
+						onClick(e);
+					}
+				});
 				tmp = initMenu(p[child],level + 1);
 				if(tmp){
 					t.append(tmp);

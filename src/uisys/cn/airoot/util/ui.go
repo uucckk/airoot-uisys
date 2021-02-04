@@ -645,6 +645,7 @@ func (j *UI) scanHTML(child []*HTML) {
 					tFunc.SetConstructor(&Attr{tagName, p.GetConstructerParameter()}).setExtend(p.GetAttr("id") == j.domain)
 					tHTML = tFunc.ReadHTML()
 					tHTML.CopyFrom(p)
+
 					if len(arr) > 1 {
 						tHTML.SetTagName(arr[0])
 					}
@@ -713,7 +714,7 @@ func (j *UI) cssComponent(child []*HTML) {
 			if tagName != "" {
 				c = LastIndex(tagName, ".")
 				if c != -1 {
-					tagName = Substring(tagName, c+1, len(tagName))
+					tagName = Substring(tagName, c+1, StringLen(tagName))
 				}
 				tmp := ""
 				if j.cssTag[strings.ToLower(tagName)] != "" {
@@ -1242,7 +1243,6 @@ func (j *UI) initObj(html *HTML) {
 			}
 			if attr.Value.Type > 0 {
 				j.htmlAdv = append(j.htmlAdv, p)
-
 				continue
 			}
 			if Index(p.GetAttr(attr.Name), "@this") != -1 {

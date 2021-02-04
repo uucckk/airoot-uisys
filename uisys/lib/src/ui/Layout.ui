@@ -7,6 +7,17 @@
 	<@content />
 	<script>
 		var _self = $(dom);
+		
+		var getPixelRatio = function(context) {
+			var backingStore = context.backingStorePixelRatio ||
+				context.webkitBackingStorePixelRatio ||
+				context.mozBackingStorePixelRatio ||
+				context.msBackingStorePixelRatio ||
+				context.oBackingStorePixelRatio ||
+				context.backingStorePixelRatio || 1;
+			return (window.devicePixelRatio || 1) / backingStore;
+		};
+		
 		public function trigger(event){
 			var vBorderSum:int = 0;
 			var hBorderSum:int = 0;
@@ -17,12 +28,15 @@
 				$this.width(_self.width() - hBorderSum);
 				$this.height(_self.height() - vBorderSum);
 				if($this.is("canvas") || $this.is("image")){
-					if($this.attr("width") != _self.width() - hBorderSum){
-						$this.attr("width",_self.width() - hBorderSum);
-					}
+					var r = $this.is("canvas") ? getPixelRatio($this.get(0).getContext("2d")) : 1;
+					var t = (_self.width() - hBorderSum)*r;
 					
-					if($this.attr("height") !=  _self.height() - vBorderSum){
-						$this.attr("height",_self.height() - vBorderSum);
+					if($this.attr("width") != t){
+						$this.attr("width",t);
+					}
+					t = (_self.height() - vBorderSum)*r;
+					if($this.attr("height") != t){
+						$this.attr("height",t);
 					}
 					
 					

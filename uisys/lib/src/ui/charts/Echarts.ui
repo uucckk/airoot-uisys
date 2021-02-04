@@ -4,6 +4,7 @@
 	var theme from "theme";
 	private var myChart = null;
 	private var temp = null;
+	private var temp_on = null;//on绑定事件模板
 	function init(){
 		// 基于准备好的dom，初始化echarts实例
 		if(theme != null){
@@ -20,14 +21,18 @@
 	
 	function initChart(){
 		myChart = theme ? echarts.init(dom,theme) : echarts.init(dom);
-		if(temp){
+		if(temp || temp_on){
 			myChart.setOption(temp);
+			if(temp_on){
+				myChart.on.apply(myChart,temp_on);
+			}
 			return;
 		}
 		var s = dom.getAttribute("src");
 		if(s){
 			src = s;
 		}else{
+			return;
 			option = {
 				title: {
 					text: 'ECharts Example'
@@ -56,6 +61,14 @@
 			temp = value;
 		}
 		
+	}
+	
+	func on(){
+		if(myChart){
+			myChart.on.apply(myChart,arguments);
+		}else{
+			temp_on = arguments;
+		}
 	}
 	
 	set src(value){

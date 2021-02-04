@@ -9,7 +9,10 @@
 <script>
 	var _self = $(dom);
 	private static function layoutH(_self,event){
-		_self.css("position","relative");
+		if(_self.css("position") == "static"){
+			_self.css("position","relative");
+		}
+		
 		var gap = parseInt(_self.attr("gap"));
 		var tArr = null;
 		var padding = 0;

@@ -25,7 +25,6 @@
 	
 	set data(value:Object){
 		bind.data = value;
-		trace("Bind.ui");
 	}
 	
 	/**
@@ -33,7 +32,6 @@
 	 */
 	func addData(name,value){
 		bind.addData(name,value);
-		trace("Bind.ui");
 	}
 	
 	//数据显示过滤器

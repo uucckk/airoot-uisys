@@ -10,24 +10,31 @@
 	<style>
 		body{
 			position:relative;
-			padding-left:5px;
-			padding-right:5px;
+			overflow:hidden;
+			border-radius:2px;
 		}
 		
 		#bg{
 			position:absolute;
-			border-radius:5px;
-			margin:4px;
+			z-index:0;
 			transition:left 0.3s,width 0.2s;
 			width:0px;
 			left:0px;
 			width:100px;
-			height:26px;
+			height:100%;
 			background-color:#00aa00;
 		}
-		
+		#content{
+			position:relative;
+			display:flex;
+			z-index:1;
+			justify-content: center;
+		}
 		#content>div{
 			cursor:pointer;
+			width:100%;
+			text-align:center;
+			box-sizing: border-box;
 			padding-left:4px;
 			padding-right:4px;
 		}
@@ -44,7 +51,7 @@
 		private var _index:int = 0;
 		private var _label:String = null;
 		function init(){
-			elements = #content.children("div");
+			elements = $(#content).children("div");
 			elements.each(function(index){
 				this.setAttribute("index",index);
 			});
@@ -52,13 +59,13 @@
 		}
 		
 		private function initGrid():void{
-			#content.height(_self.height());
+			$(#content).height(_self.height());
 			var pos = parseInt(_self.css("padding-left"));
 			var tmp = null;
-			#bg.height(_self.attr("height") - (#bg.outerHeight(true) - #bg.height()));
+			$(#bg).height(_self.attr("height") - ($(#bg).outerHeight(true) - $(#bg).height()));
 			elements.each(function(){
 				var $this = $(this);
-				$this.css("position","absolute");
+				//$this.css("position","absolute");
 				$this.css({"left":pos + "px","top":"1px","line-height":_self.attr("height") + "px"});
 				tmp = $this.attr("width");
 				tmp = tmp ? parseInt(tmp) : $this.outerWidth(true);
@@ -72,8 +79,8 @@
 				_index = parseInt($this.attr("index"));
 				_label = $this.text();
 				$this.css("color","#ffffff");
-				#bg.css("left",(parseInt($this.css("left")) - parseInt(#bg.css("margin-left"))) + "px");
-				#bg.width($this.outerWidth(true));
+				$(#bg).css("left",(parseInt($this.css("left")) - parseInt($(#bg).css("margin-left"))) + "px");
+				$(#bg).width($this.outerWidth(true));
 				if(onChange){
 					onChange({target:@this});
 				}

@@ -1,6 +1,9 @@
 class BindData{
 	static var count = 1;
 	static func ufo(p){
+		if(!p){
+			return;
+		}
 		if(p.constructor == Object){
 			if(!p._u$){
 				Object.defineProperty(p, '_u$', {

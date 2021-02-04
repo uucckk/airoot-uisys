@@ -615,6 +615,7 @@ HTMLElement.prototype.remove = HTMLElement.prototype.removeChild = function(obj)
 	//清除自对象
 	var clearFunc = "";
 	if(dom.querySelectorAll){
+		clearFunc += dom.getAttribute("onremove") + ";\r\n";
 		var qtLst = dom.querySelectorAll("div[onremove]");
 		for(var i = 0;i<qtLst.length;i++){
 			clearFunc += qtLst[i].getAttribute("onremove") + ";\r\n";
@@ -1037,6 +1038,9 @@ var gcDefer = function(){
 var cl = null;
 var cp = null;
 function gcEvt(){
+	if(__PACKAGE_COUNT__>0){
+		return;
+	}
 	for(var name in __MODULE_LIST__){
 		if(!document.getElementById(name)){
 			var obj = __OBJECT__[name];

@@ -259,7 +259,7 @@ func (c *CSS) AddDomain(domain string) {
 			}
 			nce := &ClassElement{Value: domain, ElementType: 0}
 			nce.Next = ce
-			p[i] = nce
+			v.Element[i] = nce
 		}
 	}
 }
@@ -340,10 +340,9 @@ func (c *CSS) Length() int {
  */
 func (c *CSS) ToString(tp int) string {
 	sb := bytes.NewBufferString("")
-	var ce *ClassElement = nil
+	//var ce *ClassElement = nil
 	for _, s := range c.selecter {
-		for _, a := range s.Element {
-			ce = a
+		for _, ce := range s.Element {
 			for ce != nil {
 				if c.jus == nil {
 					sb.WriteString(ce.Value + IfStr(ce.ElementType == 0, " ", ""))

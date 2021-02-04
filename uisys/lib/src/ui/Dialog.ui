@@ -139,11 +139,7 @@
 		
 		
 		public function addChild(obj:Object):void{
-			$(#content).addChild(obj);
-			if(content.trigger){
-				content.trigger(0);
-			}
-			
+			content.appendChild(obj);
 		}
 
 		/**

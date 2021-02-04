@@ -133,8 +133,11 @@
 		});
 	}
 	
-	function load(url,params){
+	function load(url,params,callback){
 		dom.loadModule(url,function(e){
+			if(callback){
+				callback(e)
+			}
 			trigger();
 		},params);
 	}

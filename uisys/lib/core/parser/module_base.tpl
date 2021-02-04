@@ -135,6 +135,7 @@ var asjs = new function(){
 		req.data= data;
 		req.dataType = dataType;//json,text,or null
 		ul.addEventListener(Event.COMPLETE,compEvt);
+		ul.addEventListener(IOErrorEvent.IO_Error,compEvt);
 		ul.load(req);
 		if(data){data.url = url};
 		return data;
@@ -151,6 +152,7 @@ var asjs = new function(){
 		req.method = URLRequestMethod.GET;
 		req.data= data;
 		ul.addEventListener(Event.COMPLETE,compEvt);
+		ul.addEventListener(IOErrorEvent.IO_Error,compEvt);
 		ul.load(req);
 		if(data){data.url = url};
 		return data;
@@ -167,6 +169,7 @@ var asjs = new function(){
 		req.method = URLRequestMethod.GET;
 		req.data= data;
 		ul.addEventListener(Event.COMPLETE,compEvt);
+		ul.addEventListener(IOErrorEvent.IO_Error,compEvt);
 		ul.load(req);
 		return ul;
 	};
@@ -393,3 +396,14 @@ function __Hash__(){
 	}
 }
 
+//获取query
+function getQueryVariable(q)
+{
+       var query = window.location.search.substring(1);
+       var vars = query.split("&");
+       for (var i=0;i<vars.length;i++) {
+               var pair = vars[i].split("=");
+               if(pair[0] == q){return pair[1];}
+       }
+       return false;
+}

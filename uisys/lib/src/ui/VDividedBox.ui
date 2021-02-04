@@ -26,6 +26,7 @@
 	var br = 0;
 	var can = false;
 	var _self = $(dom);
+	public var onChildResize = null;//当子元素大小变化时候
 	function init(){
 		_self.bind("mousedown",mouseDown);
 		_self.bind("mousemove",mouseMove);
@@ -58,6 +59,9 @@
 			bb.attr("height",br - e.pageY);
 			endElem.attr("height","100%");
 			super.trigger();
+			if(onChildResize){
+				onChildResize({target:@this});
+			}
 			return;
 		}
 		var arr = _self.find(">div");
